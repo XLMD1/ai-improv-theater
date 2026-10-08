@@ -2,12 +2,14 @@
 
 import { create } from "zustand";
 import { api, readSSE } from "@/lib/api";
-import type { Action, Node, Option, TreeNode, World } from "@/lib/types";
+import type { Action, Node, Option, Provider, TreeNode, World } from "@/lib/types";
 
 type Pending = { key: string; parentId: string; action: Action; runId?: string };
 
 type StoryState = {
   token: string | null;
+  provider: Provider;
+  modelId: string;
   node: Node | null;
   world: World | null;
   tree: TreeNode[];
@@ -18,6 +20,7 @@ type StoryState = {
   busy: boolean;
   error: string | null;
   initialize: () => Promise<void>;
+  newStory: (provider: Provider, modelId: string) => Promise<void>;
   choose: (action: Action) => Promise<void>;
   selectNode: (id: string) => Promise<void>;
   regenerate: () => Promise<void>;
@@ -69,6 +72,8 @@ async function listenToRun(token: string, pending: Pending, set: (patch: Partial
 
 export const useStoryStore = create<StoryState>((set, get) => ({
   token: null,
+  provider: "demo",
+  modelId: "demo",
   node: null,
   world: null,
   tree: [],
@@ -85,19 +90,26 @@ export const useStoryStore = create<StoryState>((set, get) => ({
       const world = await api.world();
       let token = storage.read("theater:token");
       let node: Node;
+      let provider: Provider;
+      let modelId: string;
       if (!token) {
         const created = await api.createSession();
         token = created.token;
         node = created.root;
+        provider = created.provider;
+        modelId = created.model_id;
         storage.write("theater:token", token);
         storage.write("theater:node", node.id);
       } else {
         const id = storage.read("theater:node");
         if (!id) throw new Error("存档节点丢失，请清除本页会话后重试。");
-        node = await api.node(token, id);
+        const [savedNode, session] = await Promise.all([api.node(token, id), api.currentSession(token)]);
+        node = savedNode;
+        provider = session.provider;
+        modelId = session.model_id;
       }
       const tree = await api.tree(token);
-      set({ token, node, world, tree, busy: false });
+      set({ token, node, world, tree, provider, modelId, busy: false });
       const stored = storage.read("theater:pending");
       if (stored) {
         const pending = JSON.parse(stored) as Pending;
@@ -111,6 +123,24 @@ export const useStoryStore = create<StoryState>((set, get) => ({
       }
     } catch (error) {
       set({ busy: false, error: (error as Error).message });
+    }
+  },
+
+  newStory: async (provider, modelId) => {
+    if (get().busy) throw new Error("当前回合尚未结束。");
+    set({ busy: true, error: null });
+    try {
+      const created = await api.createSession(provider, modelId);
+      const tree = await api.tree(created.token);
+      storage.write("theater:token", created.token);
+      storage.write("theater:node", created.root.id);
+      storage.remove("theater:pending");
+      set({ token: created.token, node: created.root, tree, provider: created.provider,
+        modelId: created.model_id, pending: null, busy: false, streamedText: "",
+        streamedOptions: [], stage: "", error: null });
+    } catch (error) {
+      set({ busy: false, error: (error as Error).message });
+      throw error;
     }
   },
 

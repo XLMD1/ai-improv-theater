@@ -1,6 +1,6 @@
-import type { Action, Node, Run, TreeNode, World } from "./types";
+import type { Action, AiProvider, LocalSettings, Node, Provider, Run, TreeNode, World } from "./types";
 
-const BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+const BASE = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000";
 
 async function request<T>(path: string, token?: string, init?: RequestInit): Promise<T> {
   const response = await fetch(`${BASE}${path}`, {
@@ -22,7 +22,16 @@ async function request<T>(path: string, token?: string, init?: RequestInit): Pro
 
 export const api = {
   world: () => request<World>("/world"),
-  createSession: () => request<{ token: string; root: Node }>("/sessions", undefined, { method: "POST" }),
+  settings: () => request<LocalSettings>("/local-settings"),
+  saveKey: (provider: AiProvider, apiKey: string) => request<{ configured: boolean }>(`/local-settings/keys/${provider}`, undefined, {
+    method: "PUT", body: JSON.stringify({ api_key: apiKey }),
+  }),
+  clearKey: (provider: AiProvider) => request<{ configured: boolean }>(`/local-settings/keys/${provider}`, undefined, { method: "DELETE" }),
+  createSession: (provider: Provider = "demo", modelId = "demo") => request<{ token: string; root: Node; provider: Provider; model_id: string }>("/sessions", undefined, {
+    method: "POST",
+    ...(provider === "demo" ? {} : { body: JSON.stringify({ provider, model_id: modelId }) }),
+  }),
+  currentSession: (token: string) => request<{ provider: Provider; model_id: string }>("/session", token),
   node: (token: string, id: string) => request<Node>(`/nodes/${id}`, token),
   nodeEvents: (token: string, id: string) => request<{ event_type: string; payload: Action }[]>(`/nodes/${id}/events`, token),
   tree: (token: string) => request<TreeNode[]>("/tree", token),

@@ -5,15 +5,18 @@ from contextlib import asynccontextmanager
 from fastapi import Depends, FastAPI, Header, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
+from pydantic import SecretStr
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.config import get_settings
+from app.costs import budget_status
 from app.canon import get_canon
 from app.db import SessionLocal
 from app.jobs import create_run, create_story_session, dispatch_run, interrupt_unfinished, session_for_token
+from app.local_settings import MODELS, Provider, clear_key, configured, public_status, put_key
 from app.models import Node, Run, RunEvent, StorySession, TurnEvent
-from app.schemas import TurnRequest
+from app.schemas import ApiKeyRequest, SessionCreateRequest, TurnRequest
 from app.state import StoryValidationError
 
 
@@ -28,7 +31,7 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=get_settings().origins,
     allow_credentials=False,
-    allow_methods=["GET", "POST"],
+    allow_methods=["GET", "POST", "PUT", "DELETE"],
     allow_headers=["Authorization", "Content-Type", "Idempotency-Key", "Last-Event-ID"],
 )
 
@@ -61,6 +64,30 @@ def health():
     return {"ok": True, "demo_mode": True}
 
 
+@app.get("/local-settings")
+def local_settings(db: Session = Depends(db_session)):
+    return {**public_status(), "budget": budget_status(db)}
+
+
+@app.put("/local-settings/keys/{provider}")
+def save_key(provider: Provider, request: ApiKeyRequest):
+    if provider == "openai":
+        raise HTTPException(status_code=409, detail="OpenAI 密钥选择待开发验证")
+    key = request.api_key.get_secret_value().strip()
+    if not 1 <= len(key) <= 500:
+        raise HTTPException(status_code=422, detail="API Key 长度须为 1–500 个字符")
+    put_key(provider, SecretStr(key))
+    return {"configured": True}
+
+
+@app.delete("/local-settings/keys/{provider}")
+def delete_key(provider: Provider):
+    if provider == "openai":
+        raise HTTPException(status_code=409, detail="OpenAI 密钥选择待开发验证")
+    clear_key(provider)
+    return {"configured": False}
+
+
 @app.get("/world")
 def world():
     canon = get_canon()
@@ -68,9 +95,25 @@ def world():
 
 
 @app.post("/sessions", status_code=201)
-def new_session():
-    token, root = create_story_session()
-    return {"token": token, "root": public_node(root)}
+def new_session(request: SessionCreateRequest | None = None):
+    request = request or SessionCreateRequest()
+    if request.provider == "openai":
+        raise HTTPException(status_code=409, detail="OpenAI 密钥选择待开发验证")
+    model_id = request.model_id or ("demo" if request.provider == "demo" else MODELS[request.provider])
+    if request.provider == "demo":
+        if model_id != "demo":
+            raise HTTPException(status_code=422, detail="unverified model")
+    elif model_id != MODELS[request.provider]:
+        raise HTTPException(status_code=422, detail="unverified model")
+    elif not configured(request.provider):
+        raise HTTPException(status_code=409, detail="API key is not configured")
+    token, root = create_story_session(request.provider, model_id)
+    return {"token": token, "root": public_node(root), "provider": request.provider, "model_id": model_id}
+
+
+@app.get("/session")
+def get_session(session: StorySession = Depends(current_session)):
+    return {"provider": session.provider, "model_id": session.model_id}
 
 
 @app.get("/nodes/{node_id}")
