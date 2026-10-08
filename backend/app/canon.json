@@ -1,0 +1,25 @@
+{
+  "version": "1.0.0",
+  "title": "雾港最后一夜",
+  "premise": "暴风雨封锁雾港，三人必须在灯塔熄灭前决定一份失踪航海日志的去向。",
+  "scenes": {
+    "s1": {"name": "候船厅", "background": "harbor", "fallback": "雨敲着候船厅的玻璃。三人暂时收起争执，决定继续寻找航海日志。"},
+    "s2": {"name": "旧档案室", "background": "archive", "fallback": "档案室的门缓缓合上。线索仍在，但此刻谁也不愿仓促下结论。"},
+    "s3": {"name": "码头", "background": "dock", "fallback": "潮水抹平了脚印。众人决定先回灯塔核对手上的证据。"},
+    "s4": {"name": "钟楼", "background": "tower", "fallback": "钟声盖过了争吵。众人决定先回灯塔核对手上的证据。"},
+    "s5": {"name": "灯塔", "background": "lighthouse", "fallback": "灯塔的光重新亮起。真相尚未说尽，但选择已迫在眉睫。"},
+    "e1": {"name": "公开真相", "background": "dawn", "fallback": "日志被公开，雾港迎来了一个不再沉默的清晨。"},
+    "e2": {"name": "共同守护", "background": "dawn", "fallback": "三人达成协议，暂时保管日志，等待更可靠的证据。"},
+    "e3": {"name": "秘密沉海", "background": "dawn", "fallback": "日志随潮水离去，雾港留下一个无人能够证实的传说。"}
+  },
+  "transitions": {
+    "s1": ["s2"], "s2": ["s3", "s4"], "s3": ["s5"], "s4": ["s5"],
+    "s5": ["e1", "e2", "e3"], "e1": [], "e2": [], "e3": []
+  },
+  "flags": ["clue_found", "secret_shared", "trust_broken"],
+  "characters": {
+    "c1": {"name": "林岚", "role": "记者", "risk": 2, "loyalty": 1, "secrecy": 0, "goal": "查清航海日志的真相", "taboo": ["伪造证据"], "portrait": "linlan"},
+    "c2": {"name": "周砚", "role": "灯塔守望人", "risk": 0, "loyalty": 2, "secrecy": 2, "goal": "保护雾港居民", "taboo": ["主动伤害无辜者"], "portrait": "zhouyan"},
+    "c3": {"name": "沈知夏", "role": "失踪船长之女", "risk": 1, "loyalty": 2, "secrecy": 1, "goal": "找到父亲失踪的原因", "taboo": ["抛弃同伴"], "portrait": "shenzhixia"}
+  }
+}

@@ -18,13 +18,13 @@ FastAPI 单进程任务调度
 Qwen 兼容接口：聊天模型 + text-embedding-v4
 ```
 
-前端使用 Next.js 静态导出，不放服务器端路由；FastAPI 独立部署于 Fly，Neon 保存 PostgreSQL/pgvector。Redis 首版不用。真实模型密钥只在后端。无密钥时可启动确定性 Demo 模式，但 UI 必须标明其性质。
+上图是目标架构。阶段 1 只运行确定性 Demo，不调用模型、不写向量记忆；前端使用 Next.js 静态导出，浏览器直连 FastAPI。Fly、Neon、模型与 pgvector 留待后续阶段。Redis 首版不用，UI 必须标明 Demo 性质。
 
 ## 2. 世界与生成协议
 
 `canon.json` 固定场景、合法转移、角色卡和允许的 flag。节点快照固定为 `schema_version`、`scene_id`、`turn`、`flags`、`relations`、`ending_id`；关系值范围 -3..3，flag 仅可由允许列表设置为 0/1。
 
-每个 Agent 接收只读包 `canon_version`、`parent_node_id`、`world_state`、`recent_turns`、`retrieved_memories`、`user_action`。导演输出场景、目标、冲突及 1–2 位角色；编剧输出叙述、1–4 个对白槽、2–3 个选项、最多 4 个状态变更和 2 条记忆候选；每个出场角色只填自己的槽；审核输出 `pass|repair|block` 与问题列表。严格字段与类型以 `backend/app/schemas.py` 为执行契约。
+阶段 1 的 `backend/app/schemas.py` 只包含玩家行动、状态变更与任务状态。阶段 3 再加入 Agent 协议：所有 Agent 接收只读包 `canon_version`、`parent_node_id`、`world_state`、`recent_turns`、`retrieved_memories`、`user_action`；导演输出场景、目标、冲突及 1–2 位角色；编剧输出叙述、1–4 个对白槽、2–3 个选项、最多 4 个状态变更和 2 条记忆候选；每个出场角色只填自己的槽；审核输出 `pass|repair|block` 与问题列表。届时以严格 Pydantic 类型为执行契约。
 
 处理顺序：解析结构 → 检查场景转移、选项/槽位/状态键 → 组装正文 → 检查硬禁忌 → 审核。审核修复最多一次；二次失败或 `block` 时改用场景预写过渡幕，不改状态、不写记忆。服务端事实优先级是：规则与固定设定 → 父节点快照 → 祖先已提交事件 → 审核意见 → 检索记忆。未知 `fact_key` 的事实冲突指控不生效。
 
@@ -39,7 +39,7 @@ Qwen 兼容接口：聊天模型 + text-embedding-v4
 - `memories`：来源节点、`fact_key`、类型、文本、重要度、创建回合、过期回合、1024 维向量与模型版本。
 - `llm_calls`：每次模型调用的角色、模型、输入/输出 token 与估算费用。
 
-节点与事件不可变。回放直接读取 `rendered_scene`，不重新生成。创建子节点时在单一事务中写入节点、事件、记忆并结束 run；失败候选不能进入时间线。记忆查询只看父节点祖先链，过期项剔除，同 `fact_key` 取最近祖先版本，再按余弦相似度 ≥0.72 取前 3 条。该阈值是首版假设，需用评测数据校准。每日摘要不做；最近 3 回合直接进上下文。
+阶段 1 的初始迁移只创建 `sessions`、`nodes`、`turn_events`、`runs`、`run_events` 五张表；记忆与调用用量表在对应功能阶段迁移。节点与事件不可变，回放直接读取 `rendered_scene`，不重新生成。阶段 1 创建子节点时，在单一事务中写入节点、事件并结束 run。阶段 3 再把已批准记忆纳入同一事务：只看父节点祖先链，剔除过期项，同 `fact_key` 取最近祖先版本，再按余弦相似度 ≥0.72 取前 3 条。该阈值需用评测数据校准。每日摘要不做；最近 3 回合直接进上下文。
 
 ## 4. API、SSE 与恢复
 
@@ -50,7 +50,7 @@ Qwen 兼容接口：聊天模型 + text-embedding-v4
 | `GET /runs/{id}` | 查询任务状态与已提交节点 |
 | `GET /runs/{id}/events?after=N` | 只补发序号大于 N 的阶段/批准内容事件 |
 | `GET /nodes/{id}` | 回放完整已批准节点 |
-| `GET /tree` | 返回当前会话分支树 |
+| `GET /tree` | 返回当前会话分支树，包含用于区分兄弟分支的 `action_label` |
 
 SSE 阶段事件可实时发送；`scene_chunk`、`options`、`done` 仅在审核与事务提交后发送。连接断开只影响读取，后端任务继续；客户端刷新后用保存在 `sessionStorage` 的 run ID 和最后序号继续读取。新幂等键从同一父节点重新生成，形成明确的新分支。服务重启将未提交任务标记 `interrupted`，不自动重调第三方模型。第三方请求已经发出时无法保证绝对只计费一次。
 
