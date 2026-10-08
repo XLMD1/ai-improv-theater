@@ -1,4 +1,4 @@
-$ErrorActionPreference = 'Stop'
+﻿$ErrorActionPreference = 'Stop'
 
 $repoRoot = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
 $backendDir = Join-Path $repoRoot 'backend'
@@ -7,7 +7,10 @@ $python = Join-Path $backendDir '.venv/Scripts/python.exe'
 $next = Join-Path $frontendDir 'node_modules/.bin/next.cmd'
 
 if (-not (Test-Path -LiteralPath $python -PathType Leaf)) {
-    throw '缺少 backend/.venv。请在 backend 目录运行 python -m venv .venv，然后运行 .\.venv\Scripts\python.exe -m pip install -e .'
+    $python = Join-Path $repoRoot '.venv/Scripts/python.exe'
+}
+if (-not (Test-Path -LiteralPath $python -PathType Leaf)) {
+    throw '缺少虚拟环境（backend/.venv 或项目根目录 .venv）。请在 backend 目录运行 python -m venv .venv，然后运行 .\.venv\Scripts\python.exe -m pip install -e .'
 }
 if (-not (Test-Path -LiteralPath $next -PathType Leaf)) {
     throw '缺少前端依赖。请在 frontend 目录运行 npm ci。'
