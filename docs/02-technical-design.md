@@ -39,7 +39,7 @@ DeepSeek JSON Output（deepseek-flash）；OpenAI Responses API 待开发验证
 - `runs` 与 `run_events`：生成状态、幂等键、可补发的 SSE 事件序号。
 - `llm_calls`：每次模型调用的供应商、模型、输入/输出 token 与估算费用。
 
-阶段 1 的初始迁移只创建 `sessions`、`nodes`、`turn_events`、`runs`、`run_events` 五张表。阶段 2 增加会话供应商字段与调用用量表。节点与事件不可变，回放直接读取 `rendered_scene`，不重新生成。阶段 3 仅使用最近 3 回合和父节点祖先链上的已提交事件作为上下文；兄弟分支信息不得进入提示材料。不建向量表、不做每日摘要。
+阶段 1 的初始迁移只创建 `sessions`、`nodes`、`turn_events`、`runs`、`run_events` 五张表。阶段 2 增加会话供应商字段与调用用量表。节点与事件不可变，回放直接读取 `rendered_scene`，不重新生成。阶段 3 的提示词版本为 `single-2`：仅使用最近 3 个祖先节点的已提交玩家行动与剧情作为上下文，按时间正序排列；旧行动最多 120 字、每幕叙述最多 240 字、每句旧对白最多 100 字，当前行动不裁剪。兄弟分支信息不得进入提示材料。不建向量表、不做每日摘要。
 
 ## 4. API、SSE 与恢复
 

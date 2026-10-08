@@ -24,7 +24,7 @@ class SceneDraft(StrictModel):
     state_changes: list[StateChange] = Field(max_length=4)
 
 
-def _prompt(parent_state: dict, action: Action, target: dict) -> str:
+def _prompt(parent_state: dict, action: Action, target: dict, recent_turns: list[dict] | None = None) -> str:
     canon = get_canon()
     participants = [line["character_id"] for line in target["dialogue"]]
     cards = {character_id: canon["characters"][character_id] for character_id in participants}
@@ -34,6 +34,7 @@ def _prompt(parent_state: dict, action: Action, target: dict) -> str:
         "characters": cards, "world_state": parent_state,
         "user_action": action.model_dump(), "allowed_speakers": participants,
         "allowed_flags": canon["flags"], "allowed_relation_keys": list(parent_state["relations"]),
+        "recent_turns": recent_turns or [],
     }
     example = {
         "narration": "这里填写下一幕叙述",
@@ -57,12 +58,12 @@ def _prompt(parent_state: dict, action: Action, target: dict) -> str:
     )
 
 
-async def build_ai_scene(parent_state: dict, action: Action, provider: str, model_id: str) -> tuple[dict, list[StateChange], ModelResult]:
+async def build_ai_scene(parent_state: dict, action: Action, provider: str, model_id: str, recent_turns: list[dict] | None = None) -> tuple[dict, list[StateChange], ModelResult]:
     key = get_key(provider)
     if not key:
         raise ProviderFailure("API key not configured")
     target, baseline_changes = build_demo_scene(parent_state, action)
-    result = await call_provider(provider, model_id, key, _prompt(parent_state, action, target))
+    result = await call_provider(provider, model_id, key, _prompt(parent_state, action, target, recent_turns))
     try:
         draft = SceneDraft.model_validate_json(result.text)
         expected = {line["character_id"] for line in target["dialogue"]}

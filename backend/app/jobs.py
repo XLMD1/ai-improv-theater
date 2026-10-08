@@ -60,6 +60,26 @@ def _append_event(db, run_id: str, event: str, payload: dict) -> None:
     db.flush()
 
 
+def _recent_turns(db, parent_node_id: str) -> list[dict]:
+    turns = []
+    node = db.get(Node, parent_node_id)
+    while node and len(turns) < 3:
+        action = db.scalar(select(TurnEvent.payload).where(
+            TurnEvent.node_id == node.id, TurnEvent.event_type == "player_action",
+        ))
+        turns.append({
+            "scene_id": node.scene_id,
+            "player_action": {**action, "value": action["value"][:120]} if action else None,
+            "narration": node.rendered_scene["narration"][:240],
+            "dialogue": [
+                {"character_id": line["character_id"], "text": line["text"][:100]}
+                for line in node.rendered_scene["dialogue"]
+            ],
+        })
+        node = db.get(Node, node.parent_id) if node.parent_id else None
+    return list(reversed(turns))
+
+
 def create_run(session_id: str, parent_node_id: str, action: Action, key: str) -> tuple[Run, bool]:
     if not 1 <= len(key) <= 80:
         raise StoryValidationError("invalid Idempotency-Key")
@@ -113,13 +133,14 @@ async def process_run(run_id: str) -> None:
             session_id = run.session_id
             provider = session.provider
             model_id = session.model_id
+            recent_turns = _recent_turns(db, parent_id) if provider != "demo" else []
         if provider == "demo":
             scene, changes = build_demo_scene(parent_state, action)
             usage = None
         else:
             with SessionLocal.begin() as db:
                 _append_event(db, run_id, "writing", {})
-            scene, changes, usage = await build_ai_scene(parent_state, action, provider, model_id)
+            scene, changes, usage = await build_ai_scene(parent_state, action, provider, model_id, recent_turns)
         with SessionLocal.begin() as db:
             run = db.get(Run, run_id)
             state = apply_state_changes(parent_state, scene["scene_id"], changes)
@@ -127,7 +148,7 @@ async def process_run(run_id: str) -> None:
                 session_id=session_id, parent_id=parent_id, depth=parent_depth + 1,
                 scene_id=scene["scene_id"], state_snapshot=state, rendered_scene=scene,
                 canon_version=get_canon()["version"],
-                prompt_version="demo-1" if provider == "demo" else "single-1",
+                prompt_version="demo-1" if provider == "demo" else "single-2",
                 model_id="demo" if provider == "demo" else f"{provider}:{model_id}",
             )
             db.add(node)
