@@ -1,4 +1,6 @@
 export type CharacterId = "c1" | "c2" | "c3";
+export type Provider = "demo" | "openai" | "deepseek";
+export type AiProvider = Exclude<Provider, "demo">;
 export type Action = { type: "option" | "text"; value: string };
 export type Option = { id: string; label: string };
 
@@ -35,3 +37,8 @@ export type World = {
 };
 
 export type Run = { id: string; status: string; node_id: string | null; error_code: string | null };
+
+export type LocalSettings = {
+  providers: Record<AiProvider, { model_id: string; configured: boolean; available: boolean }>;
+  budget: { estimated_spend_cny: number; warning_cny: number; limit_cny: number; status: "ok" | "warning" | "blocked" };
+};

@@ -1,8 +1,9 @@
 "use client";
 
 import { FormEvent, useEffect, useRef, useState } from "react";
-import { ArrowLeft, GitBranch, RotateCcw, Send, Sparkles, Theater as TheaterIcon } from "lucide-react";
+import { ArrowLeft, GitBranch, RotateCcw, Send, Settings, Sparkles, Theater as TheaterIcon } from "lucide-react";
 import { CharacterPortrait, SceneArt } from "./SceneArt";
+import { LocalSettingsDialog } from "./LocalSettingsDialog";
 import { useStoryStore } from "@/store/story";
 import type { CharacterId } from "@/lib/types";
 
@@ -24,8 +25,9 @@ function RelationshipGraph({ relations, names }: { relations: Record<string, num
 }
 
 export default function Theater() {
-  const { node, world, tree, busy, error, stage, streamedText, streamedOptions, initialize, choose, selectNode, regenerate } = useStoryStore();
+  const { node, world, tree, provider, modelId, busy, error, stage, streamedText, streamedOptions, initialize, newStory, choose, selectNode, regenerate } = useStoryStore();
   const [freeText, setFreeText] = useState("");
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const [visibleText, setVisibleText] = useState("");
   const initialized = useRef(false);
 
@@ -61,7 +63,7 @@ export default function Theater() {
       <header className="topbar">
         <div className="brand"><span className="brand-mark"><TheaterIcon size={22} aria-hidden="true"/></span><div><strong>AI 即兴剧场</strong><small>THE IMPROV THEATER</small></div></div>
         <div className="topbar-center"><span className="eyebrow">正在上演</span><strong>{world.title}</strong></div>
-        <div className="topbar-status"><span className="demo-badge">确定性 Demo · 无 AI 调用</span><span className="status-dot"/><span>{busy ? stage : terminal ? "故事终章" : "等待你的选择"}</span></div>
+        <div className="topbar-status"><span className="demo-badge">{provider === "demo" ? "确定性 Demo · 无 AI 调用" : `${provider === "openai" ? "OpenAI" : "DeepSeek"} · ${modelId}`}</span><span className="status-dot"/><span>{busy ? stage : terminal ? "故事终章" : "等待你的选择"}</span><button type="button" className="topbar-settings" onClick={() => setSettingsOpen(true)} disabled={busy} aria-label="打开本地模型设置"><Settings size={17} aria-hidden="true"/> 设置</button></div>
       </header>
 
       <div className="layout">
@@ -101,9 +103,11 @@ export default function Theater() {
           <section className="side-card session-card"><span className="eyebrow">CURRENT RUN</span><h2>你的雾港之夜</h2><p>每个选择都会成为一个可回看的分支。</p><div className="session-stats"><div><strong>{node.depth}</strong><span>已走幕数</span></div><div><strong>{tree.length - 1}</strong><span>已存分支</span></div></div></section>
           <RelationshipGraph relations={node.state_snapshot.relations} names={{ c1: world.characters.c1.name, c2: world.characters.c2.name, c3: world.characters.c3.name }}/>
           <section className="side-card" aria-labelledby="branch-heading"><div className="section-title"><h2 id="branch-heading"><GitBranch size={17} aria-hidden="true"/> 分支存档</h2><span>{tree.length} 个节点</span></div><div className="branch-list">{tree.map(item => <button key={item.id} className={`branch-item ${item.id === node.id ? "selected" : ""}`} style={{ paddingLeft: `${12 + Math.min(item.depth, 6) * 12}px` }} onClick={() => void selectNode(item.id)} disabled={busy} aria-current={item.id === node.id ? "step" : undefined}><span className="branch-dot"/><span className="branch-label"><strong>{world.scenes[item.scene_id]?.name || item.scene_id}</strong><span>{item.action_label}</span></span><small>#{item.depth + 1}</small></button>)}</div><div className="branch-actions"><button onClick={() => node.parent_id && void selectNode(node.parent_id)} disabled={!node.parent_id || busy}><ArrowLeft size={15} aria-hidden="true"/> 回到上一幕</button><button onClick={() => void regenerate()} disabled={!node.parent_id || busy}><RotateCcw size={15} aria-hidden="true"/> 重新生成</button></div></section>
-          <p className="aside-note">阶段 1 只验证状态规则、分支隔离和原样回放。剧情是预写的确定性内容，不代表 AI 生成质量。</p>
+          <p className="aside-note">{provider === "demo" ? "确定性 Demo 只验证状态规则、分支隔离和原样回放，不代表 AI 生成质量。" : "当前会话使用固定模型；候选稿通过结构与状态校验后保存，旧节点回放不再调用模型。"}</p>
         </aside>
       </div>
+      {settingsOpen && <LocalSettingsDialog currentProvider={provider} currentModel={modelId} hasProgress={tree.length > 1}
+        onClose={() => setSettingsOpen(false)} onNewStory={newStory}/>}
     </div>
   );
 }

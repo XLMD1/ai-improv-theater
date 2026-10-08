@@ -1,7 +1,7 @@
 from enum import StrEnum
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, SecretStr
 
 
 class StrictModel(BaseModel):
@@ -22,6 +22,15 @@ class Action(StrictModel):
 class TurnRequest(StrictModel):
     parent_node_id: str
     action: Action
+
+
+class ApiKeyRequest(StrictModel):
+    api_key: SecretStr
+
+
+class SessionCreateRequest(StrictModel):
+    provider: Literal["demo", "openai", "deepseek"] = "demo"
+    model_id: str | None = None
 
 
 class RunStatus(StrEnum):
