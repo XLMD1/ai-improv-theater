@@ -4,7 +4,7 @@
 
 ## Windows 本地启动
 
-需要 Python 3.11+、Node.js/npm、PostgreSQL，以及 Windows PowerShell 5.1 或 PowerShell 7。默认数据库地址为 `postgresql+psycopg://theater:theater@localhost:5432/theater`；请先创建对应的本地用户与数据库，或在启动脚本所在的终端设置 `DATABASE_URL` 和 `MIGRATION_DATABASE_URL`。只写入 `backend/.env` 不会被 Alembic 迁移读取。
+需要 Python 3.11+、Node.js/npm、PostgreSQL，以及 Windows PowerShell 5.1 或 PowerShell 7。将本地数据库连接地址写入 `backend/.env` 的 `DATABASE_URL`；该文件已加入 Git 忽略规则，不要提交其中的密码。Alembic 优先使用进程环境变量 `MIGRATION_DATABASE_URL`、其次 `DATABASE_URL`，未设置时读取 `backend/.env`。
 
 首次安装依赖：
 
@@ -19,13 +19,13 @@ cd ..
 
 脚本优先使用 `backend/.venv`，也支持已有的项目根目录 `.venv`。
 
-若使用非默认数据库，在同一 PowerShell 终端设置连接地址，再启动：
+若使用非默认数据库，先把连接地址写入 `backend/.env` 的 `DATABASE_URL`，再运行启动命令：
 
 ```powershell
-$env:DATABASE_URL = 'postgresql+psycopg://USER:PASSWORD@127.0.0.1:5432/theater'
-$env:MIGRATION_DATABASE_URL = $env:DATABASE_URL
 pwsh -NoProfile -File .\scripts\start-local.ps1
 ```
+
+如果需要临时覆盖 `.env` 配置，可在启动脚本的同一个终端设置 `DATABASE_URL`；迁移使用不同数据库时再额外设置 `MIGRATION_DATABASE_URL`。
 
 使用 Windows PowerShell 5.1 时，将最后一行改为 `powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\start-local.ps1`；执行策略覆盖只作用于这个新进程。
 
