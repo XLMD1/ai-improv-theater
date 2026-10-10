@@ -52,6 +52,9 @@ def current_session(authorization: str = Header(default=""), db: Session = Depen
 
 
 def public_node(node: Node) -> dict:
+    if node.state_snapshot.get('engine_version') == 'investigation-1':
+        from app.investigation_jobs import public_investigation_node
+        return public_investigation_node(node)
     return {
         "id": node.id, "session_id": node.session_id, "parent_id": node.parent_id,
         "depth": node.depth, "scene_id": node.scene_id,
@@ -138,6 +141,9 @@ def get_node_events(node_id: str, session: StorySession = Depends(current_sessio
     node = db.get(Node, node_id)
     if not node or node.session_id != session.id:
         raise HTTPException(status_code=404, detail="Node not found")
+    if node.state_snapshot.get('engine_version') == 'investigation-1':
+        from app.investigation_jobs import public_investigation_events
+        return public_investigation_events(db,node)
     events = db.scalars(select(TurnEvent).where(TurnEvent.node_id == node_id).order_by(TurnEvent.created_at)).all()
     return [{"event_type": event.event_type, "payload": event.payload} for event in events]
 
