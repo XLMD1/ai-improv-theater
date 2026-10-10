@@ -60,7 +60,7 @@ python evals/run_stage2.py --suite real_model --database-url-env MIGRATION_DATAB
 
 确定的失败边界是本地单次调用限时；供应商排队、生成速度或网络延迟的具体原因尚未区分。[DeepSeek 官方保活说明](https://api-docs.deepseek.com/zh-cn/quick_start/rate_limit/)说明非流式请求可能先持续返回空行等待推理，不能据 20 秒超时判断服务端已经停止。下一步先核对供应商账单；如调整生成限时，需先同步设计及操作策略并验证，不能悄悄放宽所有操作或盲目重发。
 
-用户随后报告 DeepSeek 控制台：消费 0.02 CNY、API 请求 1 次、总 token 9,598。来源为用户核对控制台后的陈述，未取得供应商原始响应或输入/输出拆分；不得从总量编造两类 token。该报告确认存在消费，但不能恢复丢失的候选正文或将失败案例改成成功。原始评测 report.json 与原账本 NULL 字段保留；当前实现仍因 uncertain 行阻断，账单核对机制和生成限时调整方案见[待确认补充](../design/stage-2-custom-stories.md#11-首次真实评测后的补充方案待确认)。
+用户随后报告 DeepSeek 控制台：消费 0.02 CNY、API 请求 1 次、总 token 9,598；随后补充 input=5,088、output=4,510，两者之和与总量一致。来源为用户核对控制台后的陈述，未取得供应商原始响应。这份用量和实际金额应作为人工核账证据保存，不能冒充原响应，也不能恢复丢失的候选正文或将失败案例改成成功。原始评测 report.json 与原账本 NULL 字段保留；当前实现仍因 uncertain 行阻断，账单核对机制和生成限时调整方案见[待确认补充](../design/stage-2-custom-stories.md#11-首次真实评测后的补充方案待确认)。
 
 一次独立审查发现两项 Important（原始 JSON/裸 token 脱敏、领取后初始化故障不收尾），均以数据库断言 RED→GREEN 修复；完整 154 项通过，不再进行重复全量审查。Minor 待补：approved 的 /resume 使用新键仍返回 409，已保存根节点可经 GET task 与确认重放取得。
 
