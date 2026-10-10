@@ -157,7 +157,8 @@ def run_suite(suite: str, database_url_env: str) -> tuple[dict, Path]:
     commit = subprocess.run(["git", "rev-parse", "HEAD"], cwd=ROOT, capture_output=True, text=True, check=False)
     dirty = subprocess.run(["git", "status", "--porcelain"], cwd=ROOT, capture_output=True, text=True, check=False)
     report = {
-        "git_dirty": bool(dirty.stdout.strip()),        "metric_version": manifest["metric_version"], "run_id": run_id, "suite": suite,
+        "git_dirty": bool(dirty.stdout.strip()),
+        "metric_version": manifest["metric_version"], "run_id": run_id, "suite": suite,
         "timestamp": datetime.now(timezone.utc).isoformat(), "git_commit": commit.stdout.strip(),
         "manifest_sha256": hashlib.sha256(MANIFEST.read_bytes()).hexdigest(),
         "fixture_hashes": fixture_hashes, "fixture_hash_mode": "utf8-lf", "fixture_raw_sha256": fixture_raw_hashes, "story_version": manifest["versions"][suite]["story"],

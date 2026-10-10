@@ -113,3 +113,6 @@ def test_fixture_hash_is_portable_across_windows_line_endings(tmp_path):
     windows.write_bytes(content.replace(b"\n", b"\r\n"))
     assert hashlib.sha256(windows.read_bytes()).hexdigest() != hashlib.sha256(content).hexdigest()
     assert runner.fixture_digest(windows) == hashlib.sha256(content).hexdigest()
+    manifest = runner.load_manifest()
+    for relative, expected in manifest["fixture_hashes"].items():
+        assert runner.fixture_digest(runner.ROOT / relative) == expected
