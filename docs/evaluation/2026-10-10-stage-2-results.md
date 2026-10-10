@@ -18,11 +18,12 @@
 | 规则基线 | 30/30，17.110 秒，报告 1da0356c47874180bc525a50a793a952 |
 | 旧存档兼容 | 9/9，10.906 秒，报告 b2105f3984cd472eadb254e1e88ac63f |
 | runtime_simulated | 10/10，32.047 秒，报告 7b38b53be0214b8b9dfe7b9c2915800a（审查修复后） |
-| real_model | 0/12，12 error：key_not_configured，报告 18a8989e3adc425eb570d9eb8ce1cf8c；未发出真实请求 |
+| real_model（首次无密钥） | 0/12，12 error：key_not_configured，报告 18a8989e3adc425eb570d9eb8ce1cf8c；未发出真实请求 |
+| real_model（本地输入密钥后） | 0/12，12 error，20.828 秒，报告 4ac6f08bfd764d9c8807e3380ed1ab06；1 个真实 attempt 超时且费用未知，后续调用被阻断 |
 | 人工剧情核查 | 0 人，门槛未通过 |
 | 前端测试/typecheck/build | 本阶段未修改前端，未运行 |
 
-必需案例的 skip/error/timeout 均保留分母，返回非零。模拟故障不是 AI 任务成功率；模拟账本统计只覆盖保留行，主动清理的故障 fixture 不计入，不称供应商实际费用。本轮真实 attempt、usage 和费用均为 0，不能推断真实延迟、截断率、语义质量或恢复成功率。
+必需案例的 skip/error/timeout 均保留分母，返回非零。模拟故障不是 AI 任务成功率；模拟账本统计只覆盖保留行，主动清理的故障 fixture 不计入，不称供应商实际费用。首次无密钥运行没有真实 attempt。最新运行有 1 个真实 attempt，其 token 与费用均未知；报告汇总的 0 只是已知数值之和，不能解释为实际零费用。没有成功候选，不能推断截断率、语义质量或恢复成功率。
 
 自动检查覆盖 strict schema、未知操作、有限安全重试、Retry-After、未知结果、单次墙钟超时、截止时间、取消、账本故障阻断、并发序号、越权、一次修复、确认幂等、创建恢复、五类行动、三结局规则路径、同地点重复不改状态、错误发言角色、语义否决、事务回滚、旧 worker、兄弟祖先隔离与保存回放。自然语言检查仍有漏报风险，不能用模拟 passed 代替真实人工核查。
 
@@ -47,7 +48,17 @@ python evals/run_stage2.py --suite real_model --database-url-env MIGRATION_DATAB
 
 ## 剩余门槛
 
-配置真实密钥后完成三类背景生成、九条结局路径和恢复验证，记录各操作真实 attempt、token、费用、时延及至少一位人工剧情核查结果。全部门槛通过前，开发计划中阶段 2 保持未验收，新故事前端入口仍不开放。
+先核对最新未知请求的供应商用量/费用，再完成三类背景生成、九条结局路径和恢复验证，记录各操作真实 attempt、token、费用、时延及至少一位人工剧情核查结果。全部门槛通过前，开发计划中阶段 2 保持未验收，新故事前端入口仍不开放。
+
+## 首次真实请求失败记录
+
+用户确认密钥准备完成后，在本地独立交互终端用 getpass 隐藏输入，仅进入评测进程内存；退出时清除。新建独立 stage2_real_test，迁移 0001→0005 成功，未读取用户 .env 或连接用户故事库。固定清单 hash 为 ac927d293c87f5407692d7aa11aa22307191a936175c1b8c017335f5315fef5a，执行代码为 71c5f0e9ed7403c6781d551781b07053f8643cae，没有更换案例或挑选成功故事。
+
+北京时间 18:57:33–18:57:53，story.generate 的第一次 attempt 用时 20,016 ms，触发当前设计的 20 秒墙钟上限。任务返回 outcome_unknown，账本 call_status=outcome_unknown、usage_status=uncertain，input_tokens/output_tokens/estimated_cost_cny 都是 NULL。没有拿到完整响应，无法确定供应商是否完成推理或计费，也不能据此断言密钥认证成功或失败。
+
+古代创建为 outcome_unknown；近现代与未来创建均为 cost_unconfirmed，没有新增供应商 attempt；九条路径均为 creation_dependency_failed。共 12 error，人工核查 0，无候选故事可供阅读。一次请求结束后没有重试，也未换库绕过未确认费用阻断。
+
+确定的失败边界是本地单次调用限时；供应商排队、生成速度或网络延迟的具体原因尚未区分。[DeepSeek 官方保活说明](https://api-docs.deepseek.com/zh-cn/quick_start/rate_limit/)说明非流式请求可能先持续返回空行等待推理，不能据 20 秒超时判断服务端已经停止。下一步先核对供应商账单；如调整生成限时，需先同步设计及操作策略并验证，不能悄悄放宽所有操作或盲目重发。
 
 一次独立审查发现两项 Important（原始 JSON/裸 token 脱敏、领取后初始化故障不收尾），均以数据库断言 RED→GREEN 修复；完整 154 项通过，不再进行重复全量审查。Minor 待补：approved 的 /resume 使用新键仍返回 409，已保存根节点可经 GET task 与确认重放取得。
 
