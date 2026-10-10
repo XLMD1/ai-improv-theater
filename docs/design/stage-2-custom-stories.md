@@ -1,7 +1,7 @@
 # 阶段 2：自定义故事与普通流水线设计
 
 日期：2026-10-10；设计版本：1。
-状态：待用户审阅的设计，阶段 2 实现与验收尚未开始。
+状态：用户于 2026-10-10 明确回复“我已确认”，书面设计已确认；[实施计划](stage-2-implementation-plan.md)待审阅及选择执行方式，阶段 2 实现与验收尚未开始。
 依据：[阶段计划](../03-development-plan.md)、[故事规则](stage-1-story-rules.md)、[运行可靠性](runtime-reliability.md)、[评测口径](../evaluation/task-success-baseline.md)。
 
 ## 1. 目标、范围与实施顺序

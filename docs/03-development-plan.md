@@ -40,7 +40,7 @@
 
 ### 阶段 2：自定义故事与普通流水线
 
-当前状态：已开始设计准备；[阶段 2 专题设计草案](design/stage-2-custom-stories.md)待用户审阅，代码实现及验收尚未开始。工作记录见[设计准备日志](development-log/2026-10-10-stage-2-design.md)。
+当前状态：用户已确认[阶段 2 专题设计](design/stage-2-custom-stories.md)；[实施计划](design/stage-2-implementation-plan.md)待审阅和选择执行方式，代码实现及验收尚未开始。工作记录见[设计准备日志](development-log/2026-10-10-stage-2-design.md)。
 
 - [ ] 实现背景与年代生成、结构/规则/语义检查、至多一次设定修复、无剧透简介及玩家确认；批准故事版本固定。
 - [ ] 实现“AI 理解行动 → 服务端裁决 → AI 演绎回应”，覆盖调查、追问、出示证据、移动及最终抉择。
