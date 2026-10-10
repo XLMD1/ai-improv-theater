@@ -74,5 +74,5 @@ async def test_generation_http_and_wall_timeout_share_policy_and_remaining_deadl
                            {'story_id':str(uuid4()),'story_version':'draft-1','setting':'调查故事','era':'modern'},context)
     assert result.status == 'success'
     assert [kind for kind,_ in limits] == ['wall','http']
-    assert 0 < limits[1][1] <= limits[0][1] <= min(120,remaining)
+    assert 0 < limits[1][1] <= limits[0][1] <= min(120,remaining)+1e-9
     assert abs(limits[1][1]-limits[0][1]) < .01

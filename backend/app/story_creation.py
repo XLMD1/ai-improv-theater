@@ -2,12 +2,13 @@
 import asyncio
 from datetime import datetime, timedelta, timezone
 import hashlib
+import json
 import secrets
 import time
 from typing import Annotated, Literal
 from uuid import uuid4
 
-from pydantic import Field, StringConstraints
+from pydantic import Field, StringConstraints, ValidationError
 from sqlalchemy import func, select
 from sqlalchemy.exc import SQLAlchemyError
 
@@ -170,7 +171,8 @@ async def process_creation_task(task_id):
                         raise ValueError('candidate_identity_or_setting')
                     proof = await validate_reachability(story,context.deadline)
                     if proof.status != 'passed':
-                        issues = [proof.status,proof.error_code or 'reachability_failed']
+                        issues = [json.dumps({'kind':'reachability',**proof.model_dump(mode='json',
+                                   exclude={'ending_paths','locations','evidence'})},ensure_ascii=False)]
                     elif not checkpoint.get('semantic_passed'):
                         _checkpoint(task_id,checkpoint,'semantic_check')
                         check = await execute(registry,'story.semantic_check','v1',
@@ -184,8 +186,13 @@ async def process_creation_task(task_id):
                             _checkpoint(task_id,checkpoint,'validate')
                 except CreationError:
                     raise
-                except (ValueError,TypeError):
-                    issues = ['story_validation_failed']
+                except ValidationError as error:
+                    errors = [{'path':list(e['loc']),'type':e['type'],'message':e['msg'][:1000]}
+                              for e in error.errors(include_input=False,include_context=False,include_url=False)[:20]]
+                    issues = [json.dumps({'kind':'schema','errors':errors},ensure_ascii=False)]
+                except (ValueError,TypeError) as error:
+                    issues = [json.dumps({'kind':'validation','message':str(error)[:1000]},ensure_ascii=False)]
+                issues = [context.recorder.redact(issue) for issue in issues]
                 if not issues:
                     break
                 context.recorder.event(context.task,'story_validation_failed',{'issues':issues})

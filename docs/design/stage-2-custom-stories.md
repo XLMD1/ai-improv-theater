@@ -82,7 +82,7 @@ GET /session 为调查会话增加 lifecycle、root_node_id 和当前创建任�
 
 任务加载父节点后保存身份、版本与快照；提交时锁定 run/session 并重新核对任务状态、截止时间和父节点归属。按同一规范化行动重新计算裁决，必须与先前结果一致。一个事务提交不可变 Node、TurnEvent、run 终态及批准后 SSE；任何失败无新节点或部分状态。
 
-Node.scene_id 使用服务器 location_id，story_version_id 绑定该局版本，canon_version 保存故事版本；新 prompt_version 使用 investigation-single-1。TurnEvent 分别记录玩家输入、行动理解、确定性裁决、披露/承诺/主动事件和批准场景；内部快照保留阶段 1 完整协议。
+Node.scene_id 使用服务器 location_id，story_version_id 绑定该局版本，canon_version 保存故事版本；首次 prompt 为 investigation-single-1，真实失败后完善内部校验反馈与规则说明使用 investigation-single-2。旧节点不改写。TurnEvent 分别记录玩家输入、行动理解、确定性裁决、披露/承诺/主动事件和批准场景；内部快照保留阶段 1 完整协议。
 
 调查节点的玩家 state_snapshot 只包含版本身份、当前地点、action_turn、已发现证据/披露/承诺 ID、trust 和 ending_id，不输出 applied_once_rules、fired_events、规则条件或隐藏定义。调查事件和世界接口使用各自字段白名单；内部 option 映射不进入 public_node。旧节点响应保持原协议。
 
@@ -144,3 +144,5 @@ llm_calls.run_id 改可空，增加 creation_task_id、trace/span/attempt 关联
 3. story.generate/story.repair 新执行策略版本 v2 单次最多 120 秒，HTTP 和墙钟上限均使用同一操作策略且不得超过任务剩余时间；创建执行区间仍为 300 秒。生成/修复输出预算仍为 12,000，prompt 不改。行动理解、叙事和语义检查保留 v1、单次 20 秒，行动总限时仍为 60 秒。未知结果不自动重试，单次内容修复上限保持一次。更长限时可能降低过早取消，但不保证可玩质量或供应商完成时间。
 
 先用失败测试覆盖核账前阻断、后续预算计费、并发/重复不重计、冲突/非法输入拒绝、其他未知调用继续阻断、原账本与节点不变；执行策略测试覆盖生成与短操作区分、适配器限时一致及剩余截止时间截断。通过相关和完整后端测试后，在同一 stage2_real_test 上核对原调用，显式运行新一轮固定 12 项评测；保留首轮 0/12，不换库规避未知费用。同步运行可靠性设计及实测日志，再记录新轮真实结果。
+
+真实 v2 轮 0/12 的只读诊断发现：古代两结局不可达，另外两局违规引用主角；原修复只得到泛化错误码。修复输入须保留有界内部校验详情：schema 的路径/类型/消息（不含原输入或异常 context），以及可达性状态和未到达地点/证据/结局 ID。失败详情仍需脱敏，只用于内部 Trace 和设定修复，不进入玩家 API。生成/修复提示补充 JSON Schema 不能表达的现有规则：全局 ID 唯一、NPC 引用限制、角色固定地点、条件合取及证据/信任的确定性获得方式。不改 Story 协议、规则校验门槛或一次修复上限；新 prompt 版本明确记录，旧轮保留分母。

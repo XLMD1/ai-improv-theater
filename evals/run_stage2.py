@@ -213,7 +213,7 @@ def run_suite(suite,database_url_env):
     from sqlalchemy.orm import Session
     from app.models import ExecutionTrace,LLMCall
     from app.costs import EXECUTION_PRICE_VERSION,budget_status
-    from app.story_operations import OPERATION_VERSIONS,OPERATION_TIMEOUTS
+    from app.story_operations import PROMPT_VERSION,OPERATION_VERSIONS,OPERATION_TIMEOUTS
     with create_engine(url).connect() as connection,Session(bind=connection) as db:
         query = select(LLMCall).where(LLMCall.created_at>=started_at)
         calls = db.scalars(query).all()
@@ -226,7 +226,7 @@ def run_suite(suite,database_url_env):
     report = {'metric_version':manifest['metric_version'],'run_id':run_id,'suite':suite,
               'measurement':'simulated_faults' if suite=='runtime_simulated' else 'real_model_paths',
               'git_commit':commit.stdout.strip(),'manifest_sha256':hashlib.sha256(MANIFEST.read_bytes()).hexdigest(),
-              'model_version':'deepseek-flash','prompt_version':'investigation-single-1','price_version':EXECUTION_PRICE_VERSION,
+              'model_version':'deepseek-flash','prompt_version':PROMPT_VERSION,'price_version':EXECUTION_PRICE_VERSION,
               'operation_versions':OPERATION_VERSIONS,'operation_timeout_seconds':OPERATION_TIMEOUTS,
               'timestamp':datetime.now(timezone.utc).isoformat(),'duration_ms':round((time.monotonic()-started)*1000,3),
               'manual_reviewers':0,'summary':summarize(results),'cases':results,'usage':usage,'database_budget':budget}

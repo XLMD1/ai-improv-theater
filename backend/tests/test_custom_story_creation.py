@@ -110,6 +110,42 @@ def test_malformed_story_repairs_once_then_fails_without_root():
         c.delete('/local-settings/keys/deepseek')
 
 
+@pytest.mark.parametrize('fault',['npc_reference','unreachable_ending'])
+def test_repair_receives_specific_internal_errors_and_can_fix_one_candidate(fault):
+    seen = []
+    async def provider(*args):
+        from app.provider_clients import ProviderOutcome
+        inp = json.loads(args[3].split('\n输入数据：',1)[1])
+        if 'raw_candidate' in inp:
+            seen.extend(inp['issues'])
+            return await successful_provider(*args)
+        if 'story_id' in inp:
+            data = sample_data()
+            data.update(story_id=inp['story_id'],story_version=inp['story_version'],setting=inp['setting'],era=inp['era'])
+            if fault=='npc_reference':
+                data['endings'][0]['conditions']['all'].append({'op':'trust_at_least','character_id':data['protagonist_id'],'value':1})
+            else:
+                for place in data['locations'][:2]:
+                    data['endings'][0]['conditions']['all'].append({'op':'at_location','location_id':place['id']})
+            return ProviderOutcome(json.dumps(data,ensure_ascii=False),100,100,request_sent=True)
+        return await successful_provider(*args)
+    with client() as c,patch('app.story_operations.call_operation_provider',side_effect=provider):
+        headers,_ = create_session(c)
+        task = prepare(c,headers)
+        assert task['status']=='awaiting_confirmation',task
+        assert seen and 'errors' not in task and 'missing_endings' not in task
+        assert all(issue.startswith('{') for issue in seen),seen
+        details = [json.loads(issue) for issue in seen]
+        if fault=='npc_reference':
+            assert any('invalid reference: character_id=' in e['message'] for issue in details
+                       for e in issue.get('errors',[]))
+            assert all('input' not in e and 'ctx' not in e for issue in details for e in issue.get('errors',[]))
+        else:
+            assert any(sample_data()['endings'][0]['id'] in issue.get('missing_endings',[]) for issue in details)
+        assert c.get('/tree',headers=headers).json()==[]
+        c.delete('/local-settings/keys/deepseek')
+
+
 @pytest.mark.parametrize('body',[{'setting':'   ','era':'modern'}, {'setting':'x'*501,'era':'modern'},
                                  {'setting':'港口','era':'past'}, {'setting':'港口','era':'modern','truth':'x'}])
 def test_creation_rejects_invalid_request_before_provider(body):
