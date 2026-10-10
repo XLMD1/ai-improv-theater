@@ -185,3 +185,18 @@ def test_concurrent_same_key_one_run_and_sibling_context_is_excluded():
             assert c.get('/tree',headers=headers).json()[1]['id']==first.id
         assert provider.call_count==6
         c.delete('/local-settings/keys/deepseek')
+
+
+def test_player_text_bare_current_token_is_not_saved_in_trace_or_public_events():
+    from app.db import SessionLocal
+    from app.models import ExecutionTrace
+    with client() as c,patch('app.story_operations.call_operation_provider',side_effect=successful_provider):
+        headers,root = approved(c)
+        token = headers['Authorization'][7:]
+        run = turn(c,headers,root['id'],{'type':'text','value':'调查 '+token})
+        assert run['status']=='completed',run
+        with SessionLocal() as db:
+            payloads = [row.payload for row in db.scalars(select(ExecutionTrace).where(ExecutionTrace.run_id==run['id']))]
+            assert token not in json.dumps(payloads)
+        assert token not in c.get('/nodes/'+run['node_id']+'/events',headers=headers).text
+        c.delete('/local-settings/keys/deepseek')

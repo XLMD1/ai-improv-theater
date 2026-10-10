@@ -116,10 +116,11 @@ async def process_investigation_run(run_id):
         mapping = deepcopy(parent.investigation_options or {})
         recent = recent_investigation_turns(db,parent.id)
         provider,model_id = session.provider,session.model_id
+        session_token_hash = session.token_hash
         action = Action.model_validate(run.action)
         db.expunge(run)
     context = ExecutionContext(TaskRef('action',run.id,run.session_id),time.monotonic()+60,
-                               provider,model_id,TraceRecorder(SessionLocal,secrets=[get_key(provider)]))
+                               provider,model_id,TraceRecorder(SessionLocal,secrets=[get_key(provider)],token_hashes=[session_token_hash]))
     registry = ToolRegistry()
     register_investigation_operations(registry)
     try:

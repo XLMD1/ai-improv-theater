@@ -10,6 +10,7 @@ from sqlalchemy import select
 
 from test_investigation_schema import sample_data
 import pytest
+import asyncio
 
 
 def client():
@@ -166,4 +167,23 @@ def test_restart_resume_reuses_candidate_and_does_not_reset_repair():
             link = db.scalar(select(ExecutionTrace).where(ExecutionTrace.creation_task_id==task_id,
                               ExecutionTrace.event_type=='creation_resumed'))
             assert link and link.payload['source_trace_id']==source_trace
+        c.delete('/local-settings/keys/deepseek')
+
+
+def test_claimed_task_initialization_storage_failure_is_terminal_and_recoverable():
+    from app.db import SessionLocal
+    from app.models import StoryTask
+    from app.story_creation import CreationRequest,create_creation_task,process_creation_task
+    from sqlalchemy.exc import OperationalError
+    with client() as c:
+        headers,session = create_session(c)
+        task,_ = create_creation_task(session['session_id'],CreationRequest(setting='雾港',era='modern'),uuid4().hex)
+        with patch('app.story_creation.creation_context',side_effect=OperationalError('context read',{},Exception('transient'))):
+            asyncio.run(process_creation_task(task.id))
+        queried = c.get('/story-tasks/'+task.id,headers=headers).json()
+        assert queried['status']=='failed' and queried['error_code']=='storage_failure' and queried['recoverable']
+        with patch('app.story_operations.call_operation_provider',side_effect=successful_provider):
+            resumed = c.post('/story-tasks/'+task.id+'/resume',headers={**headers,'Idempotency-Key':uuid4().hex})
+            assert resumed.status_code==202
+            assert wait_creation(c,headers,resumed.json()['task_id'])['status']=='awaiting_confirmation'
         c.delete('/local-settings/keys/deepseek')

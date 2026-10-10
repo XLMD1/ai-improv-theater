@@ -9,6 +9,7 @@ from uuid import uuid4
 
 from pydantic import Field, StringConstraints
 from sqlalchemy import func, select
+from sqlalchemy.exc import SQLAlchemyError
 
 from app.db import SessionLocal
 from app.execution import ExecutionContext, ToolFailure, ToolRegistry, execute
@@ -117,12 +118,13 @@ def _checkpoint(task_id,checkpoint,stage,repair_count=None):
 def creation_context(task,seconds):
     with SessionLocal() as db:
         session = db.get(StorySession,task.session_id)
-        recorder = TraceRecorder(SessionLocal,secrets=[get_key(session.provider)])
+        recorder = TraceRecorder(SessionLocal,secrets=[get_key(session.provider)],token_hashes=[session.token_hash])
         return ExecutionContext(TaskRef('creation',task.id,session.id),time.monotonic()+seconds,
                                  session.provider,session.model_id,recorder)
 
 
 async def process_creation_task(task_id):
+    deadline = time.monotonic()+300
     with SessionLocal.begin() as db:
         task = db.scalar(select(StoryTask).where(StoryTask.id == task_id).with_for_update())
         if task is None or task.status != 'queued':
@@ -135,11 +137,13 @@ async def process_creation_task(task_id):
         story_id = task.story_id
         db.flush()
         db.expunge(task)
-    context = creation_context(task,300)
-    registry = ToolRegistry()
-    register_story_operations(registry)
+    context = None
     try:
-        async with asyncio.timeout(300):
+        async with asyncio.timeout_at(deadline):
+            context = creation_context(task,max(0,deadline-time.monotonic()))
+            context.deadline = deadline
+            registry = ToolRegistry()
+            register_story_operations(registry)
             if task.source_task_id:
                 with SessionLocal() as db:
                     source = db.get(StoryTask,task.source_task_id)
@@ -213,13 +217,15 @@ async def process_creation_task(task_id):
         _fail_creation(task,context,'cancelled',interrupted=True)
         raise
     except Exception as error:
-        code = 'task_timeout' if isinstance(error,TimeoutError) else str(error) if isinstance(error,CreationError) else 'storage_failure' if isinstance(error,TraceStorageFailure) else 'internal_error'
+        code = 'task_timeout' if isinstance(error,TimeoutError) else str(error) if isinstance(error,CreationError) else 'storage_failure' if isinstance(error,(TraceStorageFailure,SQLAlchemyError)) else 'internal_error'
         _fail_creation(task,context,code,interrupted=code=='task_timeout')
 
 
 def _fail_creation(task,context,code,interrupted=False):
+    recorder = context.recorder if context else TraceRecorder(SessionLocal)
+    task_ref = context.task if context else TaskRef('creation',task.id,task.session_id)
     try:
-        context.recorder.event(context.task,'task_failed',{'error_code':code})
+        recorder.event(task_ref,'task_failed',{'error_code':code})
     except TraceStorageFailure:
         code = 'storage_failure'
     with SessionLocal.begin() as db:

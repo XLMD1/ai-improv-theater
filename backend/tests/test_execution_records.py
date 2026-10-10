@@ -4,6 +4,9 @@ from decimal import Decimal
 from uuid import uuid4
 
 import pytest
+import json
+import secrets
+import hashlib
 from sqlalchemy import delete, select
 
 
@@ -45,6 +48,23 @@ def records():
         db.flush()
         ref = TaskRef('creation', task.id, session.id)
     return TraceRecorder(SessionLocal, secrets=['fixture-private-key']), ref, SessionLocal
+
+
+def test_raw_json_and_bare_session_token_are_redacted_before_invalid_output_is_saved():
+    recorder,task,factory = records()
+    token = secrets.token_urlsafe(32)
+    # Server stores a token hash, never its plaintext, and checks text against it.
+    recorder.token_hashes = (hashlib.sha256(token.encode()).hexdigest(),)
+    raw = json.dumps({'nested':json.dumps({'session_token':token,'reasoning_content':'PRIVATE_REASONING_SENTINEL'})})
+    attempt = recorder.begin_attempt(task,'story.generate','v1',1,{'player_text':'请处理 '+token})
+    recorder.finish_attempt(attempt,{**outcome(),'text':raw},None)
+    recorder.event(task,'output_validation_failed',{'raw':'{"session_token":"'+token+'","reasoning_content":"PRIVATE_REASONING_SENTINEL'})
+    from app.models import ExecutionTrace,LLMCall
+    with factory() as db:
+        saved = json.dumps([row.payload for row in db.scalars(select(ExecutionTrace).where(ExecutionTrace.trace_id==attempt.trace_id))])
+        assert token not in saved and 'PRIVATE_REASONING_SENTINEL' not in saved
+        call = db.scalar(select(LLMCall).where(LLMCall.attempt_id==attempt.attempt_id))
+        assert call.input_tokens==120 and call.output_tokens==80
 
 
 def outcome(**overrides):

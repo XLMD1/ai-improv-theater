@@ -1,6 +1,8 @@
 """Independent audit transactions; never commit story state here."""
 from dataclasses import dataclass
 from decimal import Decimal
+import hashlib
+import json
 import re
 from typing import Literal
 from uuid import uuid4
@@ -31,9 +33,10 @@ class AttemptRef:
 
 
 class TraceRecorder:
-    def __init__(self, factory, secrets=()):
+    def __init__(self, factory, secrets=(), token_hashes=()):
         self.factory = factory
         self.secrets = tuple(value for value in secrets if value)
+        self.token_hashes = tuple(token_hashes)
 
     def redact(self, value):
         if isinstance(value, dict):
@@ -42,8 +45,22 @@ class TraceRecorder:
         if isinstance(value, list):
             return [self.redact(item) for item in value]
         if isinstance(value, str):
+            if len(value)>256_000:
+                return '[oversized_payload]'
             for secret in self.secrets:
                 value = value.replace(secret, '[redacted]')
+            value = re.sub(r'[A-Za-z0-9_-]{16,200}',
+                           lambda match:'[redacted]' if hashlib.sha256(match.group().encode()).hexdigest() in self.token_hashes
+                           else match.group(),value)
+            # Provider candidates are JSON strings at the audit boundary, even
+            # when their business schema will subsequently reject them.
+            try:
+                parsed = json.loads(value)
+            except (ValueError,RecursionError):
+                if re.search(r'(?:session_token|access_token|api.?key|authorization|password|reasoning_content|hidden_reasoning)["\s\']*[:=]',value,re.I):
+                    return '[unstructured_sensitive_payload]'
+            else:
+                return json.dumps(self.redact(parsed),ensure_ascii=False)
             value = re.sub(r'(?i)Bearer\s+[^\s"\,]+', '[redacted]', value)
             value = re.sub(r'(?i)(?:postgresql|postgres|mysql)(?:\+\w+)?://[^\s"\,]+', '[redacted]', value)
             value = re.sub(r'\bsk-[A-Za-z0-9_-]+', '[redacted]', value)

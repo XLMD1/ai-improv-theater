@@ -41,13 +41,14 @@ def load_manifest():
 def inspect_trace(factory,session_id,trace_id):
     from sqlalchemy import select
     from app.execution_traces import TraceRecorder
-    from app.models import ExecutionTrace
+    from app.models import ExecutionTrace,StorySession
     with factory() as db:
         rows = db.scalars(select(ExecutionTrace).where(ExecutionTrace.session_id==session_id,
                           ExecutionTrace.trace_id==trace_id).order_by(ExecutionTrace.seq)).all()
         if not rows:
             raise ValueError('trace_not_found')
-        recorder = TraceRecorder(factory)
+        session = db.get(StorySession,session_id)
+        recorder = TraceRecorder(factory,token_hashes=[session.token_hash])
         return [{'seq':row.seq,'event_type':row.event_type,'span_id':row.span_id,'parent_span_id':row.parent_span_id,
                  'attempt':row.attempt,'duration_ms':row.duration_ms,'error_code':row.error_code,
                  'payload':recorder.redact(row.payload)} for row in rows]
