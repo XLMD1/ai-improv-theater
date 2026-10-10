@@ -48,7 +48,7 @@ python evals/run_stage2.py --suite real_model --database-url-env MIGRATION_DATAB
 
 ## 剩余门槛
 
-先核对最新未知请求的供应商用量/费用，再完成三类背景生成、九条结局路径和恢复验证，记录各操作真实 attempt、token、费用、时延及至少一位人工剧情核查结果。全部门槛通过前，开发计划中阶段 2 保持未验收，新故事前端入口仍不开放。
+用户已报告首次请求的控制台账单；先实现并验证有审计的人工费用核对入口及预算读取，再完成三类背景生成、九条结局路径和恢复验证，记录各操作真实 attempt、token、费用、时延及至少一位人工剧情核查结果。全部门槛通过前，开发计划中阶段 2 保持未验收，新故事前端入口仍不开放。
 
 ## 首次真实请求失败记录
 
@@ -59,6 +59,8 @@ python evals/run_stage2.py --suite real_model --database-url-env MIGRATION_DATAB
 古代创建为 outcome_unknown；近现代与未来创建均为 cost_unconfirmed，没有新增供应商 attempt；九条路径均为 creation_dependency_failed。共 12 error，人工核查 0，无候选故事可供阅读。一次请求结束后没有重试，也未换库绕过未确认费用阻断。
 
 确定的失败边界是本地单次调用限时；供应商排队、生成速度或网络延迟的具体原因尚未区分。[DeepSeek 官方保活说明](https://api-docs.deepseek.com/zh-cn/quick_start/rate_limit/)说明非流式请求可能先持续返回空行等待推理，不能据 20 秒超时判断服务端已经停止。下一步先核对供应商账单；如调整生成限时，需先同步设计及操作策略并验证，不能悄悄放宽所有操作或盲目重发。
+
+用户随后报告 DeepSeek 控制台：消费 0.02 CNY、API 请求 1 次、总 token 9,598。来源为用户核对控制台后的陈述，未取得供应商原始响应或输入/输出拆分；不得从总量编造两类 token。该报告确认存在消费，但不能恢复丢失的候选正文或将失败案例改成成功。原始评测 report.json 与原账本 NULL 字段保留；当前实现仍因 uncertain 行阻断，账单核对机制和生成限时调整方案见[待确认补充](../design/stage-2-custom-stories.md#11-首次真实评测后的补充方案待确认)。
 
 一次独立审查发现两项 Important（原始 JSON/裸 token 脱敏、领取后初始化故障不收尾），均以数据库断言 RED→GREEN 修复；完整 154 项通过，不再进行重复全量审查。Minor 待补：approved 的 /resume 使用新键仍返回 409，已保存根节点可经 GET task 与确认重放取得。
 
