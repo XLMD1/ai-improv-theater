@@ -19,6 +19,15 @@
 - Add explicit story, state, and engine versions through incremental migrations. Keep old nodes and rendered scenes intact and replay legacy stories through their compatibility path. New stories use story-provided character and location IDs instead of the Demo's hardcoded IDs.
 - Do not stream unvalidated candidate story text to the browser.
 
+## Tool execution, reliability, and traces
+
+- Application tools exposed to models and external-service operations must have independent, versioned registry entries with strict Pydantic input/output schemas. Invoke them through one validated execution boundary; orchestration and UI code must not call provider APIs directly. Ordinary internal functions do not need tool wrappers.
+- Give every registered operation an explicit timeout, maximum attempt count, retry classification, and side-effect policy. Use bounded exponential backoff for safe transient failures only; do not blindly retry invalid credentials, invalid arguments, invalid model output, or writes without idempotency protection. Retries and repairs share the task deadline and budget.
+- Timeout or exhausted retries must produce a structured failure or an explicitly approved fallback. Preserve the parent state and player input; never fabricate successful evidence, silently advance a location, bypass validation, or submit a partial node. Legacy saved behavior remains on its compatibility path.
+- Persist observable execution traces for successful and failed tasks, including validated/redacted inputs and outputs, validation results, individual attempts, timing, usage, and outcomes. Link traces to task/session/node and `llm_calls` records; `llm_calls` is a usage ledger, not a complete trace store. Failure traces and incurred usage must survive story-transaction rollback.
+- Never put API keys, authorization headers, session tokens, or hidden model reasoning into traces. Debug traces containing story secrets must remain local and inaccessible to player-facing APIs and generation context. Inspection/replay of a trace must not rerun tools or providers.
+- Use [runtime-reliability.md](docs/design/runtime-reliability.md) for execution policies and [stage-1-story-rules.md](docs/design/stage-1-story-rules.md) for deterministic rules. These documents are design requirements, not evidence of implemented capabilities.
+
 ## Local configuration and secrets
 
 - Put the local database URL in `backend/.env`. That file is Git-ignored. Never stage, commit, print, or log its contents or any API key.
@@ -35,6 +44,8 @@
 - For documentation-only baseline changes, check local links, scope and phase consistency, preservation of historical acceptance records, and `git diff --check`; do not claim runtime tests were rerun.
 - Keep Next.js static export. Planned story pages use fixed routes and query parameters, with a per-story library that restores session credentials, the current node, and pending tasks across browser restarts; API keys never enter that storage.
 - Each phase follows specification updates, implementation, tests, local acceptance, a record in `docs/development-log/`, and a relevant commit. Record measured latency, usage, cost, and reviewer count rather than unsupported portfolio claims.
+- Phase 1 must deliver a runnable minimum task-success evaluation with frozen cases, explicit success criteria, counts, and failure details; follow [task-success-baseline.md](docs/evaluation/task-success-baseline.md). Use `evals/` for runners/case manifests, `backend/tests/` for assertions and shared fixtures, and `docs/evaluation/` for metric definitions/reports; do not create a duplicate `benchmark/` entry point or empty placeholders.
+- Cover invalid input, malformed model output, tool failure, timeout, retry exhaustion, and recovery at the phase where each boundary is implemented. Report deterministic rule evaluation separately from simulated fault tests and real-model evaluation; skipped or unimplemented cases must not inflate success rates.
 - Report only checks that were actually run. Do not describe a plan, draft, or unverified feature as complete.
 - Preserve unrelated working-tree changes. The untracked `backend/app/generators.py`, `backend/app/llm.py`, `backend/app/memory.py`, and `docker-compose.yml` are pre-existing drafts; do not stage or rewrite them unless they are explicitly brought into scope and validated.
 
