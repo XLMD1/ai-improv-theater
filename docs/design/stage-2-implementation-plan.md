@@ -13,7 +13,7 @@
 ## Global Constraints
 
 - 三角色、五地点、三结局；沿用 investigation-story-1、investigation-1 和 schema_version=2，不改变阶段 1 冻结样本/hash。
-- 文字单次 20 秒、行动整体 60 秒、创建执行区间 300 秒；BFS 50,000 状态上限。取消和超时后禁止提交。
+- 用户确认首次真实评测补充后：完整设定生成/修复 v2 单次 120 秒，其余文字 v1 单次 20 秒、行动整体 60 秒、创建执行区间 300 秒；BFS 50,000 状态上限。取消和超时后禁止提交。
 - 安全传输重试最多三次（首次加两次），退避 0.5/1 秒加 0–0.25 秒抖动；遵守 Retry-After。内容修复全故事至多一次，恢复不重置计数。
 - 输出预算：故事生成/修复 12,000 token、行动理解 300、叙事 900、语义检查 2,000；接入前核实受控模型支持，价格需版本化。
 - 全局费用 80 CNY 提醒、100 CNY 停止；每次调用/重试/修复重新检查。失败和未知 usage 不按免费处理；共享图片原子预留在阶段 3。
@@ -65,7 +65,7 @@
 
 **Interfaces:** operation_schemas.py 定义 StoryGenerateInput(story_id,story_version,setting,era)、StoryRepairInput(同身份和背景,raw_candidate,issues)、StorySemanticInput(story,reachability)、SceneSemanticInput(story,public_world,adjudication_feedback,candidate)、SemanticReport(passed,issues)、SemanticIssue(code,entity_ids,description)；另定义任务 5 所用 ActionInterpretInput/Interpretation 和 SceneRenderInput/SceneTextDraft。story_operations.py 提供 `register_story_operations(registry: ToolRegistry) -> None`；reachability_worker.py 提供 `async validate_reachability(story: Story,deadline: float) -> ReachabilityReport`。investigation_generation.py 先提供纯函数 `build_public_options(story: Story,state: dict) -> tuple[list[dict],dict]`，返回公开 id/label 与内部 id/action 映射，供任务 4 建立根节点。
 
-- [ ] 红灯：schema 额外字段/非法身份拒绝、语义 unknown entity/passed 与 issues 矛盾拒绝、生成/修复预算 12,000、检查预算 2,000。验证注册表含四项 story.generate/repair/semantic_check 和 scene.semantic_check，版本均 v1，独立入参/出参。
+- [ ] 红灯：schema 额外字段/非法身份拒绝、语义 unknown entity/passed 与 issues 矛盾拒绝、生成/修复预算 12,000、检查预算 2,000。验证注册表含四项 story.generate/repair/semantic_check 和 scene.semantic_check，生成/修复执行策略现为 v2、检查为 v1（首次实施均为 v1），独立入参/出参。
 - [ ] 运行上述两文件测试，失败后实现模型请求模板和 JSON 解析；业务非法候选的脱敏内部 artifact 引用进入 ToolFailure，以便一次修复，不能把未校验内容当成功返回。模型不能指定工具、版本或批准状态。
 - [ ] 使用 Windows 可用的 spawn 工作进程运行既有 check_reachability，同一 50,000 上限；到截止时间必须 terminate/join 并拒绝，结果不得继续写库。test_worker_timeout_exits_process 断言进程退出，test_worker_matches_frozen_paths 断言与已有结果一致；异常只返回受限诊断。
 - [ ] 先写选项负例再实现纯函数：只输出 accepted 动作、UUID 不含 topic_id、present 只已知证据、talk 标签仅角色名/序号、decide 只当前可选结局，内部映射不进入公开字段。运行操作/工作进程/选项及 test_investigation_schema.py/test_investigation_rules.py，核对 Story 和固定 fixture hash 不变。真实参数和价格核对在任务 8 的调用前完成，不据模拟输出宣称供应商支持。

@@ -152,3 +152,127 @@ def test_migration_refuses_to_remove_execution_records():
     from alembic.config import Config
     with pytest.raises(RuntimeError, match='cannot downgrade execution records'):
         command.downgrade(Config('alembic.ini'), '0004_story_versions')
+
+
+def unknown_call():
+    recorder,task,factory = records()
+    from app.models import LLMCall
+    attempt = recorder.begin_attempt(task,'story.generate','v1',1,{})
+    data = outcome()
+    data.update(input_tokens=None,output_tokens=None,estimated_cost_cny=None)
+    recorder.finish_attempt(attempt,data,'outcome_unknown')
+    with factory() as db:
+        call = db.scalar(select(LLMCall).where(LLMCall.attempt_id==attempt.attempt_id))
+        return recorder,task,factory,call.id
+
+
+def reconciliation(call_id,**changes):
+    return {'schema_version':'usage-reconciliation-1','call_id':call_id,
+            'source':'user_reported_provider_console','actual_cost_cny':Decimal('.02'),
+            'total_tokens':9598,'input_tokens':5088,'output_tokens':4510,**changes}
+
+
+def test_reconciliation_unblocks_only_reported_call_and_preserves_original_ledger():
+    recorder,task,factory,call_id = unknown_call()
+    from app.costs import check_execution_budget,total_spend_cny
+    from app.models import ExecutionTrace,LLMCall,Node
+    assert hasattr(recorder,'reconcile_usage'), 'local audited reconciliation is missing'
+    with factory() as db:
+        before = total_spend_cny(db)
+        nodes = len(db.scalars(select(Node)).all())
+        with pytest.raises(ValueError,match='cost_unconfirmed'):
+            check_execution_budget(db)
+    receipt = recorder.reconcile_usage(task,reconciliation(call_id))
+    assert receipt.duplicate is False
+    with factory() as db:
+        check_execution_budget(db)
+        assert total_spend_cny(db)==before+Decimal('.02')
+        call = db.get(LLMCall,call_id)
+        assert (call.call_status,call.usage_status)==('outcome_unknown','uncertain')
+        assert call.input_tokens is None and call.output_tokens is None and call.estimated_cost_cny is None
+        event = db.get(ExecutionTrace,receipt.event_id)
+        assert event.llm_call_id==call_id and event.payload['total_tokens']==9598
+        assert event.payload['input_tokens']==5088 and event.payload['output_tokens']==4510
+        assert len(db.scalars(select(Node)).all())==nodes
+        with pytest.raises(ValueError,match='budget_exhausted'):
+            check_execution_budget(db,Decimal('100')-before-Decimal('.02'))
+    recorder.begin_attempt(task,'test','v1',2,{})
+    with factory() as db:
+        with pytest.raises(ValueError,match='audit_incomplete'):
+            check_execution_budget(db)
+
+
+def test_concurrent_reconciliation_is_idempotent_and_conflict_is_rejected():
+    recorder,task,factory,call_id = unknown_call()
+    assert hasattr(recorder,'reconcile_usage'), 'local audited reconciliation is missing'
+    from app.models import ExecutionTrace
+    with ThreadPoolExecutor(max_workers=4) as pool:
+        receipts = list(pool.map(lambda _:recorder.reconcile_usage(task,reconciliation(call_id)),range(4)))
+    assert sum(not r.duplicate for r in receipts)==1
+    assert len({r.event_id for r in receipts})==1
+    with pytest.raises(ValueError,match='reconciliation_conflict'):
+        recorder.reconcile_usage(task,reconciliation(call_id,actual_cost_cny=Decimal('.03')))
+    with factory() as db:
+        assert len(db.scalars(select(ExecutionTrace).where(ExecutionTrace.llm_call_id==call_id,
+                         ExecutionTrace.event_type=='usage_reconciled')).all())==1
+
+
+@pytest.mark.parametrize('changes',[{'actual_cost_cny':Decimal('-1')},{'actual_cost_cny':Decimal('NaN')},
+    {'total_tokens':True},{'source':'model_claim'},{'input_tokens':None},{'output_tokens':4509},{'extra':'ignored'}])
+def test_reconciliation_rejects_invalid_evidence(changes):
+    assert importlib.util.find_spec('app.usage_reconciliation'), 'reconciliation schema is missing'
+    from app.usage_reconciliation import UsageReconciliation
+    from pydantic import ValidationError
+    with pytest.raises(ValidationError):
+        UsageReconciliation.model_validate(reconciliation(str(uuid4()),**changes))
+
+
+def test_reconciliation_rejects_foreign_known_and_unfinished_calls_and_keeps_other_uncertain_blocked():
+    recorder,task,factory,call_id = unknown_call()
+    _,foreign,_,other_id = unknown_call()
+    assert hasattr(recorder,'reconcile_usage'), 'local audited reconciliation is missing'
+    from app.costs import check_execution_budget
+    with pytest.raises(ValueError,match='call_not_found'):
+        recorder.reconcile_usage(foreign,reconciliation(call_id))
+    recorder.reconcile_usage(task,reconciliation(call_id))
+    with factory() as db:
+        with pytest.raises(ValueError,match='cost_unconfirmed'):
+            check_execution_budget(db)
+    known = recorder.begin_attempt(task,'test','v1',2,{})
+    recorder.finish_attempt(known,outcome(),None)
+    from app.models import LLMCall,ExecutionTrace
+    with factory() as db:
+        known_id = db.scalar(select(LLMCall.id).where(LLMCall.attempt_id==known.attempt_id))
+    with pytest.raises(ValueError,match='call_not_uncertain'):
+        recorder.reconcile_usage(task,reconciliation(known_id))
+    # A ledger row alone cannot make an unfinished audit eligible for recovery.
+    with factory.begin() as db:
+        db.execute(delete(ExecutionTrace).where(ExecutionTrace.llm_call_id==other_id,
+                                               ExecutionTrace.event_type=='attempt_finished'))
+    with pytest.raises(ValueError,match='attempt_not_finished'):
+        recorder.reconcile_usage(foreign,reconciliation(other_id))
+
+
+@pytest.mark.parametrize('cost,status',[('80','warning'),('100','blocked')])
+def test_reconciled_cost_preserves_shared_warning_and_stop_threshold(cost,status):
+    recorder,task,factory,call_id = unknown_call()
+    from app.costs import budget_status,check_execution_budget
+    recorder.reconcile_usage(task,reconciliation(call_id,actual_cost_cny=Decimal(cost)))
+    with factory() as db:
+        assert budget_status(db)['status']==status
+        if status=='blocked':
+            with pytest.raises(ValueError,match='budget_exhausted'):
+                check_execution_budget(db)
+
+
+def test_budget_cannot_clear_uncertainty_with_a_newer_unaccounted_reconciliation(monkeypatch):
+    recorder,task,factory,call_id = unknown_call()
+    import app.costs as costs
+    from app.usage_reconciliation import UsageReconciliation
+    confirmed = UsageReconciliation.model_validate(reconciliation(call_id,actual_cost_cny=Decimal('100')))
+    # Reproduce a local operator committing between the amount and uncertainty reads.
+    reads = iter([{}, {call_id:confirmed}])
+    monkeypatch.setattr(costs,'reconciled_usage',lambda db:next(reads))
+    with factory() as db:
+        with pytest.raises(ValueError,match='cost_unconfirmed|budget_exhausted'):
+            costs.check_execution_budget(db)

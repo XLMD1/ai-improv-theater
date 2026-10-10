@@ -6,6 +6,7 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import aliased
 
 from app.models import ExecutionTrace, LLMCall
+from app.usage_reconciliation import reconciled_usage
 
 
 PRICE_VERSION = "2026-10-08-peak-usd-cny7.5"
@@ -25,7 +26,13 @@ def estimate_cny(provider: str, input_tokens: int, output_tokens: int) -> Decima
 
 
 def total_spend_cny(db) -> Decimal:
-    return db.scalar(select(func.coalesce(func.sum(LLMCall.estimated_cost_cny), 0))) or Decimal(0)
+    return _accounted_spend_cny(db,reconciled_usage(db))
+
+
+def _accounted_spend_cny(db,evidence) -> Decimal:
+    estimated = db.scalar(select(func.coalesce(func.sum(LLMCall.estimated_cost_cny), 0)).where(
+                          LLMCall.id.not_in(list(evidence)))) or Decimal(0)
+    return estimated + sum((item.actual_cost_cny for item in evidence.values()),Decimal(0))
 
 
 def budget_status(db) -> dict:
@@ -39,9 +46,10 @@ def budget_status(db) -> dict:
 
 def check_execution_budget(db, estimated_cost=Decimal(0)):
     """Unknown incurred usage or an unfinished audit blocks another external call."""
-    if total_spend_cny(db) + Decimal(str(estimated_cost)) >= LIMIT_CNY:
+    confirmed = reconciled_usage(db)
+    if _accounted_spend_cny(db,confirmed) + Decimal(str(estimated_cost)) >= LIMIT_CNY:
         raise ValueError('budget_exhausted')
-    if db.scalar(select(LLMCall.id).where(LLMCall.usage_status == 'uncertain').limit(1)):
+    if db.scalar(select(LLMCall.id).where(LLMCall.usage_status == 'uncertain',LLMCall.id.not_in(list(confirmed))).limit(1)):
         raise ValueError('cost_unconfirmed')
     finished = aliased(ExecutionTrace)
     complete = select(finished.id).where(finished.trace_id == ExecutionTrace.trace_id,

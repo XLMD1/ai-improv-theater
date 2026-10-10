@@ -37,6 +37,42 @@ def test_story_operations_have_separate_strict_schemas_and_budgets():
     from app.story_operations import register_story_operations, OUTPUT_BUDGETS
     registry = ToolRegistry()
     register_story_operations(registry)
-    assert set(registry.specs) == {(name,'v1') for name in ['story.generate','story.repair','story.semantic_check','scene.semantic_check']}
-    assert registry.get('story.generate','v1').input_schema != registry.get('story.repair','v1').input_schema
+    assert set(registry.specs) == {('story.generate','v2'),('story.repair','v2'),('story.semantic_check','v1'),('scene.semantic_check','v1')}
+    assert registry.get('story.generate','v2').input_schema != registry.get('story.repair','v2').input_schema
+    assert registry.get('story.generate','v2').timeout_seconds == 120
+    assert registry.get('story.repair','v2').timeout_seconds == 120
+    assert registry.get('story.semantic_check','v1').timeout_seconds == 20
     assert OUTPUT_BUDGETS['story.generate'] == 12000 and OUTPUT_BUDGETS['scene.semantic_check'] == 2000
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize('remaining', [300, .05])
+async def test_generation_http_and_wall_timeout_share_policy_and_remaining_deadline(monkeypatch,remaining):
+    import asyncio
+    import time
+    from app.execution import ExecutionContext,ToolRegistry,execute
+    from app.execution_traces import TaskRef
+    from app.provider_clients import ProviderOutcome
+    import app.story_operations as operations
+    from app.story_schema import Story
+    from test_execution import Recorder
+    limits = []
+    original = asyncio.timeout
+    def timeout(value):
+        limits.append(('wall',value))
+        return original(value)
+    async def provider(*args):
+        limits.append(('http',args[-1]))
+        return ProviderOutcome(Story.model_validate(sample_data()).model_dump_json(),20,20,request_sent=True)
+    monkeypatch.setattr(asyncio,'timeout',timeout)
+    monkeypatch.setattr(operations,'call_operation_provider',provider)
+    registry = ToolRegistry()
+    operations.register_story_operations(registry)
+    context = ExecutionContext(TaskRef('creation','task','session'),time.monotonic()+remaining,
+                               'deepseek','deepseek-flash',Recorder(),budget_check=lambda:None)
+    result = await execute(registry,'story.generate','v2',
+                           {'story_id':str(uuid4()),'story_version':'draft-1','setting':'调查故事','era':'modern'},context)
+    assert result.status == 'success'
+    assert [kind for kind,_ in limits] == ['wall','http']
+    assert 0 < limits[1][1] <= limits[0][1] <= min(120,remaining)
+    assert abs(limits[1][1]-limits[0][1]) < .01

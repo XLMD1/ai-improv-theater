@@ -13,6 +13,7 @@
 | 检查 | 实际结果 |
 |---|---|
 | 完整后端 pytest | 154 passed、7 warnings，29.73 秒（审查修复后）；审查前 151 passed |
+| 补充后完整后端 pytest | 171 passed、7 warnings，35.20 秒（核账快照竞态修复后） |
 | Alembic upgrade head | 0001→0005 成功，专用测试库 |
 | Alembic check | No new upgrade operations detected |
 | 规则基线 | 30/30，17.110 秒，报告 1da0356c47874180bc525a50a793a952 |
@@ -46,9 +47,17 @@ python evals/run_stage2.py --suite real_model --database-url-env MIGRATION_DATAB
 
 本地只读复盘：python scripts/inspect-execution-trace.py --session-id <本地会话ID> --trace-id <本地TraceID>。输出可能含内部剧情事实，仅作本地调试；不会重新调用模型/工具或写剧情。没有玩家 Trace HTTP 接口。
 
+本地核账入口为 scripts/reconcile-execution-usage.py，先显式设置专用测试库的 MIGRATION_DATABASE_URL。命令仅追加内部核账事件，没有供应商调用或玩家接口；同值重复返回 duplicate=true，冲突拒绝。输入/输出拆分可同时省略，提供时必须成对且合计与 total-tokens 一致。来源明确为用户核对控制台，原 usage 不改写。
+
+```powershell
+python scripts/reconcile-execution-usage.py --session-id '<本地会话ID>' --call-id '<本地调用ID>' --source user_reported_provider_console --actual-cost-cny 0.02 --total-tokens 9598 --input-tokens 5088 --output-tokens 4510
+```
+
+新报告 execution-usage-2 分别显示原响应 input_tokens/output_tokens/estimated_cost_cny、原 uncertain_calls、人工核账 reconciled_* 与 actual_reconciled_cost_cny，以及仍未核账的 unconfirmed_calls。database_budget 包含该测试库历史的有效费用，不能把当前轮统计误作全库累计消费；人工核账金额不冒充自动取得的精确账单。
+
 ## 剩余门槛
 
-用户已报告首次请求的控制台账单；先实现并验证有审计的人工费用核对入口及预算读取，再完成三类背景生成、九条结局路径和恢复验证，记录各操作真实 attempt、token、费用、时延及至少一位人工剧情核查结果。全部门槛通过前，开发计划中阶段 2 保持未验收，新故事前端入口仍不开放。
+首次请求的人工核账入口与预算读取已实现验证；后续核账及新轮结果见[2026-10-11 补充实测](2026-10-11-stage-2-supplement-results.md)。三类背景生成、九条结局路径和恢复验证、真实用量/时延记录及至少一位人工剧情核查仍须通过。全部门槛通过前，开发计划中阶段 2 保持未验收，新故事前端入口仍不开放。
 
 ## 首次真实请求失败记录
 
@@ -60,7 +69,7 @@ python evals/run_stage2.py --suite real_model --database-url-env MIGRATION_DATAB
 
 确定的失败边界是本地单次调用限时；供应商排队、生成速度或网络延迟的具体原因尚未区分。[DeepSeek 官方保活说明](https://api-docs.deepseek.com/zh-cn/quick_start/rate_limit/)说明非流式请求可能先持续返回空行等待推理，不能据 20 秒超时判断服务端已经停止。下一步先核对供应商账单；如调整生成限时，需先同步设计及操作策略并验证，不能悄悄放宽所有操作或盲目重发。
 
-用户随后报告 DeepSeek 控制台：消费 0.02 CNY、API 请求 1 次、总 token 9,598；随后补充 input=5,088、output=4,510，两者之和与总量一致。来源为用户核对控制台后的陈述，未取得供应商原始响应。这份用量和实际金额应作为人工核账证据保存，不能冒充原响应，也不能恢复丢失的候选正文或将失败案例改成成功。原始评测 report.json 与原账本 NULL 字段保留；当前实现仍因 uncertain 行阻断，账单核对机制和生成限时调整方案见[待确认补充](../design/stage-2-custom-stories.md#11-首次真实评测后的补充方案待确认)。
+用户随后报告 DeepSeek 控制台：消费 0.02 CNY、API 请求 1 次、总 token 9,598；随后补充 input=5,088、output=4,510，两者之和与总量一致。来源为用户核对控制台后的陈述，未取得供应商原始响应。这份用量和实际金额应作为人工核账证据保存，不能冒充原响应，也不能恢复丢失的候选正文或将失败案例改成成功。原始评测 report.json 与原账本 NULL 字段保留；账单核对机制和生成限时调整按[已确认补充](../design/stage-2-custom-stories.md#11-首次真实评测后的补充方案已确认)实施，实际核账及复测结果另记。
 
 一次独立审查发现两项 Important（原始 JSON/裸 token 脱敏、领取后初始化故障不收尾），均以数据库断言 RED→GREEN 修复；完整 154 项通过，不再进行重复全量审查。Minor 待补：approved 的 /resume 使用新键仍返回 409，已保存根节点可经 GET task 与确认重放取得。
 

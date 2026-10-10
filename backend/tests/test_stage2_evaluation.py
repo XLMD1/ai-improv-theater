@@ -76,3 +76,50 @@ def test_real_runner_harness_freezes_story_then_uses_public_text_and_buttons(tmp
         assert (tmp_path/'ancient-frozen.json').exists()
     finally:
         clear_key('deepseek')
+
+
+def test_report_separates_original_usage_operator_evidence_and_unconfirmed_calls():
+    from test_execution_records import unknown_call,reconciliation,cleanup_records
+    from app.models import LLMCall
+    module = runner()
+    recorder,task,factory,call_id = unknown_call()
+    try:
+        assert hasattr(module,'usage_summary'), 'reconciled report measurements are missing'
+        recorder.reconcile_usage(task,reconciliation(call_id))
+        with factory() as db:
+            summary = module.usage_summary(db,[db.get(LLMCall,call_id)])
+        assert summary['input_tokens']==summary['output_tokens']==0
+        assert summary['uncertain_calls']==1 and summary['unconfirmed_calls']==0
+        assert summary['reconciled_calls']==1 and summary['reconciled_total_tokens']==9598
+        assert summary['reconciled_input_tokens']==5088 and summary['reconciled_output_tokens']==4510
+        from decimal import Decimal
+        assert Decimal(summary['actual_reconciled_cost_cny'])==Decimal('.02')
+        assert Decimal(summary['estimated_cost_cny'])==0
+    finally:
+        cleanup_records()
+
+
+def test_local_reconciliation_cli_uses_strict_evidence_and_refuses_unsafe_database():
+    import os
+    import subprocess
+    import sys
+    from test_execution_records import unknown_call,cleanup_records
+    root = Path(__file__).resolve().parents[2]
+    script = root/'scripts/reconcile-execution-usage.py'
+    assert script.exists(), 'local reconciliation CLI is missing'
+    recorder,task,factory,call_id = unknown_call()
+    args = [sys.executable,str(script),'--session-id',task.session_id,'--call-id',call_id,
+            '--source','user_reported_provider_console','--actual-cost-cny','.02','--total-tokens','9598',
+            '--input-tokens','5088','--output-tokens','4510']
+    environment = dict(os.environ,MIGRATION_DATABASE_URL=os.environ['DATABASE_URL'])
+    try:
+        result = subprocess.run(args,cwd=root,env=environment,capture_output=True,text=True,timeout=20)
+        assert result.returncode==0,result.stdout
+        assert json.loads(result.stdout)['duplicate'] is False
+        repeated = subprocess.run(args,cwd=root,env=environment,capture_output=True,text=True,timeout=20)
+        assert repeated.returncode==0 and json.loads(repeated.stdout)['duplicate'] is True
+        environment['MIGRATION_DATABASE_URL']='postgresql+psycopg://owner:sk-private@localhost/stories'
+        rejected = subprocess.run(args,cwd=root,env=environment,capture_output=True,text=True,timeout=20)
+        assert rejected.returncode==2 and 'sk-private' not in rejected.stdout+rejected.stderr
+    finally:
+        cleanup_records()

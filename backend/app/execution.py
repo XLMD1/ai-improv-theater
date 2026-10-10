@@ -26,7 +26,7 @@ class ToolSpec:
     estimate_cost: Callable
 
     def __post_init__(self):
-        if not 0 < self.timeout_seconds <= 20 or not 1 <= self.max_attempts <= 3:
+        if not 0 < self.timeout_seconds <= 120 or not 1 <= self.max_attempts <= 3:
             raise ValueError('invalid_execution_policy')
         for schema in (self.input_schema, self.output_schema):
             if schema.model_config.get('extra') != 'forbid' or not schema.model_config.get('strict'):

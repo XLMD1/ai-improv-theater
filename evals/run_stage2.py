@@ -1,5 +1,6 @@
 """Fixed phase 2 simulated/real tasks. Only dedicated PostgreSQL *_test databases."""
 import argparse
+from decimal import Decimal
 from datetime import datetime,timezone
 import getpass
 import hashlib
@@ -163,6 +164,28 @@ def execute_real_cases(cases,output):
     return results
 
 
+def usage_summary(db,calls):
+    from app.usage_reconciliation import reconciled_usage
+    evidence = reconciled_usage(db)
+    confirmed = [evidence[c.id] for c in calls if c.id in evidence]
+    actual = sum((item.actual_cost_cny for item in confirmed),Decimal(0))
+    original_estimate = sum((c.estimated_cost_cny or Decimal(0) for c in calls),Decimal(0))
+    accounted = sum((c.estimated_cost_cny or Decimal(0) for c in calls if c.id not in evidence),Decimal(0))+actual
+    return {'usage_measurement_version':'execution-usage-2',
+            'input_tokens':sum(c.input_tokens or 0 for c in calls),
+            'output_tokens':sum(c.output_tokens or 0 for c in calls),
+            'uncertain_calls':sum(c.usage_status!='known' for c in calls),
+            'unconfirmed_calls':sum(c.usage_status!='known' and c.id not in evidence for c in calls),
+            'estimated_cost_cny':str(original_estimate),
+            'reconciled_calls':len(confirmed),
+            'reconciliation_source':'user_reported_provider_console' if confirmed else None,
+            'reconciled_total_tokens':sum(item.total_tokens for item in confirmed),
+            'reconciled_input_tokens':sum(item.input_tokens or 0 for item in confirmed),
+            'reconciled_output_tokens':sum(item.output_tokens or 0 for item in confirmed),
+            'reconciled_missing_split_calls':sum(item.input_tokens is None for item in confirmed),
+            'actual_reconciled_cost_cny':str(actual),'budget_accounted_cost_cny':str(accounted)}
+
+
 def run_suite(suite,database_url_env):
     manifest = load_manifest()
     cases = [case for case in manifest['cases'] if case['suite']==suite]
@@ -189,23 +212,24 @@ def run_suite(suite,database_url_env):
     from sqlalchemy import create_engine,func,select
     from sqlalchemy.orm import Session
     from app.models import ExecutionTrace,LLMCall
-    from app.costs import EXECUTION_PRICE_VERSION
+    from app.costs import EXECUTION_PRICE_VERSION,budget_status
+    from app.story_operations import OPERATION_VERSIONS,OPERATION_TIMEOUTS
     with create_engine(url).connect() as connection,Session(bind=connection) as db:
         query = select(LLMCall).where(LLMCall.created_at>=started_at)
         calls = db.scalars(query).all()
         attempts = db.scalar(select(func.count()).select_from(ExecutionTrace).where(
             ExecutionTrace.event_type=='attempt_started',ExecutionTrace.created_at>=started_at))
         usage = {'measurement':'retained_ledger_rows','attempts':attempts,'ledger_calls':len(calls),
-                 'input_tokens':sum(c.input_tokens or 0 for c in calls),'output_tokens':sum(c.output_tokens or 0 for c in calls),
-                 'uncertain_calls':sum(c.usage_status!='known' for c in calls),
-                 'estimated_cost_cny':str(sum(c.estimated_cost_cny or 0 for c in calls))}
+                 **usage_summary(db,calls)}
+        budget = budget_status(db)
     commit = subprocess.run(['git','rev-parse','HEAD'],cwd=ROOT,capture_output=True,text=True,check=False)
     report = {'metric_version':manifest['metric_version'],'run_id':run_id,'suite':suite,
               'measurement':'simulated_faults' if suite=='runtime_simulated' else 'real_model_paths',
               'git_commit':commit.stdout.strip(),'manifest_sha256':hashlib.sha256(MANIFEST.read_bytes()).hexdigest(),
               'model_version':'deepseek-flash','prompt_version':'investigation-single-1','price_version':EXECUTION_PRICE_VERSION,
+              'operation_versions':OPERATION_VERSIONS,'operation_timeout_seconds':OPERATION_TIMEOUTS,
               'timestamp':datetime.now(timezone.utc).isoformat(),'duration_ms':round((time.monotonic()-started)*1000,3),
-              'manual_reviewers':0,'summary':summarize(results),'cases':results,'usage':usage}
+              'manual_reviewers':0,'summary':summarize(results),'cases':results,'usage':usage,'database_budget':budget}
     path = output/'report.json'
     path.write_text(json.dumps(report,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
     return report,path

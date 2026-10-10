@@ -11,6 +11,7 @@ from sqlalchemy import select
 from sqlalchemy.exc import SQLAlchemyError
 
 from app.models import ExecutionTrace, LLMCall, Run, StoryTask
+from app.usage_reconciliation import UsageReconciliation, ReconciliationReceipt
 
 
 class TraceStorageFailure(RuntimeError):
@@ -115,6 +116,35 @@ class TraceRecorder:
                 self._append(db, task, row, 'attempt_started', {'operation': operation, 'version': version, 'input': payload},
                              id=attempt_id, span_id=span_id, attempt=number)
                 return AttemptRef(row.trace_id, span_id, attempt_id, number)
+        except SQLAlchemyError as error:
+            raise TraceStorageFailure('trace_storage_failure') from error
+
+    def reconcile_usage(self, task_ref, raw_input):
+        data = UsageReconciliation.model_validate(raw_input)
+        payload = data.model_dump(mode='json')
+        try:
+            with self.factory.begin() as db:
+                task = self._task(db,task_ref)
+                call = db.get(LLMCall,data.call_id)
+                if call is None or (call.run_id if task_ref.kind=='action' else call.creation_task_id) != task_ref.task_id:
+                    raise ValueError('call_not_found')
+                if call.usage_status != 'uncertain':
+                    raise ValueError('call_not_uncertain')
+                finished = db.scalar(select(ExecutionTrace).where(ExecutionTrace.llm_call_id==call.id,
+                         ExecutionTrace.trace_id==call.trace_id,ExecutionTrace.span_id==call.span_id,
+                         ExecutionTrace.event_type=='attempt_finished'))
+                if finished is None:
+                    raise ValueError('attempt_not_finished')
+                old = db.scalar(select(ExecutionTrace).where(ExecutionTrace.llm_call_id==call.id,
+                                 ExecutionTrace.event_type=='usage_reconciled'))
+                if old:
+                    previous = UsageReconciliation.model_validate_json(json.dumps(old.payload))
+                    if previous != data:
+                        raise ValueError('reconciliation_conflict')
+                    return ReconciliationReceipt(event_id=old.id,call_id=call.id,duplicate=True)
+                event = self._append(db,task_ref,task,'usage_reconciled',payload,
+                                     llm_call_id=call.id,span_id=call.span_id)
+                return ReconciliationReceipt(event_id=event.id,call_id=call.id,duplicate=False)
         except SQLAlchemyError as error:
             raise TraceStorageFailure('trace_storage_failure') from error
 

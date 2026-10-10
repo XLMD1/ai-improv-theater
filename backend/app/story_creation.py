@@ -20,7 +20,7 @@ from app.local_settings import MODELS, configured, get_key
 from app.models import Node, StorySession, StoryTask, StoryTaskEvent, StoryVersion, TurnEvent
 from app.operation_schemas import validate_semantic_report
 from app.reachability_worker import validate_reachability
-from app.story_operations import PROMPT_VERSION, register_story_operations
+from app.story_operations import PROMPT_VERSION, OPERATION_VERSIONS, register_story_operations
 from app.story_schema import Story, StrictModel
 from app.story_versions import load_story_version, save_story_version
 
@@ -153,7 +153,7 @@ async def process_creation_task(task_id):
             while True:
                 version = 'draft-2' if repair_count else 'draft-1'
                 if 'raw' not in checkpoint:
-                    result = await execute(registry,'story.generate','v1',
+                    result = await execute(registry,'story.generate',OPERATION_VERSIONS['story.generate'],
                               {'story_id':story_id,'story_version':version,**request},context)
                     if isinstance(result,ToolFailure):
                         if result.error_code != 'output_validation':
@@ -194,7 +194,7 @@ async def process_creation_task(task_id):
                 repair_count = 1
                 checkpoint = {**checkpoint,'repair_started':True,'semantic_passed':False}
                 _checkpoint(task_id,checkpoint,'repair',repair_count=1)
-                repaired = await execute(registry,'story.repair','v1',
+                repaired = await execute(registry,'story.repair',OPERATION_VERSIONS['story.repair'],
                               {'story_id':story_id,'story_version':'draft-2',**request,
                                'raw_candidate':checkpoint['raw'],'issues':issues[:20]},context)
                 if isinstance(repaired,ToolFailure):
