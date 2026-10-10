@@ -9,7 +9,7 @@ from app.models import ExecutionTrace, LLMCall
 
 
 PRICE_VERSION = "2026-10-08-peak-usd-cny7.5"
-EXECUTION_PRICE_VERSION = "2026-10-10-deepseek-flash-peak-usd-cny7.5"
+EXECUTION_PRICE_VERSION = "2026-10-10-flash-peak-usd-cny7.5"
 USD_TO_CNY = Decimal("7.5")
 USD_PER_MILLION = {
     "deepseek": (Decimal("0.30"), Decimal("1.20")),
