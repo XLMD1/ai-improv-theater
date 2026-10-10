@@ -35,7 +35,7 @@ pwsh -NoProfile -File .\scripts\start-local.ps1
 
 ## 阶段 1 规则评测
 
-阶段 1 已提供严格调查协议、确定性裁决、可达性校验及增量版本迁移。当前界面继续使用 Demo；完整雾港调查样本保持 draft，审定内容见[剧情与证据材料](docs/design/mist-harbor-draft-review.md)。
+阶段 1 已提供严格调查协议、确定性裁决、可达性校验及增量版本迁移。当前界面继续使用 Demo；完整雾港调查样本已获用户批准并冻结为 1.0.0，阶段 1 已验收。见[剧情与证据材料](docs/design/mist-harbor-draft-review.md)及[批准版本实测](docs/evaluation/2026-10-10-stage-1-approved-results.md)。
 
 安装后端测试依赖后，从根目录运行：
 

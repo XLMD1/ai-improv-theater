@@ -2,7 +2,7 @@
 
 > 执行方式：使用 superpowers:executing-plans 与 test-driven-development，逐任务完成红灯、实现、绿灯及记录。
 
-目标：交付严格调查协议、统一裁决、版本迁移及固定规则评测；完整雾港样本等待用户审定。
+目标：交付严格调查协议、统一裁决、版本迁移及固定规则评测；完整雾港样本已获用户批准并冻结为 1.0.0，阶段 1 验收完成。
 架构：schema 与引用检查独立于纯裁决。所有状态后继通过 app/state.py 分派；BFS 复用该路径。持久化保存不可变版本，不开放新前端/API。
 技术：Pydantic 2、SQLAlchemy、Alembic、pytest、PostgreSQL 18。
 规范：[故事规则](stage-1-story-rules.md)、[评测](../evaluation/task-success-baseline.md)。
@@ -13,7 +13,7 @@
 - 有界 BFS 上限 50,000；超限不能批准。旧 Demo 和四份草稿不改。
 - 不读取用户 .env；数据库验证仅使用隔离 *_test 数据库。
 - 外部模型重试/超时/Trace 在阶段 2，本阶段不发 API 请求。
-- 样本 draft；语义审定与用户批准不能被自动测试替代。
+- 样本起草时为 draft；用户已审定并批准，冻结为 1.0.0。语义审定与用户批准不能被自动测试替代。
 
 ## 任务与验证
 
@@ -22,7 +22,7 @@
 接口：Story.model_validate(data)、parse_action(data)、canonical_hash(story)。
 - [x] 写严格类型、额外字段、未知版本、重复 ID、悬空引用及非法效果测试，执行并确认失败。
 - [x] 实现判别联合、故事/状态模型、跨实体引用及信任规则检查。
-- [x] 运行 schema 测试，检查全样本合法并保持 draft。
+- [x] 运行 schema 测试，检查全样本合法；初次交付保持 draft，用户批准后冻结为 1.0.0。
 
 ### 2. 裁决、公开投影及可达性
 文件：app/investigation.py，app/story_validation.py，修改 app/state.py；tests/test_investigation_rules.py。
