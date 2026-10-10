@@ -561,11 +561,11 @@
       "id": "evaluation_failure",
       "suite": "rules",
       "test": "tests/test_stage1_evaluation.py::test_skip_and_assertion_failure_cannot_count_as_success",
-      "input": "失败/错误/跳过XML与敏感消息",
-      "fault": "失败/错误/跳过XML与敏感消息",
+      "input": "失败/错误/跳过的安全计数协议",
+      "fault": "失败/错误/跳过的安全计数协议",
       "expected": "stable_status",
       "invariants": [
-        "失败不能成功，报告不回显原错误"
+        "失败不能成功，产物只含状态数量"
       ],
       "timeout_seconds": 60,
       "story_version": "draft-1",
@@ -576,8 +576,8 @@
       "id": "evaluation_missing",
       "suite": "rules",
       "test": "tests/test_stage1_evaluation.py::test_malformed_or_absent_result_cannot_count_as_success",
-      "input": "缺失评测XML",
-      "fault": "缺失评测XML",
+      "input": "缺失评测计数 JSON",
+      "fault": "缺失评测计数 JSON",
       "expected": "invalid_test_result",
       "invariants": [
         "零退出码不能替代验证结果"
@@ -791,6 +791,51 @@
       "expected": "passed_with_custom_ids",
       "invariants": [
         "同一裁决路径，父状态不变或合法后继，实体由故事提供"
+      ],
+      "timeout_seconds": 60,
+      "story_version": "draft-1",
+      "engine_version": "investigation-1",
+      "fixture_sha256": "aea817271f5f6f71d1d1f014d26ed1cff095f8e9bcd4bd96f5fce2a05ad01610"
+    },
+    {
+      "id": "report_coverage",
+      "suite": "rules",
+      "test": "tests/test_stage1_evaluation.py::test_report_coverage_measures_witness_actions_and_locations",
+      "input": "实际搜索与完整见证行动统计",
+      "fault": null,
+      "expected": "70_states_5_locations_12_evidence_21_actions",
+      "invariants": [
+        "行动数来自实际裁决见证，不由行动数推断分钟"
+      ],
+      "timeout_seconds": 60,
+      "story_version": "draft-1",
+      "engine_version": "investigation-1",
+      "fixture_sha256": "aea817271f5f6f71d1d1f014d26ed1cff095f8e9bcd4bd96f5fce2a05ad01610"
+    },
+    {
+      "id": "selector_isolation",
+      "suite": "rules",
+      "test": "tests/test_stage1_evaluation.py::test_inherited_pytest_selector_cannot_remove_required_checks",
+      "input": "继承 -k 筛选参数",
+      "fault": "继承 -k 筛选参数",
+      "expected": "all_13_checks_execute",
+      "invariants": [
+        "所有必需断言执行，磁盘产物仅安全状态数量，不含诊断或令牌"
+      ],
+      "timeout_seconds": 60,
+      "story_version": "draft-1",
+      "engine_version": "investigation-1",
+      "fixture_sha256": "aea817271f5f6f71d1d1f014d26ed1cff095f8e9bcd4bd96f5fce2a05ad01610"
+    },
+    {
+      "id": "artifact_redaction",
+      "suite": "rules",
+      "test": "tests/test_stage1_evaluation.py::test_saved_artifacts_never_include_raw_failure_or_output",
+      "input": "断言和 stdout 含模拟会话令牌",
+      "fault": "断言和 stdout 含模拟会话令牌",
+      "expected": "failed_with_safe_artifacts",
+      "invariants": [
+        "所有必需断言执行，磁盘产物仅安全状态数量，不含诊断或令牌"
       ],
       "timeout_seconds": 60,
       "story_version": "draft-1",

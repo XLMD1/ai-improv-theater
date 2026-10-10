@@ -32,3 +32,22 @@ pwsh -NoProfile -File .\scripts\start-local.ps1
 使用默认数据库时，直接运行最后一行。脚本会检查依赖和 8000/3000 端口、执行迁移，然后启动仅监听 `127.0.0.1:8000` 的 API 与 `http://localhost:3000` 页面。按 `Ctrl+C` 正常退出；若 Windows 提示 `Terminate batch job (Y/N)?`，输入 `Y`，脚本随后会停止它启动的后端进程。脚本不会启动 PostgreSQL、自动安装依赖或保存 API 密钥。
 
 遇到启动失败，先看终端错误；后端启动日志保存在系统临时目录的 `ai-improv-api-<进程号>.err.log`。可运行 `pwsh -NoProfile -File .\scripts\test-start-local.ps1` 检查启动脚本的前置条件提示。
+
+## 阶段 1 规则评测
+
+阶段 1 已提供严格调查协议、确定性裁决、可达性校验及增量版本迁移。当前界面继续使用 Demo；完整雾港调查样本保持 draft，审定内容见[剧情与证据材料](docs/design/mist-harbor-draft-review.md)。
+
+安装后端测试依赖后，从根目录运行：
+
+```powershell
+.\backend\.venv\Scripts\python.exe -m pip install -e './backend[test]'
+.\backend\.venv\Scripts\python.exe evals/run_stage1.py --suite rules
+```
+
+已有根目录 .venv 时使用对应 Python。规则套件无需数据库或模型密钥。旧存档兼容套件需要已完成迁移的独立 PostgreSQL *_test 库，并在进程环境中设置 MIGRATION_DATABASE_URL 后运行：
+
+```powershell
+.\backend\.venv\Scripts\python.exe evals/run_stage1.py --suite legacy --database-url-env MIGRATION_DATABASE_URL
+```
+
+缺测试库、失败、错误、跳过或超时均保留固定分母并返回非零。JSON 报告位于 Git 忽略的 runtime/evals；这些结果证明规则与兼容性，不表示真实 AI 任务成功率。详细口径见[评测规范](docs/evaluation/task-success-baseline.md)。

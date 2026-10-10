@@ -10,7 +10,6 @@ import subprocess
 import sys
 import time
 from uuid import uuid4
-import xml.etree.ElementTree as ET
 
 from sqlalchemy.engine import make_url
 
@@ -41,30 +40,40 @@ def summarize(results: list[dict]) -> dict:
 
 def execute_case(case: dict, output: Path, environment: dict) -> dict:
     started = time.monotonic()
-    result = {"id": case["id"], "status": "error", "error_code": None}
-    xml = output / (case["id"] + ".xml")
+    result = {"id": case["id"], "status": "error", "error_code": None, "checks_run": 0}
+    artifact = output / (case["id"] + ".json")
+    child_env = dict(environment)
+    child_env.pop("PYTEST_ADDOPTS", None)
+    child_env["PYTHONPATH"] = str(ROOT) + os.pathsep + child_env.get("PYTHONPATH", "")
     try:
         completed = subprocess.run(
-            [sys.executable, "-m", "pytest", case["test"], "-q", "--junitxml=" + str(xml)],
-            cwd=BACKEND, env=environment, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+            [sys.executable, "-m", "pytest", case["test"], "-q", "--override-ini=addopts=",
+             "-p", "no:cacheprovider", "-p", "evals.pytest_status", "--stage1-result=" + str(artifact)],
+            cwd=BACKEND, env=child_env, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
             timeout=case["timeout_seconds"], check=False,
         )
-        tests = list(ET.parse(xml).getroot().iter("testcase"))
-        if not tests:
-            result["error_code"] = "empty_test_result"
-        elif any(test.find("error") is not None for test in tests):
+        counts = json.loads(artifact.read_text(encoding="utf-8"))
+        required = {"passed", "failed", "error", "skipped", "collected", "deselected", "exit_code"}
+        if (set(counts) != required or any(type(value) is not int or value < 0 for value in counts.values())):
+            raise ValueError("invalid_test_result")
+        elif counts["deselected"]:
+            result["error_code"] = "required_checks_deselected"
+        elif counts["error"]:
             result["error_code"] = "test_error"
-        elif any(test.find("failure") is not None for test in tests):
+        elif counts["failed"]:
             result.update(status="failed", error_code="assertion_failed")
-        elif any(test.find("skipped") is not None for test in tests):
+        elif counts["skipped"]:
             result.update(status="skipped", error_code="required_case_skipped")
-        elif completed.returncode != 0:
+        elif counts["collected"] == 0 or counts["passed"] != counts["collected"]:
+            result["error_code"] = "empty_or_partial_test_result"
+        elif completed.returncode != 0 or counts["exit_code"] != 0:
             result["error_code"] = "test_process_failed"
         else:
             result["status"] = "succeeded"
+        result["checks_run"] = counts.get("collected", 0)
     except subprocess.TimeoutExpired:
         result["error_code"] = "case_timeout"
-    except (OSError, ET.ParseError):
+    except (OSError, ValueError, TypeError, AttributeError):
         result["error_code"] = "invalid_test_result"
     result["duration_ms"] = round((time.monotonic() - started) * 1000, 3)
     return result
@@ -88,6 +97,19 @@ def load_manifest():
             raise ValueError("invalid_manifest_case")
         ids.add(case["id"])
     return manifest
+
+
+def rule_coverage() -> dict:
+    from app.story_schema import Story
+    from app.story_validation import check_reachability
+    definition = Story.model_validate(json.loads(
+        (BACKEND / "tests" / "fixtures" / "mist_harbor_investigation.json").read_text(encoding="utf-8")))
+    proof = check_reachability(definition)
+    return {
+        "reachability_status": proof.status, "states_checked": proof.states_checked,
+        "locations_visited": len(proof.locations), "evidence_discovered": len(proof.evidence),
+        "ending_action_counts": {ending: len(actions) for ending, actions in proof.ending_paths.items()},
+    }
 
 
 def run_suite(suite: str, database_url_env: str) -> tuple[dict, Path]:
@@ -125,14 +147,17 @@ def run_suite(suite: str, database_url_env: str) -> tuple[dict, Path]:
     else:
         results = [execute_case(case, output, environment) for case in cases]
     commit = subprocess.run(["git", "rev-parse", "HEAD"], cwd=ROOT, capture_output=True, text=True, check=False)
+    dirty = subprocess.run(["git", "status", "--porcelain"], cwd=ROOT, capture_output=True, text=True, check=False)
     report = {
-        "metric_version": manifest["metric_version"], "run_id": run_id, "suite": suite,
+        "git_dirty": bool(dirty.stdout.strip()),        "metric_version": manifest["metric_version"], "run_id": run_id, "suite": suite,
         "timestamp": datetime.now(timezone.utc).isoformat(), "git_commit": commit.stdout.strip(),
         "manifest_sha256": hashlib.sha256(MANIFEST.read_bytes()).hexdigest(),
         "fixture_hashes": fixture_hashes, "story_version": manifest["versions"][suite]["story"],
         "engine_version": manifest["versions"][suite]["engine"], "model_version": None, "prompt_version": None,
         "measurement": "deterministic_rules" if suite == "rules" else "legacy_saved_node_compatibility",
-        "provider_calls": 0, "duration_ms": round((time.monotonic() - started) * 1000, 3),
+        "provider_calls": 0,
+        "coverage": rule_coverage() if suite == "rules" and error is None else None,
+        "duration_ms": round((time.monotonic() - started) * 1000, 3),
         "summary": summarize(results), "cases": results,
     }
     path = output / "report.json"

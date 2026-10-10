@@ -91,6 +91,7 @@ def test_siblings_and_public_projection_are_isolated():
 @pytest.mark.parametrize("field,value", [
     ("engine_version", "future"),
     ("schema_version", 3),
+    ("schema_version", 2.0),
     ("story_id", "00000000-0000-0000-0000-000000000000"),
     ("story_version", "other"),
     ("location_id", "missing"),
@@ -197,6 +198,11 @@ def test_unknown_legacy_version_and_mixed_inputs_are_rejected():
     legacy["engine_version"] = "future"
     with pytest.raises(StoryValidationError, match="unsupported_state_version"):
         apply_state_changes(legacy, "s2", [])
+    for invalid in (True, 1.0):
+        legacy = initial_state()
+        legacy["schema_version"] = invalid
+        with pytest.raises(StoryValidationError, match="unsupported_state_version"):
+            apply_state_changes(legacy, "s2", [])
     definition = story()
     parent = initial_investigation_state(definition)
     with pytest.raises(StoryValidationError, match="investigation_requires_story_and_action"):

@@ -31,7 +31,8 @@ def apply_state_changes(parent_state: dict, scene_id: str | None = None,
         from app.investigation import _adjudicate
         from app.story_schema import Story
         return _adjudicate(Story.model_validate(story.model_dump()), parent_state, action)
-    if engine is not None or parent_state.get("schema_version", 1) != 1:
+    legacy_version = parent_state.get("schema_version", 1)
+    if engine is not None or type(legacy_version) is not int or legacy_version != 1:
         raise StoryValidationError("unsupported_state_version")
     if story is not None or action is not None or scene_id is None or changes is None:
         raise StoryValidationError("legacy_requires_scene_and_changes")

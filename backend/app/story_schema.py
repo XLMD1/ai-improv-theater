@@ -4,7 +4,7 @@ import json
 from typing import Annotated, Literal
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field, StringConstraints, TypeAdapter, model_validator
+from pydantic import BaseModel, ConfigDict, Field, StringConstraints, TypeAdapter, field_validator, model_validator
 
 EntityId = Annotated[str, StringConstraints(pattern=r"^[a-z][a-z0-9_]*$", min_length=1, max_length=64)]
 Text = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1)]
@@ -318,6 +318,13 @@ class InvestigationState(StrictModel):
     applied_once_rules: list[EntityId]
     fired_events: list[EntityId]
     ending_id: EntityId | None
+
+    @field_validator("schema_version", mode="before")
+    @classmethod
+    def strict_schema_version(cls, value):
+        if type(value) is not int:
+            raise ValueError("schema_version must be an integer")
+        return value
 
     @model_validator(mode="after")
     def canonical_sets(self):
