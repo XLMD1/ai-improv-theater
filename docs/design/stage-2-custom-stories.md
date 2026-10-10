@@ -66,7 +66,7 @@ GET /session 为调查会话增加 lifecycle、root_node_id 和当前创建任�
 
 沿用 POST /turns 的外部 Action(type=option|text,value<=500)，调查会话分派到新任务服务。按钮 ID 必须属于选中父节点保存的服务器选项；每个节点内部保存 option_id → 规范化行动的映射，玩家仅看到不透明 option_id 和公开 label。按钮直接取服务器行动，不调用行动理解；自由输入通过注册操作理解为调查、交流、出示、移动或抉择。无法映射时返回 uninterpretable 的明确反馈，不凭空创造规则。
 
-行动理解只得到公开世界、当前公开选项对应的可执行行动和最近三个祖先回合，不得到真相、未知证据、规则条件或内部 Trace。严格输出为判别联合：recognized（一个阶段 1 Action）或 unrecognized；识别出的行动还须确定性校验实体、地点和条件。玩家文本按数据编码，不拼接为系统指令。
+行动理解只得到公开世界、当前公开选项对应的可执行行动及同序公开标签（action_labels）和最近三个祖先回合，不得到真相、未知证据、规则条件或内部 Trace。标签使模型可以将公开地点名和交流序号对应到服务器行动，不依赖猜测内部 ID。严格输出为判别联合：recognized（一个阶段 1 Action）或 unrecognized；识别出的行动还须确定性校验实体、地点和条件。玩家文本按数据编码，不拼接为系统指令。
 
 通过 apply_state_changes(parent_state,story=story,action=action) 得到完整裁决，包括事件闭包及后继快照。invalid/repeat/precondition_failed 或 uninterpretable 使用确定性反馈节点，不调用叙事模型，父状态完全不变。accepted 才调用叙事生成；模型出参只有 narration（1–1200 字）、dialogue（0–2 条，每条 character_id、1–280 字 text 和固定情绪枚举），禁止 state_changes、scene_id、选项或规则字段。
 

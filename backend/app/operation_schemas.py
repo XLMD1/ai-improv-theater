@@ -124,7 +124,14 @@ class ActionInterpretInput(StrictModel):
     public_world: PublicWorld
     text: str = Field(min_length=1,max_length=500)
     available_actions: list[Action]
+    action_labels: list[str]
     recent_turns: list[RecentTurn] = Field(max_length=3)
+
+    @model_validator(mode='after')
+    def labels_match(self):
+        if len(self.action_labels)!=len(self.available_actions):
+            raise ValueError('action_labels_mismatch')
+        return self
 
 
 class Recognized(StrictModel):

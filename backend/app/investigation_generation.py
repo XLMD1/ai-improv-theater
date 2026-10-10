@@ -45,9 +45,13 @@ async def interpret_action(story,state,mapping,action,recent_turns,registry,cont
         if action.value not in mapping:
             raise GenerationError('invalid_option')
         return mapping[action.value]
+    public_options,current_mapping = build_public_options(story,state)
+    labels = {tuple(sorted(current_mapping[o['id']].items())):o['label'] for o in public_options}
     result = await execute(registry,'action.interpret','v1',
                            {'public_world':public_projection(story,state),'text':action.value,
-                            'available_actions':list(mapping.values()),'recent_turns':recent_turns},context)
+                            'available_actions':list(mapping.values()),
+                            'action_labels':[labels[tuple(sorted(value.items()))] for value in mapping.values()],
+                            'recent_turns':recent_turns},context)
     if isinstance(result,ToolFailure):
         raise GenerationError(result.error_code)
     if result.output.result.status == 'unrecognized':

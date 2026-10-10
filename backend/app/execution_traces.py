@@ -37,7 +37,7 @@ class TraceRecorder:
 
     def redact(self, value):
         if isinstance(value, dict):
-            return {key: '[redacted]' if re.search(r'authorization|api.?key|(?:^|_)token$|session_token|access_token|password|database.?url', key, re.I)
+            return {key: '[redacted]' if re.search(r'authorization|api.?key|(?:^|_)token$|session_token|access_token|password|database.?url|reasoning_content|hidden_reasoning', key, re.I)
                     else self.redact(item) for key, item in value.items()}
         if isinstance(value, list):
             return [self.redact(item) for item in value]
