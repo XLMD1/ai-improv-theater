@@ -2,15 +2,15 @@
 
 日期：2026-10-10；评测口径版本：1
 依据：[阶段验收](../03-development-plan.md) · [故事与规则](../design/stage-1-story-rules.md) · [运行可靠性](../design/runtime-reliability.md)
-状态：指标与案例规范已写入文档；脚本、fixture 和报告由阶段 1 及后续实现，本次没有运行任务评测。
+状态：阶段 1 规则及旧存档兼容入口、固定清单和 fixture 已实现并实际运行；后续模型执行器及真实模型套件尚未验收。样本已获用户批准并冻结为 1.0.0。实际结果见[批准版本报告](2026-10-10-stage-1-approved-results.md)，[原草稿报告](2026-10-10-stage-1-results.md)保留其历史口径。
 
 ## 1. 目录职责与入口
 
 `evals/` 放可执行评测入口及案例清单，`backend/tests/` 放断言和固定故事 fixture，`docs/evaluation/` 放口径、运行说明和已执行报告；运行原始结果进入 Git 忽略目录。不另建 `benchmark/`，不用同一份故事 JSON 的多份拷贝制造漂移。
 
-阶段 1 的最小入口为 `evals/run_stage1.py`，案例清单为 `evals/cases/stage1.json`，统一读取 `backend/tests/fixtures/mist_harbor_investigation.json` 及其版本/hash；这些是待实现路径，不创建空文件。fixture 在用户审定前为 draft，机器评测可以用于开发，但不能代替批准。纯规则评测不需要模型密钥或用户数据库；旧存档集成回放必须使用独立 `_test` PostgreSQL 库。
+阶段 1 的最小入口为 `evals/run_stage1.py`，案例清单为 `evals/cases/stage1.json`，统一读取 `backend/tests/fixtures/mist_harbor_investigation.json` 及其版本/hash；这些路径已实现。fixture 在用户审定前为 draft，机器评测可以用于开发，但不能代替批准。纯规则评测不需要模型密钥或用户数据库；旧存档集成回放必须使用独立 `_test` PostgreSQL 库。
 
-计划调用方式：从根目录使用安装了 backend 测试依赖的 Python 执行 `python evals/run_stage1.py --suite rules`；`--suite legacy --database-url-env MIGRATION_DATABASE_URL` 单独运行旧存档兼容集成案例，先校验数据库名以 `_test` 结尾，错误配置拒绝连接及迁移。运行说明在脚本实际存在并验证后记录，不能把这些命令写成当前可运行。
+已验证调用方式：从根目录使用安装了 backend 测试依赖的 Python 执行 `python evals/run_stage1.py --suite rules`；`--suite legacy --database-url-env MIGRATION_DATABASE_URL` 单独运行旧存档兼容集成案例，先校验数据库名以 `_test` 结尾，错误配置拒绝连接及迁移。首次运行 legacy 前须已对该独立测试库执行迁移；本脚本不迁移或重置用户故事库。报告写入 runtime/evals/<run_id>/report.json，失败明细使用稳定代码，pytest 子进程只通过状态钩子保存安全计数 JSON，不保存原始诊断、node ID 或捕获输出；清除继承的 PYTEST_ADDOPTS 并覆盖 addopts，发现 deselected 就计错误。
 
 ## 2. 成功的定义
 
@@ -43,7 +43,7 @@
 
 ## 5. 输出与可复现性
 
-每次报告包含 run ID、时间、Git commit、评测口径版本、suite、case manifest/fixture SHA-256、模型/引擎/prompt 版本（无模型时明确 none）、总数及各终态、成功率、逐案失败详情和执行时长。模拟测试记录故障种子/时钟设置；真实调用另报时延、fallback、token 和估算费用，缺 usage 的项目标未确认。
+fixture 比对使用 UTF-8 文本的 LF 规范化字节 SHA-256（fixture_hash_mode=utf8-lf），同时记录原文件 fixture_raw_sha256；Windows Git 换行转换不改变固定案例身份，正文及其他字节变化仍拒绝。每次报告包含 run ID、时间、Git commit、评测口径版本、suite、case manifest/fixture SHA-256、模型/引擎/prompt 版本（无模型时明确 none）、总数及各终态、成功率、逐案失败详情和执行时长。模拟测试记录故障种子/时钟设置；真实调用另报时延、fallback、token 和估算费用，缺 usage 的项目标未确认。
 
 stdout 给出摘要；结构化 JSON 保存逐案状态和结果引用，后续报告引用同一 run ID，不手工改失败记录。集成测试缺测试库时标记未执行并返回非零验收结果；纯规则套件仍可单独运行。密钥、连接 URL、会话令牌不进入输出，内部真相与候选稿只保存在本地受控产物，不进入公开评测展示。
 

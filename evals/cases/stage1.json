@@ -1,0 +1,879 @@
+{
+  "metric_version": "task-success-1",
+  "manifest_version": "stage1-2",
+  "versions": {
+    "rules": {
+      "story": "1.0.0",
+      "engine": "investigation-1"
+    },
+    "legacy": {
+      "story": "1.0.0",
+      "engine": "legacy-1"
+    }
+  },
+  "fixture_hashes": {
+    "backend/tests/fixtures/mist_harbor_investigation.json": "8935c8fc113fcd6b03be1e49bb41a4c7b67917ec38fb44ab9d50dc33cbf940ff",
+    "backend/tests/fixtures/mist_harbor_paths.json": "eee7acb7e126a51cd49f3c02ee8c39521d7ecaa205d721021ebc2e709ace4f34",
+    "backend/app/canon.json": "7cb013d1a831fbfe2280f0fa6cfc56ae1148d3e6dffecc71cc9a0b9dc33ca4f4",
+    "backend/tests/fixtures/mist_harbor_approval.json": "21b9b47586ae07a18eafe72455958c639541d7a6bb5907cc4dc4c5218f43bcc5"
+  },
+  "cases": [
+    {
+      "id": "ending_publish",
+      "suite": "rules",
+      "test": "tests/test_investigation_rules.py::test_sample_ending[publish_truth]",
+      "input": "公开真相完整路径",
+      "fault": null,
+      "expected": "terminal_publish_truth",
+      "invariants": [
+        "三结局固定见证"
+      ],
+      "timeout_seconds": 60,
+      "actions": [
+        {
+          "type": "investigate",
+          "object_id": "notice"
+        },
+        {
+          "type": "investigate",
+          "object_id": "satchel"
+        },
+        {
+          "type": "move",
+          "location_id": "archive"
+        },
+        {
+          "type": "investigate",
+          "object_id": "register"
+        },
+        {
+          "type": "investigate",
+          "object_id": "tide_chart"
+        },
+        {
+          "type": "investigate",
+          "object_id": "carbon_copy"
+        },
+        {
+          "type": "move",
+          "location_id": "dock"
+        },
+        {
+          "type": "investigate",
+          "object_id": "mooring"
+        },
+        {
+          "type": "investigate",
+          "object_id": "chest"
+        },
+        {
+          "type": "talk",
+          "character_id": "shen_zhixia",
+          "topic_id": "warning"
+        },
+        {
+          "type": "present",
+          "character_id": "shen_zhixia",
+          "evidence_id": "empty_crate"
+        },
+        {
+          "type": "move",
+          "location_id": "bell_tower"
+        },
+        {
+          "type": "investigate",
+          "object_id": "bell_log"
+        },
+        {
+          "type": "investigate",
+          "object_id": "recorder"
+        },
+        {
+          "type": "investigate",
+          "object_id": "service_hatch"
+        },
+        {
+          "type": "move",
+          "location_id": "lighthouse"
+        },
+        {
+          "type": "investigate",
+          "object_id": "lens"
+        },
+        {
+          "type": "investigate",
+          "object_id": "logbook"
+        },
+        {
+          "type": "present",
+          "character_id": "zhou_yan",
+          "evidence_id": "radio_tape"
+        },
+        {
+          "type": "talk",
+          "character_id": "zhou_yan",
+          "topic_id": "verification"
+        },
+        {
+          "type": "decide",
+          "ending_id": "publish_truth"
+        }
+      ],
+      "story_version": "1.0.0",
+      "engine_version": "investigation-1",
+      "fixture_sha256": "8935c8fc113fcd6b03be1e49bb41a4c7b67917ec38fb44ab9d50dc33cbf940ff"
+    },
+    {
+      "id": "ending_guard",
+      "suite": "rules",
+      "test": "tests/test_investigation_rules.py::test_sample_ending[guard_together]",
+      "input": "共同守护完整路径",
+      "fault": null,
+      "expected": "terminal_guard_together",
+      "invariants": [
+        "三结局固定见证"
+      ],
+      "timeout_seconds": 60,
+      "actions": [
+        {
+          "type": "investigate",
+          "object_id": "notice"
+        },
+        {
+          "type": "investigate",
+          "object_id": "satchel"
+        },
+        {
+          "type": "move",
+          "location_id": "archive"
+        },
+        {
+          "type": "investigate",
+          "object_id": "register"
+        },
+        {
+          "type": "investigate",
+          "object_id": "tide_chart"
+        },
+        {
+          "type": "investigate",
+          "object_id": "carbon_copy"
+        },
+        {
+          "type": "move",
+          "location_id": "dock"
+        },
+        {
+          "type": "investigate",
+          "object_id": "mooring"
+        },
+        {
+          "type": "investigate",
+          "object_id": "chest"
+        },
+        {
+          "type": "talk",
+          "character_id": "shen_zhixia",
+          "topic_id": "warning"
+        },
+        {
+          "type": "present",
+          "character_id": "shen_zhixia",
+          "evidence_id": "empty_crate"
+        },
+        {
+          "type": "move",
+          "location_id": "bell_tower"
+        },
+        {
+          "type": "investigate",
+          "object_id": "bell_log"
+        },
+        {
+          "type": "investigate",
+          "object_id": "recorder"
+        },
+        {
+          "type": "investigate",
+          "object_id": "service_hatch"
+        },
+        {
+          "type": "move",
+          "location_id": "lighthouse"
+        },
+        {
+          "type": "investigate",
+          "object_id": "lens"
+        },
+        {
+          "type": "investigate",
+          "object_id": "logbook"
+        },
+        {
+          "type": "present",
+          "character_id": "zhou_yan",
+          "evidence_id": "radio_tape"
+        },
+        {
+          "type": "talk",
+          "character_id": "zhou_yan",
+          "topic_id": "verification"
+        },
+        {
+          "type": "decide",
+          "ending_id": "guard_together"
+        }
+      ],
+      "story_version": "1.0.0",
+      "engine_version": "investigation-1",
+      "fixture_sha256": "8935c8fc113fcd6b03be1e49bb41a4c7b67917ec38fb44ab9d50dc33cbf940ff"
+    },
+    {
+      "id": "ending_sink",
+      "suite": "rules",
+      "test": "tests/test_investigation_rules.py::test_sample_ending[sink_secret]",
+      "input": "秘密沉海完整路径",
+      "fault": null,
+      "expected": "terminal_sink_secret",
+      "invariants": [
+        "三结局固定见证"
+      ],
+      "timeout_seconds": 60,
+      "actions": [
+        {
+          "type": "investigate",
+          "object_id": "notice"
+        },
+        {
+          "type": "investigate",
+          "object_id": "satchel"
+        },
+        {
+          "type": "move",
+          "location_id": "archive"
+        },
+        {
+          "type": "investigate",
+          "object_id": "register"
+        },
+        {
+          "type": "investigate",
+          "object_id": "tide_chart"
+        },
+        {
+          "type": "investigate",
+          "object_id": "carbon_copy"
+        },
+        {
+          "type": "move",
+          "location_id": "dock"
+        },
+        {
+          "type": "investigate",
+          "object_id": "mooring"
+        },
+        {
+          "type": "investigate",
+          "object_id": "chest"
+        },
+        {
+          "type": "talk",
+          "character_id": "shen_zhixia",
+          "topic_id": "warning"
+        },
+        {
+          "type": "present",
+          "character_id": "shen_zhixia",
+          "evidence_id": "empty_crate"
+        },
+        {
+          "type": "move",
+          "location_id": "bell_tower"
+        },
+        {
+          "type": "investigate",
+          "object_id": "bell_log"
+        },
+        {
+          "type": "investigate",
+          "object_id": "recorder"
+        },
+        {
+          "type": "investigate",
+          "object_id": "service_hatch"
+        },
+        {
+          "type": "move",
+          "location_id": "lighthouse"
+        },
+        {
+          "type": "investigate",
+          "object_id": "lens"
+        },
+        {
+          "type": "investigate",
+          "object_id": "logbook"
+        },
+        {
+          "type": "present",
+          "character_id": "zhou_yan",
+          "evidence_id": "radio_tape"
+        },
+        {
+          "type": "talk",
+          "character_id": "zhou_yan",
+          "topic_id": "verification"
+        },
+        {
+          "type": "decide",
+          "ending_id": "sink_secret"
+        }
+      ],
+      "story_version": "1.0.0",
+      "engine_version": "investigation-1",
+      "fixture_sha256": "8935c8fc113fcd6b03be1e49bb41a4c7b67917ec38fb44ab9d50dc33cbf940ff"
+    },
+    {
+      "id": "same_place_and_rejection",
+      "suite": "rules",
+      "test": "tests/test_investigation_rules.py::test_same_location_repeated_and_invalid_actions_preserve_parent",
+      "input": "同地点对象，重复、异地、未知证据及出口",
+      "fault": "同地点对象，重复、异地、未知证据及出口",
+      "expected": "accepted_or_stable_rejection",
+      "invariants": [
+        "父快照不变，拒绝不增回合"
+      ],
+      "timeout_seconds": 60,
+      "story_version": "1.0.0",
+      "engine_version": "investigation-1",
+      "fixture_sha256": "8935c8fc113fcd6b03be1e49bb41a4c7b67917ec38fb44ab9d50dc33cbf940ff"
+    },
+    {
+      "id": "reachability",
+      "suite": "rules",
+      "test": "tests/test_investigation_rules.py::test_three_endings_have_witnesses_and_events_fire_once",
+      "input": "全样本有限状态搜索",
+      "fault": null,
+      "expected": "passed",
+      "invariants": [
+        "五地点、全部证据、三个结局、事件一次性"
+      ],
+      "timeout_seconds": 60,
+      "story_version": "1.0.0",
+      "engine_version": "investigation-1",
+      "fixture_sha256": "8935c8fc113fcd6b03be1e49bb41a4c7b67917ec38fb44ab9d50dc33cbf940ff"
+    },
+    {
+      "id": "public_and_siblings",
+      "suite": "rules",
+      "test": "tests/test_investigation_rules.py::test_siblings_and_public_projection_are_isolated",
+      "input": "共同父状态两个分支与未发现证据",
+      "fault": "共同父状态两个分支与未发现证据",
+      "expected": "private_fields_absent",
+      "invariants": [
+        "兄弟状态不污染，私有事实过滤"
+      ],
+      "timeout_seconds": 60,
+      "story_version": "1.0.0",
+      "engine_version": "investigation-1",
+      "fixture_sha256": "8935c8fc113fcd6b03be1e49bb41a4c7b67917ec38fb44ab9d50dc33cbf940ff"
+    },
+    {
+      "id": "forged_state",
+      "suite": "rules",
+      "test": "tests/test_investigation_rules.py::test_forged_state_is_rejected",
+      "input": "版本、身份、集合和严格类型错误",
+      "fault": "版本、身份、集合和严格类型错误",
+      "expected": "validation_rejected",
+      "invariants": [
+        "状态引用必须属于同一版本"
+      ],
+      "timeout_seconds": 60,
+      "story_version": "1.0.0",
+      "engine_version": "investigation-1",
+      "fixture_sha256": "8935c8fc113fcd6b03be1e49bb41a4c7b67917ec38fb44ab9d50dc33cbf940ff"
+    },
+    {
+      "id": "trust_atomicity",
+      "suite": "rules",
+      "test": "tests/test_investigation_rules.py::test_trust_overflow_in_event_is_atomic",
+      "input": "主动事件中先发证据后信任越界",
+      "fault": "主动事件中先发证据后信任越界",
+      "expected": "trust_overflow",
+      "invariants": [
+        "整个批次失败，父状态不变"
+      ],
+      "timeout_seconds": 60,
+      "story_version": "1.0.0",
+      "engine_version": "investigation-1",
+      "fixture_sha256": "8935c8fc113fcd6b03be1e49bb41a4c7b67917ec38fb44ab9d50dc33cbf940ff"
+    },
+    {
+      "id": "rule_conflict",
+      "suite": "rules",
+      "test": "tests/test_investigation_rules.py::test_matching_rule_conflict_is_not_guessed",
+      "input": "同一行动两条同时成立规则",
+      "fault": "同一行动两条同时成立规则",
+      "expected": "rule_conflict",
+      "invariants": [
+        "不猜优先级"
+      ],
+      "timeout_seconds": 60,
+      "story_version": "1.0.0",
+      "engine_version": "investigation-1",
+      "fixture_sha256": "8935c8fc113fcd6b03be1e49bb41a4c7b67917ec38fb44ab9d50dc33cbf940ff"
+    },
+    {
+      "id": "evidence_deadlock",
+      "suite": "rules",
+      "test": "tests/test_investigation_rules.py::test_evidence_mutual_lock_and_unreachable_location_are_rejected",
+      "input": "第一项证据反向依赖第二项",
+      "fault": "第一项证据反向依赖第二项",
+      "expected": "unreachable",
+      "invariants": [
+        "证据互锁、地点和结局不可达"
+      ],
+      "timeout_seconds": 60,
+      "story_version": "1.0.0",
+      "engine_version": "investigation-1",
+      "fixture_sha256": "8935c8fc113fcd6b03be1e49bb41a4c7b67917ec38fb44ab9d50dc33cbf940ff"
+    },
+    {
+      "id": "unreachable_and_cap",
+      "suite": "rules",
+      "test": "tests/test_investigation_rules.py::test_unreachable_ending_and_search_cap_are_not_success",
+      "input": "不可能信任阈值和搜索上限1",
+      "fault": "不可能信任阈值和搜索上限1",
+      "expected": "unreachable_or_inconclusive",
+      "invariants": [
+        "不能把超限当通过"
+      ],
+      "timeout_seconds": 60,
+      "story_version": "1.0.0",
+      "engine_version": "investigation-1",
+      "fixture_sha256": "8935c8fc113fcd6b03be1e49bb41a4c7b67917ec38fb44ab9d50dc33cbf940ff"
+    },
+    {
+      "id": "event_closure",
+      "suite": "rules",
+      "test": "tests/test_investigation_rules.py::test_event_closure_reevaluates_sorted_ids_and_no_retrigger",
+      "input": "后排事件激活前排事件",
+      "fault": "后排事件激活前排事件",
+      "expected": "events_once",
+      "invariants": [
+        "事件闭包有界且不重复"
+      ],
+      "timeout_seconds": 60,
+      "story_version": "1.0.0",
+      "engine_version": "investigation-1",
+      "fixture_sha256": "8935c8fc113fcd6b03be1e49bb41a4c7b67917ec38fb44ab9d50dc33cbf940ff"
+    },
+    {
+      "id": "story_schema",
+      "suite": "rules",
+      "test": "tests/test_investigation_schema.py::test_invalid_story_is_rejected",
+      "input": "错版本、额外字段、非法操作、错类型与悬空引用",
+      "fault": "错版本、额外字段、非法操作、错类型与悬空引用",
+      "expected": "schema_rejected",
+      "invariants": [
+        "白名单实体与效果"
+      ],
+      "timeout_seconds": 60,
+      "story_version": "1.0.0",
+      "engine_version": "investigation-1",
+      "fixture_sha256": "8935c8fc113fcd6b03be1e49bb41a4c7b67917ec38fb44ab9d50dc33cbf940ff"
+    },
+    {
+      "id": "action_schema",
+      "suite": "rules",
+      "test": "tests/test_investigation_schema.py::test_action_schema_rejects_untrusted_fields",
+      "input": "模型格式错误、额外效果或未知行动",
+      "fault": "模型格式错误、额外效果或未知行动",
+      "expected": "schema_rejected",
+      "invariants": [
+        "未经验证的效果不进状态"
+      ],
+      "timeout_seconds": 60,
+      "story_version": "1.0.0",
+      "engine_version": "investigation-1",
+      "fixture_sha256": "8935c8fc113fcd6b03be1e49bb41a4c7b67917ec38fb44ab9d50dc33cbf940ff"
+    },
+    {
+      "id": "canonical_hash",
+      "suite": "rules",
+      "test": "tests/test_investigation_schema.py::test_full_sample_and_canonical_hash",
+      "input": "完整fixture和副本",
+      "fault": null,
+      "expected": "same_canonical_hash",
+      "invariants": [
+        "严格协议与稳定哈希"
+      ],
+      "timeout_seconds": 60,
+      "story_version": "1.0.0",
+      "engine_version": "investigation-1",
+      "fixture_sha256": "8935c8fc113fcd6b03be1e49bb41a4c7b67917ec38fb44ab9d50dc33cbf940ff"
+    },
+    {
+      "id": "denominator",
+      "suite": "rules",
+      "test": "tests/test_stage1_evaluation.py::test_fixed_denominator_includes_failure_error_and_skip",
+      "input": "成功、失败、错误、跳过四条",
+      "fault": "成功、失败、错误、跳过四条",
+      "expected": "rate_0_25",
+      "invariants": [
+        "固定分母；空套件错误"
+      ],
+      "timeout_seconds": 60,
+      "story_version": "1.0.0",
+      "engine_version": "investigation-1",
+      "fixture_sha256": "8935c8fc113fcd6b03be1e49bb41a4c7b67917ec38fb44ab9d50dc33cbf940ff"
+    },
+    {
+      "id": "database_guard",
+      "suite": "rules",
+      "test": "tests/test_stage1_evaluation.py::test_legacy_refuses_missing_or_unsafe_database_before_start",
+      "input": "缺失连接、非PG、非测试库",
+      "fault": "缺失连接、非PG、非测试库",
+      "expected": "rejected_before_connection",
+      "invariants": [
+        "不连接用户数据库"
+      ],
+      "timeout_seconds": 60,
+      "story_version": "1.0.0",
+      "engine_version": "investigation-1",
+      "fixture_sha256": "8935c8fc113fcd6b03be1e49bb41a4c7b67917ec38fb44ab9d50dc33cbf940ff"
+    },
+    {
+      "id": "evaluation_timeout",
+      "suite": "rules",
+      "test": "tests/test_stage1_evaluation.py::test_subprocess_timeout_is_error_and_keeps_denominator",
+      "input": "评测子进程超时（非模型故障）",
+      "fault": "评测子进程超时（非模型故障）",
+      "expected": "case_timeout",
+      "invariants": [
+        "超时计错误且保留分母"
+      ],
+      "timeout_seconds": 60,
+      "story_version": "1.0.0",
+      "engine_version": "investigation-1",
+      "fixture_sha256": "8935c8fc113fcd6b03be1e49bb41a4c7b67917ec38fb44ab9d50dc33cbf940ff"
+    },
+    {
+      "id": "evaluation_failure",
+      "suite": "rules",
+      "test": "tests/test_stage1_evaluation.py::test_skip_and_assertion_failure_cannot_count_as_success",
+      "input": "失败/错误/跳过的安全计数协议",
+      "fault": "失败/错误/跳过的安全计数协议",
+      "expected": "stable_status",
+      "invariants": [
+        "失败不能成功，产物只含状态数量"
+      ],
+      "timeout_seconds": 60,
+      "story_version": "1.0.0",
+      "engine_version": "investigation-1",
+      "fixture_sha256": "8935c8fc113fcd6b03be1e49bb41a4c7b67917ec38fb44ab9d50dc33cbf940ff"
+    },
+    {
+      "id": "evaluation_missing",
+      "suite": "rules",
+      "test": "tests/test_stage1_evaluation.py::test_malformed_or_absent_result_cannot_count_as_success",
+      "input": "缺失评测计数 JSON",
+      "fault": "缺失评测计数 JSON",
+      "expected": "invalid_test_result",
+      "invariants": [
+        "零退出码不能替代验证结果"
+      ],
+      "timeout_seconds": 60,
+      "story_version": "1.0.0",
+      "engine_version": "investigation-1",
+      "fixture_sha256": "8935c8fc113fcd6b03be1e49bb41a4c7b67917ec38fb44ab9d50dc33cbf940ff"
+    },
+    {
+      "id": "legacy_endings",
+      "suite": "legacy",
+      "test": "tests/test_stage1.py::test_three_endings_are_reachable_and_state_is_consistent",
+      "input": "旧Demo全部结局",
+      "fault": null,
+      "expected": "three_saved_endings",
+      "invariants": [
+        "旧状态解释保留"
+      ],
+      "timeout_seconds": 60,
+      "story_version": "1.0.0",
+      "engine_version": "legacy-1",
+      "fixture_sha256": "7cb013d1a831fbfe2280f0fa6cfc56ae1148d3e6dffecc71cc9a0b9dc33ca4f4"
+    },
+    {
+      "id": "legacy_replay",
+      "suite": "legacy",
+      "test": "tests/test_stage1.py::test_replay_reads_saved_bytes_without_generating",
+      "input": "生成器设为抛异常后回放保存节点",
+      "fault": null,
+      "expected": "saved_content_equal",
+      "invariants": [
+        "回放不生成"
+      ],
+      "timeout_seconds": 60,
+      "story_version": "1.0.0",
+      "engine_version": "legacy-1",
+      "fixture_sha256": "7cb013d1a831fbfe2280f0fa6cfc56ae1148d3e6dffecc71cc9a0b9dc33ca4f4"
+    },
+    {
+      "id": "legacy_siblings",
+      "suite": "legacy",
+      "test": "tests/test_stage1.py::test_sibling_branches_are_isolated",
+      "input": "旧Demo共同父节点两个选择",
+      "fault": null,
+      "expected": "independent_branches",
+      "invariants": [
+        "兄弟分支隔离"
+      ],
+      "timeout_seconds": 60,
+      "story_version": "1.0.0",
+      "engine_version": "legacy-1",
+      "fixture_sha256": "7cb013d1a831fbfe2280f0fa6cfc56ae1148d3e6dffecc71cc9a0b9dc33ca4f4"
+    },
+    {
+      "id": "legacy_invalid",
+      "suite": "legacy",
+      "test": "tests/test_stage1.py::test_illegal_transition_and_flag_are_rejected_without_mutation",
+      "input": "非法跳场与flag",
+      "fault": "非法跳场与flag",
+      "expected": "rejected",
+      "invariants": [
+        "父状态不变"
+      ],
+      "timeout_seconds": 60,
+      "story_version": "1.0.0",
+      "engine_version": "legacy-1",
+      "fixture_sha256": "7cb013d1a831fbfe2280f0fa6cfc56ae1148d3e6dffecc71cc9a0b9dc33ca4f4"
+    },
+    {
+      "id": "legacy_authorization",
+      "suite": "legacy",
+      "test": "tests/test_stage1.py::test_invalid_option_and_foreign_session_are_rejected",
+      "input": "未知按钮和异会话",
+      "fault": "未知按钮和异会话",
+      "expected": "409_or_404",
+      "invariants": [
+        "旧授权边界不变"
+      ],
+      "timeout_seconds": 60,
+      "story_version": "1.0.0",
+      "engine_version": "legacy-1",
+      "fixture_sha256": "7cb013d1a831fbfe2280f0fa6cfc56ae1148d3e6dffecc71cc9a0b9dc33ca4f4"
+    },
+    {
+      "id": "legacy_idempotency",
+      "suite": "legacy",
+      "test": "tests/test_stage1.py::test_idempotency_key_does_not_create_a_second_branch",
+      "input": "同键重复动作",
+      "fault": null,
+      "expected": "same_run_id",
+      "invariants": [
+        "不能重复创建分支"
+      ],
+      "timeout_seconds": 60,
+      "story_version": "1.0.0",
+      "engine_version": "legacy-1",
+      "fixture_sha256": "7cb013d1a831fbfe2280f0fa6cfc56ae1148d3e6dffecc71cc9a0b9dc33ca4f4"
+    },
+    {
+      "id": "version_identity",
+      "suite": "legacy",
+      "test": "tests/test_story_versions.py::test_version_identity_hash_and_database_immutability",
+      "input": "同身份不同内容、数据库直接更新/删除",
+      "fault": "同身份不同内容、数据库直接更新/删除",
+      "expected": "immutable_rejected",
+      "invariants": [
+        "固定定义和旧版本隔离"
+      ],
+      "timeout_seconds": 60,
+      "story_version": "1.0.0",
+      "engine_version": "legacy-1",
+      "fixture_sha256": "7cb013d1a831fbfe2280f0fa6cfc56ae1148d3e6dffecc71cc9a0b9dc33ca4f4"
+    },
+    {
+      "id": "version_integrity",
+      "suite": "legacy",
+      "test": "tests/test_story_versions.py::test_loader_detects_corrupt_hash_without_exposing_story",
+      "input": "损坏hash",
+      "fault": "损坏hash",
+      "expected": "story_integrity_error",
+      "invariants": [
+        "拒绝内容不匹配且不泄漏真相"
+      ],
+      "timeout_seconds": 60,
+      "story_version": "1.0.0",
+      "engine_version": "legacy-1",
+      "fixture_sha256": "7cb013d1a831fbfe2280f0fa6cfc56ae1148d3e6dffecc71cc9a0b9dc33ca4f4"
+    },
+    {
+      "id": "migration_preservation",
+      "suite": "legacy",
+      "test": "tests/test_story_versions.py::test_incremental_migration_preserves_old_node_and_event_bytes",
+      "input": "0003旧数据升级0004再降级",
+      "fault": "0003旧数据升级0004再降级",
+      "expected": "saved_bytes_equal",
+      "invariants": [
+        "旧关联保持NULL，原节点/事件/渲染保留"
+      ],
+      "timeout_seconds": 60,
+      "story_version": "1.0.0",
+      "engine_version": "legacy-1",
+      "fixture_sha256": "7cb013d1a831fbfe2280f0fa6cfc56ae1148d3e6dffecc71cc9a0b9dc33ca4f4"
+    },
+    {
+      "id": "version_dispatch",
+      "suite": "rules",
+      "test": "tests/test_investigation_rules.py::test_unknown_legacy_version_and_mixed_inputs_are_rejected",
+      "input": "未知旧引擎或混用新旧入参",
+      "fault": "未知旧引擎或混用新旧入参",
+      "expected": "version_error",
+      "invariants": [
+        "同一裁决路径，父状态不变或合法后继，实体由故事提供"
+      ],
+      "timeout_seconds": 60,
+      "story_version": "1.0.0",
+      "engine_version": "investigation-1",
+      "fixture_sha256": "8935c8fc113fcd6b03be1e49bb41a4c7b67917ec38fb44ab9d50dc33cbf940ff"
+    },
+    {
+      "id": "character_evidence",
+      "suite": "rules",
+      "test": "tests/test_investigation_rules.py::test_known_character_unknown_evidence_and_topic_do_not_mutate",
+      "input": "同地点角色、未发现证据及未知话题",
+      "fault": "同地点角色、未发现证据及未知话题",
+      "expected": "stable_rejection",
+      "invariants": [
+        "同一裁决路径，父状态不变或合法后继，实体由故事提供"
+      ],
+      "timeout_seconds": 60,
+      "story_version": "1.0.0",
+      "engine_version": "investigation-1",
+      "fixture_sha256": "8935c8fc113fcd6b03be1e49bb41a4c7b67917ec38fb44ab9d50dc33cbf940ff"
+    },
+    {
+      "id": "action_atomicity",
+      "suite": "rules",
+      "test": "tests/test_investigation_rules.py::test_rule_overflow_and_schema_error_preserve_parent",
+      "input": "行动先发证据再越界；模型追加效果",
+      "fault": "行动先发证据再越界；模型追加效果",
+      "expected": "atomic_failure",
+      "invariants": [
+        "同一裁决路径，父状态不变或合法后继，实体由故事提供"
+      ],
+      "timeout_seconds": 60,
+      "story_version": "1.0.0",
+      "engine_version": "investigation-1",
+      "fixture_sha256": "8935c8fc113fcd6b03be1e49bb41a4c7b67917ec38fb44ab9d50dc33cbf940ff"
+    },
+    {
+      "id": "event_visibility",
+      "suite": "rules",
+      "test": "tests/test_investigation_rules.py::test_event_trust_once_and_public_disclosure_visibility",
+      "input": "带信任变化的事件连续两次行动",
+      "fault": "带信任变化的事件连续两次行动",
+      "expected": "once_and_filtered",
+      "invariants": [
+        "同一裁决路径，父状态不变或合法后继，实体由故事提供"
+      ],
+      "timeout_seconds": 60,
+      "story_version": "1.0.0",
+      "engine_version": "investigation-1",
+      "fixture_sha256": "8935c8fc113fcd6b03be1e49bb41a4c7b67917ec38fb44ab9d50dc33cbf940ff"
+    },
+    {
+      "id": "data_driven_ids",
+      "suite": "rules",
+      "test": "tests/test_investigation_rules.py::test_story_ids_are_data_driven",
+      "input": "所有实体及话题改为自定义ID",
+      "fault": "所有实体及话题改为自定义ID",
+      "expected": "passed_with_custom_ids",
+      "invariants": [
+        "同一裁决路径，父状态不变或合法后继，实体由故事提供"
+      ],
+      "timeout_seconds": 60,
+      "story_version": "1.0.0",
+      "engine_version": "investigation-1",
+      "fixture_sha256": "8935c8fc113fcd6b03be1e49bb41a4c7b67917ec38fb44ab9d50dc33cbf940ff"
+    },
+    {
+      "id": "report_coverage",
+      "suite": "rules",
+      "test": "tests/test_stage1_evaluation.py::test_report_coverage_measures_witness_actions_and_locations",
+      "input": "实际搜索与完整见证行动统计",
+      "fault": null,
+      "expected": "70_states_5_locations_12_evidence_21_actions",
+      "invariants": [
+        "行动数来自实际裁决见证，不由行动数推断分钟"
+      ],
+      "timeout_seconds": 60,
+      "story_version": "1.0.0",
+      "engine_version": "investigation-1",
+      "fixture_sha256": "8935c8fc113fcd6b03be1e49bb41a4c7b67917ec38fb44ab9d50dc33cbf940ff"
+    },
+    {
+      "id": "selector_isolation",
+      "suite": "rules",
+      "test": "tests/test_stage1_evaluation.py::test_inherited_pytest_selector_cannot_remove_required_checks",
+      "input": "继承 -k 筛选参数",
+      "fault": "继承 -k 筛选参数",
+      "expected": "all_13_checks_execute",
+      "invariants": [
+        "所有必需断言执行，磁盘产物仅安全状态数量，不含诊断或令牌"
+      ],
+      "timeout_seconds": 60,
+      "story_version": "1.0.0",
+      "engine_version": "investigation-1",
+      "fixture_sha256": "8935c8fc113fcd6b03be1e49bb41a4c7b67917ec38fb44ab9d50dc33cbf940ff"
+    },
+    {
+      "id": "artifact_redaction",
+      "suite": "rules",
+      "test": "tests/test_stage1_evaluation.py::test_saved_artifacts_never_include_raw_failure_or_output",
+      "input": "断言和 stdout 含模拟会话令牌",
+      "fault": "断言和 stdout 含模拟会话令牌",
+      "expected": "failed_with_safe_artifacts",
+      "invariants": [
+        "所有必需断言执行，磁盘产物仅安全状态数量，不含诊断或令牌"
+      ],
+      "timeout_seconds": 60,
+      "story_version": "1.0.0",
+      "engine_version": "investigation-1",
+      "fixture_sha256": "8935c8fc113fcd6b03be1e49bb41a4c7b67917ec38fb44ab9d50dc33cbf940ff"
+    },
+    {
+      "id": "windows_fixture_hash",
+      "suite": "rules",
+      "test": "tests/test_stage1_evaluation.py::test_fixture_hash_is_portable_across_windows_line_endings",
+      "input": "Windows CRLF 与 LF 相同 JSON 文本",
+      "fault": "Git 换行转换",
+      "expected": "same_normalized_digest",
+      "invariants": [
+        "同时保留原文件字节哈希，正文改变不能被掩盖"
+      ],
+      "timeout_seconds": 60,
+      "story_version": "1.0.0",
+      "engine_version": "investigation-1",
+      "fixture_sha256": "8935c8fc113fcd6b03be1e49bb41a4c7b67917ec38fb44ab9d50dc33cbf940ff"
+    },
+    {
+      "id": "approved_sample_freeze",
+      "suite": "rules",
+      "test": "tests/test_investigation_schema.py::test_approved_sample_matches_reviewed_content_and_frozen_hash",
+      "input": "批准版本、审定原稿及冻结记录",
+      "fault": null,
+      "expected": "approved_hash_and_reviewed_content_match",
+      "invariants": [
+        "批准身份与规范化哈希固定",
+        "仅版本标识变化，剧情及规则与审定原稿一致"
+      ],
+      "timeout_seconds": 30,
+      "story_version": "1.0.0",
+      "engine_version": "investigation-1",
+      "fixture_sha256": "8935c8fc113fcd6b03be1e49bb41a4c7b67917ec38fb44ab9d50dc33cbf940ff"
+    }
+  ],
+  "fixture_hash_mode": "utf8-lf"
+}

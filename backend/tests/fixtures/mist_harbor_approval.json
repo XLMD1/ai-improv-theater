@@ -1,0 +1,14 @@
+{
+  "story_id": "d127cc9c-5049-4b15-96b6-c47545a68f1e",
+  "story_version": "1.0.0",
+  "approval_status": "approved",
+  "approval_date": "2026-10-10",
+  "approval_statement": "确认批准",
+  "human_reviewer_count": 1,
+  "content_hash_algorithm": "sha256-canonical-story-json",
+  "content_hash": "dbdb37eb57b2eaf90eddfb42246189920147fa94adfeef85cf43598bcbd3ce79",
+  "reviewed_story_version": "draft-1",
+  "reviewed_content_hash": "8f54507a5b96f70c7b4c8629c962d4d24607ac782fc192b45c991e91ded1f599",
+  "reviewed_source_commit": "da2a9f01a6198788fa82ca7571580961a14c7851",
+  "scope": "repository_regression_sample"
+}

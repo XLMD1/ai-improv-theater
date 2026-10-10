@@ -1,0 +1,272 @@
+{
+  "publish_truth": [
+    {
+      "type": "investigate",
+      "object_id": "notice"
+    },
+    {
+      "type": "investigate",
+      "object_id": "satchel"
+    },
+    {
+      "type": "move",
+      "location_id": "archive"
+    },
+    {
+      "type": "investigate",
+      "object_id": "register"
+    },
+    {
+      "type": "investigate",
+      "object_id": "tide_chart"
+    },
+    {
+      "type": "investigate",
+      "object_id": "carbon_copy"
+    },
+    {
+      "type": "move",
+      "location_id": "dock"
+    },
+    {
+      "type": "investigate",
+      "object_id": "mooring"
+    },
+    {
+      "type": "investigate",
+      "object_id": "chest"
+    },
+    {
+      "type": "talk",
+      "character_id": "shen_zhixia",
+      "topic_id": "warning"
+    },
+    {
+      "type": "present",
+      "character_id": "shen_zhixia",
+      "evidence_id": "empty_crate"
+    },
+    {
+      "type": "move",
+      "location_id": "bell_tower"
+    },
+    {
+      "type": "investigate",
+      "object_id": "bell_log"
+    },
+    {
+      "type": "investigate",
+      "object_id": "recorder"
+    },
+    {
+      "type": "investigate",
+      "object_id": "service_hatch"
+    },
+    {
+      "type": "move",
+      "location_id": "lighthouse"
+    },
+    {
+      "type": "investigate",
+      "object_id": "lens"
+    },
+    {
+      "type": "investigate",
+      "object_id": "logbook"
+    },
+    {
+      "type": "present",
+      "character_id": "zhou_yan",
+      "evidence_id": "radio_tape"
+    },
+    {
+      "type": "talk",
+      "character_id": "zhou_yan",
+      "topic_id": "verification"
+    },
+    {
+      "type": "decide",
+      "ending_id": "publish_truth"
+    }
+  ],
+  "guard_together": [
+    {
+      "type": "investigate",
+      "object_id": "notice"
+    },
+    {
+      "type": "investigate",
+      "object_id": "satchel"
+    },
+    {
+      "type": "move",
+      "location_id": "archive"
+    },
+    {
+      "type": "investigate",
+      "object_id": "register"
+    },
+    {
+      "type": "investigate",
+      "object_id": "tide_chart"
+    },
+    {
+      "type": "investigate",
+      "object_id": "carbon_copy"
+    },
+    {
+      "type": "move",
+      "location_id": "dock"
+    },
+    {
+      "type": "investigate",
+      "object_id": "mooring"
+    },
+    {
+      "type": "investigate",
+      "object_id": "chest"
+    },
+    {
+      "type": "talk",
+      "character_id": "shen_zhixia",
+      "topic_id": "warning"
+    },
+    {
+      "type": "present",
+      "character_id": "shen_zhixia",
+      "evidence_id": "empty_crate"
+    },
+    {
+      "type": "move",
+      "location_id": "bell_tower"
+    },
+    {
+      "type": "investigate",
+      "object_id": "bell_log"
+    },
+    {
+      "type": "investigate",
+      "object_id": "recorder"
+    },
+    {
+      "type": "investigate",
+      "object_id": "service_hatch"
+    },
+    {
+      "type": "move",
+      "location_id": "lighthouse"
+    },
+    {
+      "type": "investigate",
+      "object_id": "lens"
+    },
+    {
+      "type": "investigate",
+      "object_id": "logbook"
+    },
+    {
+      "type": "present",
+      "character_id": "zhou_yan",
+      "evidence_id": "radio_tape"
+    },
+    {
+      "type": "talk",
+      "character_id": "zhou_yan",
+      "topic_id": "verification"
+    },
+    {
+      "type": "decide",
+      "ending_id": "guard_together"
+    }
+  ],
+  "sink_secret": [
+    {
+      "type": "investigate",
+      "object_id": "notice"
+    },
+    {
+      "type": "investigate",
+      "object_id": "satchel"
+    },
+    {
+      "type": "move",
+      "location_id": "archive"
+    },
+    {
+      "type": "investigate",
+      "object_id": "register"
+    },
+    {
+      "type": "investigate",
+      "object_id": "tide_chart"
+    },
+    {
+      "type": "investigate",
+      "object_id": "carbon_copy"
+    },
+    {
+      "type": "move",
+      "location_id": "dock"
+    },
+    {
+      "type": "investigate",
+      "object_id": "mooring"
+    },
+    {
+      "type": "investigate",
+      "object_id": "chest"
+    },
+    {
+      "type": "talk",
+      "character_id": "shen_zhixia",
+      "topic_id": "warning"
+    },
+    {
+      "type": "present",
+      "character_id": "shen_zhixia",
+      "evidence_id": "empty_crate"
+    },
+    {
+      "type": "move",
+      "location_id": "bell_tower"
+    },
+    {
+      "type": "investigate",
+      "object_id": "bell_log"
+    },
+    {
+      "type": "investigate",
+      "object_id": "recorder"
+    },
+    {
+      "type": "investigate",
+      "object_id": "service_hatch"
+    },
+    {
+      "type": "move",
+      "location_id": "lighthouse"
+    },
+    {
+      "type": "investigate",
+      "object_id": "lens"
+    },
+    {
+      "type": "investigate",
+      "object_id": "logbook"
+    },
+    {
+      "type": "present",
+      "character_id": "zhou_yan",
+      "evidence_id": "radio_tape"
+    },
+    {
+      "type": "talk",
+      "character_id": "zhou_yan",
+      "topic_id": "verification"
+    },
+    {
+      "type": "decide",
+      "ending_id": "sink_secret"
+    }
+  ]
+}

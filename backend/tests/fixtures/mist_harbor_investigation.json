@@ -1,0 +1,919 @@
+{
+  "schema_version": "investigation-story-1",
+  "story_id": "d127cc9c-5049-4b15-96b6-c47545a68f1e",
+  "story_version": "1.0.0",
+  "title": "雾港最后一夜",
+  "setting": "即将废弃的海港；一桩被归咎于风暴的失踪案留下未公开的救援记录。",
+  "era": "架空1931年",
+  "public_intro": "雾港明日封港。记者林岚受邀调查沈船长在十七日风暴夜失踪的旧案，灯塔守护人周砚和船长之女沈知夏都要求在最后一夜见面。",
+  "protagonist_id": "lin_lan",
+  "start_location_id": "waiting_hall",
+  "characters": [
+    {
+      "id": "lin_lan",
+      "name": "林岚",
+      "goal": "查清失踪案，以有证据的报道让读者辨认责任。",
+      "taboos": [
+        "不以未经核实的口供定罪"
+      ],
+      "appearance": "携带笔记本与旧相机的记者。",
+      "initial_location_id": "waiting_hall",
+      "known_fact_ids": [],
+      "secret_fact_ids": []
+    },
+    {
+      "id": "zhou_yan",
+      "name": "周砚",
+      "goal": "让救援记录得到核对，同时保护幸存者家属。",
+      "taboos": [
+        "不擅自交出幸存者住址"
+      ],
+      "appearance": "手套上留着透镜油污的守塔人。",
+      "initial_location_id": "lighthouse",
+      "known_fact_ids": [
+        "fact_order",
+        "fact_redirect",
+        "fact_rescue",
+        "fact_survivors"
+      ],
+      "secret_fact_ids": [
+        "fact_cover"
+      ]
+    },
+    {
+      "id": "shen_zhixia",
+      "name": "沈知夏",
+      "goal": "还原父亲救人的经过，阻止他继续背负走私的罪名。",
+      "taboos": [
+        "不接受虚构父亲生还的安慰"
+      ],
+      "appearance": "袖口缝着旧船徽记的年轻女子。",
+      "initial_location_id": "dock",
+      "known_fact_ids": [
+        "fact_cut",
+        "fact_rescue"
+      ],
+      "secret_fact_ids": [
+        "fact_cover"
+      ]
+    }
+  ],
+  "locations": [
+    {
+      "id": "waiting_hall",
+      "name": "候船厅",
+      "description": "废港前最后一晚，候船厅仍留着渡轮时刻牌。纸张被海风压在售票窗里。",
+      "exits": [
+        {
+          "location_id": "archive",
+          "conditions": {
+            "all": [
+              {
+                "op": "has_evidence",
+                "evidence_id": "press_note",
+                "expected": true
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "archive",
+      "name": "旧档案室",
+      "description": "港务账册按月份封存，墙上挂着旧航道潮汐图。",
+      "exits": [
+        {
+          "location_id": "waiting_hall",
+          "conditions": {
+            "all": []
+          }
+        },
+        {
+          "location_id": "dock",
+          "conditions": {
+            "all": [
+              {
+                "op": "has_evidence",
+                "evidence_id": "altered_order",
+                "expected": true
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "dock",
+      "name": "码头",
+      "description": "沈知夏守着父亲旧船的缆桩，打捞上来的木箱靠在防波堤边。",
+      "exits": [
+        {
+          "location_id": "archive",
+          "conditions": {
+            "all": []
+          }
+        },
+        {
+          "location_id": "bell_tower",
+          "conditions": {
+            "all": [
+              {
+                "op": "has_disclosure",
+                "disclosure_id": "rescue_signals",
+                "expected": true
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "bell_tower",
+      "name": "钟楼",
+      "description": "停摆的钟盘下，值班日志和无线电录音筒还在原处。",
+      "exits": [
+        {
+          "location_id": "dock",
+          "conditions": {
+            "all": []
+          }
+        },
+        {
+          "location_id": "lighthouse",
+          "conditions": {
+            "all": [
+              {
+                "op": "has_evidence",
+                "evidence_id": "keeper_key",
+                "expected": true
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "lighthouse",
+      "name": "灯塔",
+      "description": "周砚正在拆下透镜，桌上摊着最后一本守塔日志。",
+      "exits": [
+        {
+          "location_id": "bell_tower",
+          "conditions": {
+            "all": []
+          }
+        }
+      ]
+    }
+  ],
+  "objects": [
+    {
+      "id": "notice",
+      "location_id": "waiting_hall",
+      "name": "渡轮时刻牌",
+      "description": "检查停航日期旁的附注。"
+    },
+    {
+      "id": "satchel",
+      "location_id": "waiting_hall",
+      "name": "记者旧邮袋",
+      "description": "核对前任记者留下的信封。"
+    },
+    {
+      "id": "register",
+      "location_id": "archive",
+      "name": "货运登记册",
+      "description": "按信封页码翻查调度登记。"
+    },
+    {
+      "id": "tide_chart",
+      "location_id": "archive",
+      "name": "潮汐图",
+      "description": "比对货船起航时的水位。"
+    },
+    {
+      "id": "carbon_copy",
+      "location_id": "archive",
+      "name": "命令复写纸",
+      "description": "查验停灯命令下的压痕。"
+    },
+    {
+      "id": "mooring",
+      "location_id": "dock",
+      "name": "断缆桩",
+      "description": "检查缆绳断口与船长刀鞘。"
+    },
+    {
+      "id": "chest",
+      "location_id": "dock",
+      "name": "打捞木箱",
+      "description": "查验木箱内壁和仓库封条。"
+    },
+    {
+      "id": "bell_log",
+      "location_id": "bell_tower",
+      "name": "敲钟日志",
+      "description": "追查沈知夏说的三短一长信号。"
+    },
+    {
+      "id": "recorder",
+      "location_id": "bell_tower",
+      "name": "无线电录音筒",
+      "description": "按敲钟时间播放存档。"
+    },
+    {
+      "id": "service_hatch",
+      "location_id": "bell_tower",
+      "name": "检修柜",
+      "description": "查看录音筒旁的守塔交接盒。"
+    },
+    {
+      "id": "lens",
+      "location_id": "lighthouse",
+      "name": "透镜底座",
+      "description": "核对红铅笔航线与透镜刻度。"
+    },
+    {
+      "id": "logbook",
+      "location_id": "lighthouse",
+      "name": "最后一本日志",
+      "description": "查阅未上交的救援页。"
+    }
+  ],
+  "evidence": [
+    {
+      "id": "ferry_record",
+      "description": "停航附注写着：十七日夜，港务命令所有民船离港，只有安澜号货船获准出航。",
+      "fact_ids": [
+        "fact_order"
+      ]
+    },
+    {
+      "id": "press_note",
+      "description": "匿名线人信封把当晚异响指向旧档案室的十七日调度单，附有登记页码。",
+      "fact_ids": [
+        "fact_order"
+      ]
+    },
+    {
+      "id": "cargo_manifest",
+      "description": "安澜号货单登记的是农具，仓库副本却标注四十箱军械，批准人是港务督办。",
+      "fact_ids": [
+        "fact_order"
+      ]
+    },
+    {
+      "id": "tide_table",
+      "description": "当晚东航道暗礁裸露，只有西航道可通行；旧值班图用红铅笔重画了西侧救援入口。",
+      "fact_ids": [
+        "fact_redirect"
+      ]
+    },
+    {
+      "id": "altered_order",
+      "description": "签章命令要求灯塔停灯两小时方便军械转运，周砚的回批写着：西入口改手动闪光，先救人。",
+      "fact_ids": [
+        "fact_order",
+        "fact_redirect"
+      ]
+    },
+    {
+      "id": "fresh_cut",
+      "description": "缆绳被利刃主动割断，刀鞘刻有沈船长姓名；断口不符合风暴磨损。",
+      "fact_ids": [
+        "fact_cut"
+      ]
+    },
+    {
+      "id": "empty_crate",
+      "description": "军械编号木箱里没有武器，箱壁留有隔舱木板和十四道身高刻痕，底部有儿童鞋印。",
+      "fact_ids": [
+        "fact_rescue"
+      ]
+    },
+    {
+      "id": "bell_times",
+      "description": "日志记下救生艇两次出发、一次返回；第二次出发后再无返港记录，时间与停灯时段重合。",
+      "fact_ids": [
+        "fact_rescue"
+      ]
+    },
+    {
+      "id": "radio_tape",
+      "description": "录音中沈船长说：我割断缆绳让军械船暂不能开航，已接回十四名被困工人，正返回寻找最后一人；周砚回应西入口闪光已开启。",
+      "fact_ids": [
+        "fact_redirect",
+        "fact_rescue",
+        "fact_cut"
+      ]
+    },
+    {
+      "id": "keeper_key",
+      "description": "交接盒内有灯塔备用钥匙及督办威胁信：若救援名单外传，幸存者家属承担军械失踪责任。",
+      "fact_ids": [
+        "fact_cover"
+      ]
+    },
+    {
+      "id": "lens_angle",
+      "description": "透镜停在西入口手动刻度，使用记录与录音吻合；它没有把安澜号诱入东侧暗礁。",
+      "fact_ids": [
+        "fact_redirect"
+      ]
+    },
+    {
+      "id": "rescue_list",
+      "description": "日志列出十四名幸存者、接应地址及沈船长返航救人后失踪的报告；附有幸存者共同签署的证明。",
+      "fact_ids": [
+        "fact_rescue",
+        "fact_survivors"
+      ]
+    }
+  ],
+  "truth": {
+    "text": "港务督办借风暴停灯掩护军械转运。沈船长割断缆绳拖延货船出航，把军械箱改成救生隔舱接回十四名被困工人；他再次返回救人后失踪，没有可信生还证据。周砚违抗停灯命令改用西入口手动闪光，协助救援。督办威胁幸存者家属，两人隐匿记录，失踪案因而被误写成风暴事故。封港前，救援名单上的幸存者愿意共同作证，但公开住址仍会危及家属。",
+    "facts": {
+      "fact_order": "港务督办签发停灯命令，掩护把军械伪装成农具出港。",
+      "fact_redirect": "周砚违令开启西入口手动闪光以救人，没有诱船触礁。",
+      "fact_cut": "沈船长主动割断缆绳拖延军械货船出港。",
+      "fact_rescue": "沈船长载回十四名被困工人，返回寻找最后一人后失踪，没有生还证据。",
+      "fact_cover": "督办威胁幸存者家属，周砚和沈知夏因而隐匿记录。",
+      "fact_survivors": "十四名幸存者提供共同签署的证明，名单含敏感接应地址。"
+    }
+  },
+  "disclosures": [
+    {
+      "id": "warning",
+      "character_id": "shen_zhixia",
+      "fact_ids": [
+        "fact_cover"
+      ],
+      "public_text": "沈知夏说督办一直威胁幸存者家属，要求先核实木箱用途。"
+    },
+    {
+      "id": "rescue_signals",
+      "character_id": "shen_zhixia",
+      "fact_ids": [
+        "fact_rescue"
+      ],
+      "public_text": "沈知夏认出载人隔舱，说明三短一长是救援钟号。"
+    },
+    {
+      "id": "confession",
+      "character_id": "zhou_yan",
+      "fact_ids": [
+        "fact_order",
+        "fact_redirect",
+        "fact_cover"
+      ],
+      "public_text": "周砚承认违令救援和隐匿日志，拒绝声称船长生还。"
+    },
+    {
+      "id": "last_warning",
+      "character_id": "zhou_yan",
+      "fact_ids": [
+        "fact_cover",
+        "fact_survivors"
+      ],
+      "public_text": "看到你带来的钥匙，周砚主动说明：名单可以核对，住址必须遮去，家属尚未脱离威胁。"
+    }
+  ],
+  "commitments": [
+    {
+      "id": "verify_together",
+      "character_id": "zhou_yan",
+      "public_text": "周砚承诺联系幸存者共同核对证据，由林岚决定公开方式。"
+    }
+  ],
+  "action_rules": [
+    {
+      "id": "inspect_notice",
+      "action": {
+        "type": "investigate",
+        "object_id": "notice"
+      },
+      "conditions": {
+        "all": []
+      },
+      "effects": [
+        {
+          "op": "discover_evidence",
+          "evidence_id": "ferry_record"
+        }
+      ],
+      "once": true,
+      "feedback": "停航附注写着：十七日夜，港务命令所有民船离港，只有安澜号货船获准出航。"
+    },
+    {
+      "id": "inspect_satchel",
+      "action": {
+        "type": "investigate",
+        "object_id": "satchel"
+      },
+      "conditions": {
+        "all": [
+          {
+            "op": "has_evidence",
+            "evidence_id": "ferry_record",
+            "expected": true
+          }
+        ]
+      },
+      "effects": [
+        {
+          "op": "discover_evidence",
+          "evidence_id": "press_note"
+        }
+      ],
+      "once": true,
+      "feedback": "匿名线人信封把当晚异响指向旧档案室的十七日调度单，附有登记页码。"
+    },
+    {
+      "id": "inspect_register",
+      "action": {
+        "type": "investigate",
+        "object_id": "register"
+      },
+      "conditions": {
+        "all": [
+          {
+            "op": "has_evidence",
+            "evidence_id": "press_note",
+            "expected": true
+          }
+        ]
+      },
+      "effects": [
+        {
+          "op": "discover_evidence",
+          "evidence_id": "cargo_manifest"
+        }
+      ],
+      "once": true,
+      "feedback": "安澜号货单登记的是农具，仓库副本却标注四十箱军械，批准人是港务督办。"
+    },
+    {
+      "id": "inspect_tide_chart",
+      "action": {
+        "type": "investigate",
+        "object_id": "tide_chart"
+      },
+      "conditions": {
+        "all": [
+          {
+            "op": "has_evidence",
+            "evidence_id": "cargo_manifest",
+            "expected": true
+          }
+        ]
+      },
+      "effects": [
+        {
+          "op": "discover_evidence",
+          "evidence_id": "tide_table"
+        }
+      ],
+      "once": true,
+      "feedback": "当晚东航道暗礁裸露，只有西航道可通行；旧值班图用红铅笔重画了西侧救援入口。"
+    },
+    {
+      "id": "inspect_carbon_copy",
+      "action": {
+        "type": "investigate",
+        "object_id": "carbon_copy"
+      },
+      "conditions": {
+        "all": [
+          {
+            "op": "has_evidence",
+            "evidence_id": "tide_table",
+            "expected": true
+          }
+        ]
+      },
+      "effects": [
+        {
+          "op": "discover_evidence",
+          "evidence_id": "altered_order"
+        }
+      ],
+      "once": true,
+      "feedback": "签章命令要求灯塔停灯两小时方便军械转运，周砚的回批写着：西入口改手动闪光，先救人。"
+    },
+    {
+      "id": "inspect_mooring",
+      "action": {
+        "type": "investigate",
+        "object_id": "mooring"
+      },
+      "conditions": {
+        "all": [
+          {
+            "op": "has_evidence",
+            "evidence_id": "altered_order",
+            "expected": true
+          }
+        ]
+      },
+      "effects": [
+        {
+          "op": "discover_evidence",
+          "evidence_id": "fresh_cut"
+        }
+      ],
+      "once": true,
+      "feedback": "缆绳被利刃主动割断，刀鞘刻有沈船长姓名；断口不符合风暴磨损。"
+    },
+    {
+      "id": "inspect_chest",
+      "action": {
+        "type": "investigate",
+        "object_id": "chest"
+      },
+      "conditions": {
+        "all": [
+          {
+            "op": "has_evidence",
+            "evidence_id": "fresh_cut",
+            "expected": true
+          }
+        ]
+      },
+      "effects": [
+        {
+          "op": "discover_evidence",
+          "evidence_id": "empty_crate"
+        }
+      ],
+      "once": true,
+      "feedback": "军械编号木箱里没有武器，箱壁留有隔舱木板和十四道身高刻痕，底部有儿童鞋印。"
+    },
+    {
+      "id": "inspect_bell_log",
+      "action": {
+        "type": "investigate",
+        "object_id": "bell_log"
+      },
+      "conditions": {
+        "all": [
+          {
+            "op": "has_evidence",
+            "evidence_id": "empty_crate",
+            "expected": true
+          }
+        ]
+      },
+      "effects": [
+        {
+          "op": "discover_evidence",
+          "evidence_id": "bell_times"
+        }
+      ],
+      "once": true,
+      "feedback": "日志记下救生艇两次出发、一次返回；第二次出发后再无返港记录，时间与停灯时段重合。"
+    },
+    {
+      "id": "inspect_recorder",
+      "action": {
+        "type": "investigate",
+        "object_id": "recorder"
+      },
+      "conditions": {
+        "all": [
+          {
+            "op": "has_evidence",
+            "evidence_id": "bell_times",
+            "expected": true
+          }
+        ]
+      },
+      "effects": [
+        {
+          "op": "discover_evidence",
+          "evidence_id": "radio_tape"
+        }
+      ],
+      "once": true,
+      "feedback": "录音中沈船长说：我割断缆绳让军械船暂不能开航，已接回十四名被困工人，正返回寻找最后一人；周砚回应西入口闪光已开启。"
+    },
+    {
+      "id": "inspect_service_hatch",
+      "action": {
+        "type": "investigate",
+        "object_id": "service_hatch"
+      },
+      "conditions": {
+        "all": [
+          {
+            "op": "has_evidence",
+            "evidence_id": "radio_tape",
+            "expected": true
+          }
+        ]
+      },
+      "effects": [
+        {
+          "op": "discover_evidence",
+          "evidence_id": "keeper_key"
+        }
+      ],
+      "once": true,
+      "feedback": "交接盒内有灯塔备用钥匙及督办威胁信：若救援名单外传，幸存者家属承担军械失踪责任。"
+    },
+    {
+      "id": "inspect_lens",
+      "action": {
+        "type": "investigate",
+        "object_id": "lens"
+      },
+      "conditions": {
+        "all": [
+          {
+            "op": "has_evidence",
+            "evidence_id": "keeper_key",
+            "expected": true
+          }
+        ]
+      },
+      "effects": [
+        {
+          "op": "discover_evidence",
+          "evidence_id": "lens_angle"
+        }
+      ],
+      "once": true,
+      "feedback": "透镜停在西入口手动刻度，使用记录与录音吻合；它没有把安澜号诱入东侧暗礁。"
+    },
+    {
+      "id": "inspect_logbook",
+      "action": {
+        "type": "investigate",
+        "object_id": "logbook"
+      },
+      "conditions": {
+        "all": [
+          {
+            "op": "has_evidence",
+            "evidence_id": "lens_angle",
+            "expected": true
+          }
+        ]
+      },
+      "effects": [
+        {
+          "op": "discover_evidence",
+          "evidence_id": "rescue_list"
+        }
+      ],
+      "once": true,
+      "feedback": "日志列出十四名幸存者、接应地址及沈船长返航救人后失踪的报告；附有幸存者共同签署的证明。"
+    },
+    {
+      "id": "hear_warning",
+      "action": {
+        "type": "talk",
+        "character_id": "shen_zhixia",
+        "topic_id": "warning"
+      },
+      "conditions": {
+        "all": [
+          {
+            "op": "has_evidence",
+            "evidence_id": "altered_order",
+            "expected": true
+          }
+        ]
+      },
+      "effects": [
+        {
+          "op": "disclose",
+          "disclosure_id": "warning"
+        },
+        {
+          "op": "trust_delta",
+          "character_id": "shen_zhixia",
+          "value": 1
+        }
+      ],
+      "once": true,
+      "feedback": "沈知夏承认有人一直威胁幸存者家属。她愿意说明父亲的信号，但请你先查清木箱是否真的装过武器。"
+    },
+    {
+      "id": "compare_crate",
+      "action": {
+        "type": "present",
+        "character_id": "shen_zhixia",
+        "evidence_id": "empty_crate"
+      },
+      "conditions": {
+        "all": [
+          {
+            "op": "has_disclosure",
+            "disclosure_id": "warning",
+            "expected": true
+          }
+        ]
+      },
+      "effects": [
+        {
+          "op": "disclose",
+          "disclosure_id": "rescue_signals"
+        },
+        {
+          "op": "trust_delta",
+          "character_id": "shen_zhixia",
+          "value": 1
+        }
+      ],
+      "once": true,
+      "feedback": "沈知夏认出箱内隔舱：父亲改装木箱载人。她教你辨认三短一长的救援钟号，请去钟楼核对记录。"
+    },
+    {
+      "id": "question_keeper",
+      "action": {
+        "type": "present",
+        "character_id": "zhou_yan",
+        "evidence_id": "radio_tape"
+      },
+      "conditions": {
+        "all": [
+          {
+            "op": "has_evidence",
+            "evidence_id": "rescue_list",
+            "expected": true
+          }
+        ]
+      },
+      "effects": [
+        {
+          "op": "disclose",
+          "disclosure_id": "confession"
+        },
+        {
+          "op": "trust_delta",
+          "character_id": "zhou_yan",
+          "value": 1
+        }
+      ],
+      "once": true,
+      "feedback": "周砚承认收到停灯命令后擅改救援信号，也承认隐匿日志。他始终没有沈船长生还的证据。"
+    },
+    {
+      "id": "agree_verification",
+      "action": {
+        "type": "talk",
+        "character_id": "zhou_yan",
+        "topic_id": "verification"
+      },
+      "conditions": {
+        "all": [
+          {
+            "op": "has_disclosure",
+            "disclosure_id": "confession",
+            "expected": true
+          },
+          {
+            "op": "has_disclosure",
+            "disclosure_id": "last_warning",
+            "expected": true
+          }
+        ]
+      },
+      "effects": [
+        {
+          "op": "record_commitment",
+          "commitment_id": "verify_together"
+        }
+      ],
+      "once": true,
+      "feedback": "周砚答应逐项核对证据并联系幸存者。你将独立决定公开方式，不让未核实的传闻成为指控。"
+    }
+  ],
+  "events": [
+    {
+      "id": "keeper_intervenes",
+      "conditions": {
+        "all": [
+          {
+            "op": "at_location",
+            "location_id": "lighthouse"
+          },
+          {
+            "op": "has_evidence",
+            "evidence_id": "keeper_key",
+            "expected": true
+          }
+        ]
+      },
+      "effects": [
+        {
+          "op": "disclose",
+          "disclosure_id": "last_warning"
+        }
+      ],
+      "feedback": "周砚放下透镜，主动提醒你遮去救援名单上的地址。"
+    }
+  ],
+  "endings": [
+    {
+      "id": "publish_truth",
+      "conditions": {
+        "all": [
+          {
+            "op": "at_location",
+            "location_id": "lighthouse"
+          },
+          {
+            "op": "has_evidence",
+            "evidence_id": "rescue_list",
+            "expected": true
+          },
+          {
+            "op": "has_evidence",
+            "evidence_id": "cargo_manifest",
+            "expected": true
+          },
+          {
+            "op": "has_disclosure",
+            "disclosure_id": "confession",
+            "expected": true
+          },
+          {
+            "op": "has_commitment",
+            "commitment_id": "verify_together",
+            "expected": true
+          }
+        ]
+      },
+      "title": "公开真相",
+      "consequence": "林岚发表核对后的报道，遮去住址，公开停灯命令与救援事实。督办受到调查，周砚也须解释隐匿记录；幸存者家属仍需要保护，真相没有让风险立即消失。"
+    },
+    {
+      "id": "guard_together",
+      "conditions": {
+        "all": [
+          {
+            "op": "at_location",
+            "location_id": "lighthouse"
+          },
+          {
+            "op": "has_evidence",
+            "evidence_id": "rescue_list",
+            "expected": true
+          },
+          {
+            "op": "has_disclosure",
+            "disclosure_id": "rescue_signals",
+            "expected": true
+          },
+          {
+            "op": "has_commitment",
+            "commitment_id": "verify_together",
+            "expected": true
+          },
+          {
+            "op": "trust_at_least",
+            "character_id": "shen_zhixia",
+            "value": 2
+          }
+        ]
+      },
+      "title": "共同守护",
+      "consequence": "林岚把证据副本交由幸存者共同保管，先建立匿名证言与保护安排，再约定公开期限。沈船长得到家属内部的正名；督办暂未受追究，承诺需要持续履行。"
+    },
+    {
+      "id": "sink_secret",
+      "conditions": {
+        "all": [
+          {
+            "op": "at_location",
+            "location_id": "lighthouse"
+          },
+          {
+            "op": "has_evidence",
+            "evidence_id": "rescue_list",
+            "expected": true
+          },
+          {
+            "op": "has_evidence",
+            "evidence_id": "altered_order",
+            "expected": true
+          },
+          {
+            "op": "has_disclosure",
+            "disclosure_id": "last_warning",
+            "expected": true
+          },
+          {
+            "op": "has_commitment",
+            "commitment_id": "verify_together",
+            "expected": true
+          }
+        ]
+      },
+      "title": "秘密沉海",
+      "consequence": "林岚决定不发表，也不留下可公开追责的副本，把报道与名单封入废港档案。家属眼前的威胁减轻，官方风暴事故结论继续存在；沈知夏知道父亲救过人，却失去公开正名的机会。"
+    }
+  ]
+}
