@@ -6,6 +6,7 @@ from app.costs import estimate_cny
 from app.execution import ToolSpec
 from app.local_settings import get_key
 from app.operation_schemas import StoryGenerateInput, StoryRepairInput, StorySemanticInput, SceneSemanticInput, SemanticReport
+from app.operation_schemas import ActionInterpretInput,Interpretation,SceneRenderInput,SceneTextDraft
 from app.provider_clients import call_operation_provider
 from app.story_schema import Story
 
@@ -43,3 +44,9 @@ def register_story_operations(registry):
                          ('story.semantic_check',StorySemanticInput,SemanticReport),
                          ('scene.semantic_check',SceneSemanticInput,SemanticReport)]:
         register_operation(registry,name,inp,out)
+
+
+def register_investigation_operations(registry):
+    register_operation(registry,'action.interpret',ActionInterpretInput,Interpretation)
+    register_operation(registry,'scene.render',SceneRenderInput,SceneTextDraft)
+    register_operation(registry,'scene.semantic_check',SceneSemanticInput,SemanticReport)
