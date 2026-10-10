@@ -140,6 +140,12 @@ async def process_creation_task(task_id):
     register_story_operations(registry)
     try:
         async with asyncio.timeout(300):
+            if task.source_task_id:
+                with SessionLocal() as db:
+                    source = db.get(StoryTask,task.source_task_id)
+                    source_trace_id = source.trace_id
+                context.recorder.event(context.task,'creation_resumed',{'source_task_id':task.source_task_id,
+                                                                       'source_trace_id':source_trace_id})
             while True:
                 version = 'draft-2' if repair_count else 'draft-1'
                 if 'raw' not in checkpoint:
@@ -201,6 +207,7 @@ async def process_creation_task(task_id):
                 row = save_story_version(db,story)
                 current.candidate_version_id = row.id
                 current.status = 'awaiting_confirmation'
+                current.stage = 'awaiting_confirmation'
                 append_creation_event(db,current,'awaiting_confirmation',{'intro':story.public_intro,'title':story.title})
     except asyncio.CancelledError:
         _fail_creation(task,context,'cancelled',interrupted=True)

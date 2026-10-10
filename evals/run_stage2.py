@@ -188,7 +188,7 @@ def run_suite(suite,database_url_env):
     from sqlalchemy import create_engine,func,select
     from sqlalchemy.orm import Session
     from app.models import ExecutionTrace,LLMCall
-    from app.costs import PRICE_VERSION
+    from app.costs import EXECUTION_PRICE_VERSION
     with create_engine(url).connect() as connection,Session(bind=connection) as db:
         query = select(LLMCall).where(LLMCall.created_at>=started_at)
         calls = db.scalars(query).all()
@@ -202,7 +202,7 @@ def run_suite(suite,database_url_env):
     report = {'metric_version':manifest['metric_version'],'run_id':run_id,'suite':suite,
               'measurement':'simulated_faults' if suite=='runtime_simulated' else 'real_model_paths',
               'git_commit':commit.stdout.strip(),'manifest_sha256':hashlib.sha256(MANIFEST.read_bytes()).hexdigest(),
-              'model_version':'deepseek-flash','prompt_version':'investigation-single-1','price_version':PRICE_VERSION,
+              'model_version':'deepseek-flash','prompt_version':'investigation-single-1','price_version':EXECUTION_PRICE_VERSION,
               'timestamp':datetime.now(timezone.utc).isoformat(),'duration_ms':round((time.monotonic()-started)*1000,3),
               'manual_reviewers':0,'summary':summarize(results),'cases':results,'usage':usage}
     path = output/'report.json'

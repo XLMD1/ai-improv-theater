@@ -64,6 +64,7 @@ def test_create_confirm_is_atomic_idempotent_and_private():
         assert c.get('/tree',headers=headers).json() == []
         task = prepare(c,headers)
         assert task['status'] == 'awaiting_confirmation',task
+        assert task['stage'] == 'awaiting_confirmation'
         assert 'truth' not in json.dumps(task) and c.get('/tree',headers=headers).json() == []
         body = {'candidate_version_id':task['candidate_version_id'],'content_hash':task['content_hash']}
         first = c.post(f"/story-tasks/{task['id']}/confirm",headers=headers,json=body)
@@ -136,11 +137,13 @@ def test_confirmation_rejects_hash_and_foreign_task_and_stream_is_public():
 
 def test_restart_resume_reuses_candidate_and_does_not_reset_repair():
     from app.db import SessionLocal
-    from app.models import StoryTask
+    from app.models import StoryTask,ExecutionTrace
+    from app.execution_traces import TaskRef,TraceRecorder
     from app.story_creation import CreationRequest,create_creation_task,interrupt_creation_tasks
     with client() as c, patch('app.story_operations.call_operation_provider',side_effect=successful_provider) as provider:
         headers,session = create_session(c)
         source,_ = create_creation_task(session['session_id'],CreationRequest(setting='雾港',era='modern'),uuid4().hex)
+        source_trace = TraceRecorder(SessionLocal).start(TaskRef('creation',source.id,session['session_id']))
         data = sample_data()
         data.update(story_id=source.story_id,story_version='draft-2',setting='雾港',era='modern')
         with SessionLocal.begin() as db:
@@ -160,4 +163,7 @@ def test_restart_resume_reuses_candidate_and_does_not_reset_repair():
         with SessionLocal() as db:
             assert db.get(StoryTask,task_id).repair_count == 1
             assert db.get(StoryTask,source.id).status == 'interrupted'
+            link = db.scalar(select(ExecutionTrace).where(ExecutionTrace.creation_task_id==task_id,
+                              ExecutionTrace.event_type=='creation_resumed'))
+            assert link and link.payload['source_trace_id']==source_trace
         c.delete('/local-settings/keys/deepseek')

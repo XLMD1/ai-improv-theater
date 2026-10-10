@@ -7,7 +7,7 @@ from typing import Callable, Literal
 
 from pydantic import BaseModel, ConfigDict, ValidationError
 
-from app.costs import PRICE_VERSION, check_execution_budget, estimate_cny
+from app.costs import EXECUTION_PRICE_VERSION, check_execution_budget, estimate_cny
 from app.execution_traces import TaskRef, TraceRecorder, TraceStorageFailure
 from app.provider_clients import ProviderOutcome
 
@@ -123,7 +123,7 @@ async def execute(registry, name, version, raw_input, context):
             except Exception:
                 outcome = ProviderOutcome(error_code='internal_error', request_sent=True)
             data = asdict(outcome)
-            data.update(provider=context.provider,model_id=context.model_id,price_version=PRICE_VERSION,
+            data.update(provider=context.provider,model_id=context.model_id,price_version=EXECUTION_PRICE_VERSION,
                         duration_ms=round((time.monotonic()-started)*1000),estimated_cost_cny=None)
             if outcome.input_tokens is not None and outcome.output_tokens is not None:
                 data['estimated_cost_cny'] = str(estimate_cny(context.provider,outcome.input_tokens,outcome.output_tokens))
