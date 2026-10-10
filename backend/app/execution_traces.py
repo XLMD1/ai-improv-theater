@@ -118,7 +118,7 @@ class TraceRecorder:
                         raise ValueError('attempt_result_conflict')
                     return
                 call = None
-                if provider_outcome.get('request_sent'):
+                if provider_outcome.get('request_sent') and provider_outcome.get('chargeable', True):
                     cost = provider_outcome.get('estimated_cost_cny')
                     call = LLMCall(run_id=begin.run_id, creation_task_id=begin.creation_task_id,
                                    trace_id=ref.trace_id, span_id=ref.span_id, attempt_id=ref.attempt_id,

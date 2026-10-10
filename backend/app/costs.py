@@ -3,8 +3,9 @@
 from decimal import Decimal
 
 from sqlalchemy import func, select
+from sqlalchemy.orm import aliased
 
-from app.models import LLMCall
+from app.models import ExecutionTrace, LLMCall
 
 
 PRICE_VERSION = "2026-10-08-peak-usd-cny7.5"
@@ -33,3 +34,17 @@ def budget_status(db) -> dict:
         "warning_cny": int(WARNING_CNY), "limit_cny": int(LIMIT_CNY),
         "status": "blocked" if spent >= LIMIT_CNY else "warning" if spent >= WARNING_CNY else "ok",
     }
+
+
+def check_execution_budget(db, estimated_cost=Decimal(0)):
+    """Unknown incurred usage or an unfinished audit blocks another external call."""
+    if total_spend_cny(db) + Decimal(str(estimated_cost)) >= LIMIT_CNY:
+        raise ValueError('budget_exhausted')
+    if db.scalar(select(LLMCall.id).where(LLMCall.usage_status == 'uncertain').limit(1)):
+        raise ValueError('cost_unconfirmed')
+    finished = aliased(ExecutionTrace)
+    complete = select(finished.id).where(finished.trace_id == ExecutionTrace.trace_id,
+                                         finished.span_id == ExecutionTrace.span_id,
+                                         finished.event_type == 'attempt_finished').exists()
+    if db.scalar(select(ExecutionTrace.id).where(ExecutionTrace.event_type == 'attempt_started', ~complete).limit(1)):
+        raise ValueError('audit_incomplete')
