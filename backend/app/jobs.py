@@ -84,7 +84,9 @@ def create_run(session_id: str, parent_node_id: str, action: Action, key: str) -
     if not 1 <= len(key) <= 80:
         raise StoryValidationError("invalid Idempotency-Key")
     with SessionLocal.begin() as db:
-        db.execute(select(StorySession).where(StorySession.id == session_id).with_for_update()).scalar_one()
+        locked_session = db.execute(select(StorySession).where(StorySession.id == session_id).with_for_update()).scalar_one()
+        if locked_session.engine_version == 'investigation-1':
+            raise StoryValidationError('story_not_ready' if locked_session.story_version_id is None else 'investigation_pipeline_not_ready')
         existing = db.scalar(select(Run).where(Run.session_id == session_id, Run.idempotency_key == key))
         if existing:
             if existing.parent_node_id != parent_node_id or existing.action != action.model_dump():
