@@ -79,9 +79,15 @@ def execute_case(case: dict, output: Path, environment: dict) -> dict:
     return result
 
 
+def fixture_digest(path: Path) -> str:
+    content = path.read_bytes()
+    content.decode("utf-8")
+    return hashlib.sha256(content.replace(b"\r\n", b"\n")).hexdigest()
+
+
 def load_manifest():
     manifest = json.loads(MANIFEST.read_text(encoding="utf-8"))
-    if manifest.get("metric_version") != "task-success-1":
+    if manifest.get("metric_version") != "task-success-1" or manifest.get("fixture_hash_mode") != "utf8-lf":
         raise ValueError("unsupported_metric_version")
     cases = manifest.get("cases")
     if not isinstance(cases, list) or not cases:
@@ -133,11 +139,13 @@ def run_suite(suite: str, database_url_env: str) -> tuple[dict, Path]:
         except ValueError as exc:
             error = str(exc)
     fixture_hashes = {}
+    fixture_raw_hashes = {}
     for relative, expected in manifest["fixture_hashes"].items():
         target = (ROOT / relative).resolve()
         if not target.is_relative_to(ROOT.resolve()):
             raise ValueError("invalid_fixture_path")
-        digest = hashlib.sha256(target.read_bytes()).hexdigest()
+        digest = fixture_digest(target)
+        fixture_raw_hashes[relative] = hashlib.sha256(target.read_bytes()).hexdigest()
         fixture_hashes[relative] = digest
         if digest != expected:
             error = "fixture_hash_mismatch"
@@ -152,7 +160,7 @@ def run_suite(suite: str, database_url_env: str) -> tuple[dict, Path]:
         "git_dirty": bool(dirty.stdout.strip()),        "metric_version": manifest["metric_version"], "run_id": run_id, "suite": suite,
         "timestamp": datetime.now(timezone.utc).isoformat(), "git_commit": commit.stdout.strip(),
         "manifest_sha256": hashlib.sha256(MANIFEST.read_bytes()).hexdigest(),
-        "fixture_hashes": fixture_hashes, "story_version": manifest["versions"][suite]["story"],
+        "fixture_hashes": fixture_hashes, "fixture_hash_mode": "utf8-lf", "fixture_raw_sha256": fixture_raw_hashes, "story_version": manifest["versions"][suite]["story"],
         "engine_version": manifest["versions"][suite]["engine"], "model_version": None, "prompt_version": None,
         "measurement": "deterministic_rules" if suite == "rules" else "legacy_saved_node_compatibility",
         "provider_calls": 0,

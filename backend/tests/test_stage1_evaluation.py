@@ -105,3 +105,11 @@ def test_saved_artifacts_never_include_raw_failure_or_output(tmp_path):
     assert result["status"] == "failed"
     assert secret not in str(result)
     assert all(secret not in artifact.read_text(encoding="utf-8") for artifact in output.iterdir())
+
+def test_fixture_hash_is_portable_across_windows_line_endings(tmp_path):
+    import hashlib
+    content = (runner.BACKEND / "app" / "canon.json").read_bytes().replace(b"\r\n", b"\n")
+    windows = tmp_path / "canon.json"
+    windows.write_bytes(content.replace(b"\n", b"\r\n"))
+    assert hashlib.sha256(windows.read_bytes()).hexdigest() != hashlib.sha256(content).hexdigest()
+    assert runner.fixture_digest(windows) == hashlib.sha256(content).hexdigest()

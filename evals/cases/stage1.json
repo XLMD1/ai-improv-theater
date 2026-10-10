@@ -841,6 +841,22 @@
       "story_version": "draft-1",
       "engine_version": "investigation-1",
       "fixture_sha256": "aea817271f5f6f71d1d1f014d26ed1cff095f8e9bcd4bd96f5fce2a05ad01610"
+    },
+    {
+      "id": "windows_fixture_hash",
+      "suite": "rules",
+      "test": "tests/test_stage1_evaluation.py::test_fixture_hash_is_portable_across_windows_line_endings",
+      "input": "Windows CRLF 与 LF 相同 JSON 文本",
+      "fault": "Git 换行转换",
+      "expected": "same_normalized_digest",
+      "invariants": [
+        "同时保留原文件字节哈希，正文改变不能被掩盖"
+      ],
+      "timeout_seconds": 60,
+      "story_version": "draft-1",
+      "engine_version": "investigation-1",
+      "fixture_sha256": "aea817271f5f6f71d1d1f014d26ed1cff095f8e9bcd4bd96f5fce2a05ad01610"
     }
-  ]
+  ],
+  "fixture_hash_mode": "utf8-lf"
 }

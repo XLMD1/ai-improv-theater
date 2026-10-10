@@ -43,7 +43,7 @@
 
 ## 5. 输出与可复现性
 
-每次报告包含 run ID、时间、Git commit、评测口径版本、suite、case manifest/fixture SHA-256、模型/引擎/prompt 版本（无模型时明确 none）、总数及各终态、成功率、逐案失败详情和执行时长。模拟测试记录故障种子/时钟设置；真实调用另报时延、fallback、token 和估算费用，缺 usage 的项目标未确认。
+fixture 比对使用 UTF-8 文本的 LF 规范化字节 SHA-256（fixture_hash_mode=utf8-lf），同时记录原文件 fixture_raw_sha256；Windows Git 换行转换不改变固定案例身份，正文及其他字节变化仍拒绝。每次报告包含 run ID、时间、Git commit、评测口径版本、suite、case manifest/fixture SHA-256、模型/引擎/prompt 版本（无模型时明确 none）、总数及各终态、成功率、逐案失败详情和执行时长。模拟测试记录故障种子/时钟设置；真实调用另报时延、fallback、token 和估算费用，缺 usage 的项目标未确认。
 
 stdout 给出摘要；结构化 JSON 保存逐案状态和结果引用，后续报告引用同一 run ID，不手工改失败记录。集成测试缺测试库时标记未执行并返回非零验收结果；纯规则套件仍可单独运行。密钥、连接 URL、会话令牌不进入输出，内部真相与候选稿只保存在本地受控产物，不进入公开评测展示。
 
