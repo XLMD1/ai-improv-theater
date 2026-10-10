@@ -57,3 +57,17 @@ def test_invalid_story_is_rejected(mutate):
 def test_action_schema_rejects_untrusted_fields(action):
     with pytest.raises(ValidationError):
         parse_action(action)
+
+
+def test_approved_sample_matches_reviewed_content_and_frozen_hash():
+    approval = json.loads((FIXTURE.parent / "mist_harbor_approval.json").read_text(encoding="utf-8"))
+    data = sample_data()
+    story = Story.model_validate(data)
+    assert approval["approval_status"] == "approved"
+    assert approval["human_reviewer_count"] == 1
+    assert approval["approval_statement"] == "确认批准"
+    assert (story.story_id, story.story_version) == (approval["story_id"], approval["story_version"])
+    assert story.story_version == "1.0.0"
+    assert canonical_hash(story) == approval["content_hash"]
+    data["story_version"] = approval["reviewed_story_version"]
+    assert canonical_hash(Story.model_validate(data)) == approval["reviewed_content_hash"]

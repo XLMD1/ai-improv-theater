@@ -1,9 +1,9 @@
 {
   "metric_version": "task-success-1",
-  "manifest_version": "stage1-1",
+  "manifest_version": "stage1-2",
   "versions": {
     "rules": {
-      "story": "draft-1",
+      "story": "1.0.0",
       "engine": "investigation-1"
     },
     "legacy": {
@@ -12,9 +12,10 @@
     }
   },
   "fixture_hashes": {
-    "backend/tests/fixtures/mist_harbor_investigation.json": "404b60fc9639adb23f327b12131bdd3611cd09531f3dc022e5236f351045dad5",
+    "backend/tests/fixtures/mist_harbor_investigation.json": "8935c8fc113fcd6b03be1e49bb41a4c7b67917ec38fb44ab9d50dc33cbf940ff",
     "backend/tests/fixtures/mist_harbor_paths.json": "eee7acb7e126a51cd49f3c02ee8c39521d7ecaa205d721021ebc2e709ace4f34",
-    "backend/app/canon.json": "7cb013d1a831fbfe2280f0fa6cfc56ae1148d3e6dffecc71cc9a0b9dc33ca4f4"
+    "backend/app/canon.json": "7cb013d1a831fbfe2280f0fa6cfc56ae1148d3e6dffecc71cc9a0b9dc33ca4f4",
+    "backend/tests/fixtures/mist_harbor_approval.json": "21b9b47586ae07a18eafe72455958c639541d7a6bb5907cc4dc4c5218f43bcc5"
   },
   "cases": [
     {
@@ -118,9 +119,9 @@
           "ending_id": "publish_truth"
         }
       ],
-      "story_version": "draft-1",
+      "story_version": "1.0.0",
       "engine_version": "investigation-1",
-      "fixture_sha256": "404b60fc9639adb23f327b12131bdd3611cd09531f3dc022e5236f351045dad5"
+      "fixture_sha256": "8935c8fc113fcd6b03be1e49bb41a4c7b67917ec38fb44ab9d50dc33cbf940ff"
     },
     {
       "id": "ending_guard",
@@ -223,9 +224,9 @@
           "ending_id": "guard_together"
         }
       ],
-      "story_version": "draft-1",
+      "story_version": "1.0.0",
       "engine_version": "investigation-1",
-      "fixture_sha256": "404b60fc9639adb23f327b12131bdd3611cd09531f3dc022e5236f351045dad5"
+      "fixture_sha256": "8935c8fc113fcd6b03be1e49bb41a4c7b67917ec38fb44ab9d50dc33cbf940ff"
     },
     {
       "id": "ending_sink",
@@ -328,9 +329,9 @@
           "ending_id": "sink_secret"
         }
       ],
-      "story_version": "draft-1",
+      "story_version": "1.0.0",
       "engine_version": "investigation-1",
-      "fixture_sha256": "404b60fc9639adb23f327b12131bdd3611cd09531f3dc022e5236f351045dad5"
+      "fixture_sha256": "8935c8fc113fcd6b03be1e49bb41a4c7b67917ec38fb44ab9d50dc33cbf940ff"
     },
     {
       "id": "same_place_and_rejection",
@@ -343,9 +344,9 @@
         "父快照不变，拒绝不增回合"
       ],
       "timeout_seconds": 60,
-      "story_version": "draft-1",
+      "story_version": "1.0.0",
       "engine_version": "investigation-1",
-      "fixture_sha256": "404b60fc9639adb23f327b12131bdd3611cd09531f3dc022e5236f351045dad5"
+      "fixture_sha256": "8935c8fc113fcd6b03be1e49bb41a4c7b67917ec38fb44ab9d50dc33cbf940ff"
     },
     {
       "id": "reachability",
@@ -358,9 +359,9 @@
         "五地点、全部证据、三个结局、事件一次性"
       ],
       "timeout_seconds": 60,
-      "story_version": "draft-1",
+      "story_version": "1.0.0",
       "engine_version": "investigation-1",
-      "fixture_sha256": "404b60fc9639adb23f327b12131bdd3611cd09531f3dc022e5236f351045dad5"
+      "fixture_sha256": "8935c8fc113fcd6b03be1e49bb41a4c7b67917ec38fb44ab9d50dc33cbf940ff"
     },
     {
       "id": "public_and_siblings",
@@ -373,9 +374,9 @@
         "兄弟状态不污染，私有事实过滤"
       ],
       "timeout_seconds": 60,
-      "story_version": "draft-1",
+      "story_version": "1.0.0",
       "engine_version": "investigation-1",
-      "fixture_sha256": "404b60fc9639adb23f327b12131bdd3611cd09531f3dc022e5236f351045dad5"
+      "fixture_sha256": "8935c8fc113fcd6b03be1e49bb41a4c7b67917ec38fb44ab9d50dc33cbf940ff"
     },
     {
       "id": "forged_state",
@@ -388,9 +389,9 @@
         "状态引用必须属于同一版本"
       ],
       "timeout_seconds": 60,
-      "story_version": "draft-1",
+      "story_version": "1.0.0",
       "engine_version": "investigation-1",
-      "fixture_sha256": "404b60fc9639adb23f327b12131bdd3611cd09531f3dc022e5236f351045dad5"
+      "fixture_sha256": "8935c8fc113fcd6b03be1e49bb41a4c7b67917ec38fb44ab9d50dc33cbf940ff"
     },
     {
       "id": "trust_atomicity",
@@ -403,9 +404,9 @@
         "整个批次失败，父状态不变"
       ],
       "timeout_seconds": 60,
-      "story_version": "draft-1",
+      "story_version": "1.0.0",
       "engine_version": "investigation-1",
-      "fixture_sha256": "404b60fc9639adb23f327b12131bdd3611cd09531f3dc022e5236f351045dad5"
+      "fixture_sha256": "8935c8fc113fcd6b03be1e49bb41a4c7b67917ec38fb44ab9d50dc33cbf940ff"
     },
     {
       "id": "rule_conflict",
@@ -418,9 +419,9 @@
         "不猜优先级"
       ],
       "timeout_seconds": 60,
-      "story_version": "draft-1",
+      "story_version": "1.0.0",
       "engine_version": "investigation-1",
-      "fixture_sha256": "404b60fc9639adb23f327b12131bdd3611cd09531f3dc022e5236f351045dad5"
+      "fixture_sha256": "8935c8fc113fcd6b03be1e49bb41a4c7b67917ec38fb44ab9d50dc33cbf940ff"
     },
     {
       "id": "evidence_deadlock",
@@ -433,9 +434,9 @@
         "证据互锁、地点和结局不可达"
       ],
       "timeout_seconds": 60,
-      "story_version": "draft-1",
+      "story_version": "1.0.0",
       "engine_version": "investigation-1",
-      "fixture_sha256": "404b60fc9639adb23f327b12131bdd3611cd09531f3dc022e5236f351045dad5"
+      "fixture_sha256": "8935c8fc113fcd6b03be1e49bb41a4c7b67917ec38fb44ab9d50dc33cbf940ff"
     },
     {
       "id": "unreachable_and_cap",
@@ -448,9 +449,9 @@
         "不能把超限当通过"
       ],
       "timeout_seconds": 60,
-      "story_version": "draft-1",
+      "story_version": "1.0.0",
       "engine_version": "investigation-1",
-      "fixture_sha256": "404b60fc9639adb23f327b12131bdd3611cd09531f3dc022e5236f351045dad5"
+      "fixture_sha256": "8935c8fc113fcd6b03be1e49bb41a4c7b67917ec38fb44ab9d50dc33cbf940ff"
     },
     {
       "id": "event_closure",
@@ -463,9 +464,9 @@
         "事件闭包有界且不重复"
       ],
       "timeout_seconds": 60,
-      "story_version": "draft-1",
+      "story_version": "1.0.0",
       "engine_version": "investigation-1",
-      "fixture_sha256": "404b60fc9639adb23f327b12131bdd3611cd09531f3dc022e5236f351045dad5"
+      "fixture_sha256": "8935c8fc113fcd6b03be1e49bb41a4c7b67917ec38fb44ab9d50dc33cbf940ff"
     },
     {
       "id": "story_schema",
@@ -478,9 +479,9 @@
         "白名单实体与效果"
       ],
       "timeout_seconds": 60,
-      "story_version": "draft-1",
+      "story_version": "1.0.0",
       "engine_version": "investigation-1",
-      "fixture_sha256": "404b60fc9639adb23f327b12131bdd3611cd09531f3dc022e5236f351045dad5"
+      "fixture_sha256": "8935c8fc113fcd6b03be1e49bb41a4c7b67917ec38fb44ab9d50dc33cbf940ff"
     },
     {
       "id": "action_schema",
@@ -493,9 +494,9 @@
         "未经验证的效果不进状态"
       ],
       "timeout_seconds": 60,
-      "story_version": "draft-1",
+      "story_version": "1.0.0",
       "engine_version": "investigation-1",
-      "fixture_sha256": "404b60fc9639adb23f327b12131bdd3611cd09531f3dc022e5236f351045dad5"
+      "fixture_sha256": "8935c8fc113fcd6b03be1e49bb41a4c7b67917ec38fb44ab9d50dc33cbf940ff"
     },
     {
       "id": "canonical_hash",
@@ -508,9 +509,9 @@
         "严格协议与稳定哈希"
       ],
       "timeout_seconds": 60,
-      "story_version": "draft-1",
+      "story_version": "1.0.0",
       "engine_version": "investigation-1",
-      "fixture_sha256": "404b60fc9639adb23f327b12131bdd3611cd09531f3dc022e5236f351045dad5"
+      "fixture_sha256": "8935c8fc113fcd6b03be1e49bb41a4c7b67917ec38fb44ab9d50dc33cbf940ff"
     },
     {
       "id": "denominator",
@@ -523,9 +524,9 @@
         "固定分母；空套件错误"
       ],
       "timeout_seconds": 60,
-      "story_version": "draft-1",
+      "story_version": "1.0.0",
       "engine_version": "investigation-1",
-      "fixture_sha256": "404b60fc9639adb23f327b12131bdd3611cd09531f3dc022e5236f351045dad5"
+      "fixture_sha256": "8935c8fc113fcd6b03be1e49bb41a4c7b67917ec38fb44ab9d50dc33cbf940ff"
     },
     {
       "id": "database_guard",
@@ -538,9 +539,9 @@
         "不连接用户数据库"
       ],
       "timeout_seconds": 60,
-      "story_version": "draft-1",
+      "story_version": "1.0.0",
       "engine_version": "investigation-1",
-      "fixture_sha256": "404b60fc9639adb23f327b12131bdd3611cd09531f3dc022e5236f351045dad5"
+      "fixture_sha256": "8935c8fc113fcd6b03be1e49bb41a4c7b67917ec38fb44ab9d50dc33cbf940ff"
     },
     {
       "id": "evaluation_timeout",
@@ -553,9 +554,9 @@
         "超时计错误且保留分母"
       ],
       "timeout_seconds": 60,
-      "story_version": "draft-1",
+      "story_version": "1.0.0",
       "engine_version": "investigation-1",
-      "fixture_sha256": "404b60fc9639adb23f327b12131bdd3611cd09531f3dc022e5236f351045dad5"
+      "fixture_sha256": "8935c8fc113fcd6b03be1e49bb41a4c7b67917ec38fb44ab9d50dc33cbf940ff"
     },
     {
       "id": "evaluation_failure",
@@ -568,9 +569,9 @@
         "失败不能成功，产物只含状态数量"
       ],
       "timeout_seconds": 60,
-      "story_version": "draft-1",
+      "story_version": "1.0.0",
       "engine_version": "investigation-1",
-      "fixture_sha256": "404b60fc9639adb23f327b12131bdd3611cd09531f3dc022e5236f351045dad5"
+      "fixture_sha256": "8935c8fc113fcd6b03be1e49bb41a4c7b67917ec38fb44ab9d50dc33cbf940ff"
     },
     {
       "id": "evaluation_missing",
@@ -583,9 +584,9 @@
         "零退出码不能替代验证结果"
       ],
       "timeout_seconds": 60,
-      "story_version": "draft-1",
+      "story_version": "1.0.0",
       "engine_version": "investigation-1",
-      "fixture_sha256": "404b60fc9639adb23f327b12131bdd3611cd09531f3dc022e5236f351045dad5"
+      "fixture_sha256": "8935c8fc113fcd6b03be1e49bb41a4c7b67917ec38fb44ab9d50dc33cbf940ff"
     },
     {
       "id": "legacy_endings",
@@ -733,9 +734,9 @@
         "同一裁决路径，父状态不变或合法后继，实体由故事提供"
       ],
       "timeout_seconds": 60,
-      "story_version": "draft-1",
+      "story_version": "1.0.0",
       "engine_version": "investigation-1",
-      "fixture_sha256": "404b60fc9639adb23f327b12131bdd3611cd09531f3dc022e5236f351045dad5"
+      "fixture_sha256": "8935c8fc113fcd6b03be1e49bb41a4c7b67917ec38fb44ab9d50dc33cbf940ff"
     },
     {
       "id": "character_evidence",
@@ -748,9 +749,9 @@
         "同一裁决路径，父状态不变或合法后继，实体由故事提供"
       ],
       "timeout_seconds": 60,
-      "story_version": "draft-1",
+      "story_version": "1.0.0",
       "engine_version": "investigation-1",
-      "fixture_sha256": "404b60fc9639adb23f327b12131bdd3611cd09531f3dc022e5236f351045dad5"
+      "fixture_sha256": "8935c8fc113fcd6b03be1e49bb41a4c7b67917ec38fb44ab9d50dc33cbf940ff"
     },
     {
       "id": "action_atomicity",
@@ -763,9 +764,9 @@
         "同一裁决路径，父状态不变或合法后继，实体由故事提供"
       ],
       "timeout_seconds": 60,
-      "story_version": "draft-1",
+      "story_version": "1.0.0",
       "engine_version": "investigation-1",
-      "fixture_sha256": "404b60fc9639adb23f327b12131bdd3611cd09531f3dc022e5236f351045dad5"
+      "fixture_sha256": "8935c8fc113fcd6b03be1e49bb41a4c7b67917ec38fb44ab9d50dc33cbf940ff"
     },
     {
       "id": "event_visibility",
@@ -778,9 +779,9 @@
         "同一裁决路径，父状态不变或合法后继，实体由故事提供"
       ],
       "timeout_seconds": 60,
-      "story_version": "draft-1",
+      "story_version": "1.0.0",
       "engine_version": "investigation-1",
-      "fixture_sha256": "404b60fc9639adb23f327b12131bdd3611cd09531f3dc022e5236f351045dad5"
+      "fixture_sha256": "8935c8fc113fcd6b03be1e49bb41a4c7b67917ec38fb44ab9d50dc33cbf940ff"
     },
     {
       "id": "data_driven_ids",
@@ -793,9 +794,9 @@
         "同一裁决路径，父状态不变或合法后继，实体由故事提供"
       ],
       "timeout_seconds": 60,
-      "story_version": "draft-1",
+      "story_version": "1.0.0",
       "engine_version": "investigation-1",
-      "fixture_sha256": "404b60fc9639adb23f327b12131bdd3611cd09531f3dc022e5236f351045dad5"
+      "fixture_sha256": "8935c8fc113fcd6b03be1e49bb41a4c7b67917ec38fb44ab9d50dc33cbf940ff"
     },
     {
       "id": "report_coverage",
@@ -808,9 +809,9 @@
         "行动数来自实际裁决见证，不由行动数推断分钟"
       ],
       "timeout_seconds": 60,
-      "story_version": "draft-1",
+      "story_version": "1.0.0",
       "engine_version": "investigation-1",
-      "fixture_sha256": "404b60fc9639adb23f327b12131bdd3611cd09531f3dc022e5236f351045dad5"
+      "fixture_sha256": "8935c8fc113fcd6b03be1e49bb41a4c7b67917ec38fb44ab9d50dc33cbf940ff"
     },
     {
       "id": "selector_isolation",
@@ -823,9 +824,9 @@
         "所有必需断言执行，磁盘产物仅安全状态数量，不含诊断或令牌"
       ],
       "timeout_seconds": 60,
-      "story_version": "draft-1",
+      "story_version": "1.0.0",
       "engine_version": "investigation-1",
-      "fixture_sha256": "404b60fc9639adb23f327b12131bdd3611cd09531f3dc022e5236f351045dad5"
+      "fixture_sha256": "8935c8fc113fcd6b03be1e49bb41a4c7b67917ec38fb44ab9d50dc33cbf940ff"
     },
     {
       "id": "artifact_redaction",
@@ -838,9 +839,9 @@
         "所有必需断言执行，磁盘产物仅安全状态数量，不含诊断或令牌"
       ],
       "timeout_seconds": 60,
-      "story_version": "draft-1",
+      "story_version": "1.0.0",
       "engine_version": "investigation-1",
-      "fixture_sha256": "404b60fc9639adb23f327b12131bdd3611cd09531f3dc022e5236f351045dad5"
+      "fixture_sha256": "8935c8fc113fcd6b03be1e49bb41a4c7b67917ec38fb44ab9d50dc33cbf940ff"
     },
     {
       "id": "windows_fixture_hash",
@@ -853,9 +854,25 @@
         "同时保留原文件字节哈希，正文改变不能被掩盖"
       ],
       "timeout_seconds": 60,
-      "story_version": "draft-1",
+      "story_version": "1.0.0",
       "engine_version": "investigation-1",
-      "fixture_sha256": "404b60fc9639adb23f327b12131bdd3611cd09531f3dc022e5236f351045dad5"
+      "fixture_sha256": "8935c8fc113fcd6b03be1e49bb41a4c7b67917ec38fb44ab9d50dc33cbf940ff"
+    },
+    {
+      "id": "approved_sample_freeze",
+      "suite": "rules",
+      "test": "tests/test_investigation_schema.py::test_approved_sample_matches_reviewed_content_and_frozen_hash",
+      "input": "批准版本、审定原稿及冻结记录",
+      "fault": null,
+      "expected": "approved_hash_and_reviewed_content_match",
+      "invariants": [
+        "批准身份与规范化哈希固定",
+        "仅版本标识变化，剧情及规则与审定原稿一致"
+      ],
+      "timeout_seconds": 30,
+      "story_version": "1.0.0",
+      "engine_version": "investigation-1",
+      "fixture_sha256": "8935c8fc113fcd6b03be1e49bb41a4c7b67917ec38fb44ab9d50dc33cbf940ff"
     }
   ],
   "fixture_hash_mode": "utf8-lf"
