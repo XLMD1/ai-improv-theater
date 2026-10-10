@@ -1,7 +1,7 @@
 from datetime import datetime, timezone
 from uuid import uuid4
 
-from sqlalchemy import JSON, DateTime, ForeignKey, Index, Integer, Numeric, String, UniqueConstraint
+from sqlalchemy import CheckConstraint, JSON, DateTime, ForeignKey, Index, Integer, Numeric, String, UniqueConstraint
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -19,11 +19,32 @@ def now() -> datetime:
 JsonType = JSON().with_variant(JSONB(), "postgresql")
 
 
+class StoryVersion(Base):
+    __tablename__ = "story_versions"
+    __table_args__ = (
+        UniqueConstraint("story_id", "story_version", name="uq_story_version_identity"),
+        CheckConstraint("approval_status IN ('draft','approved')", name="ck_story_approval_status"),
+    )
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=uid)
+    story_id: Mapped[str] = mapped_column(String(36), nullable=False)
+    story_version: Mapped[str] = mapped_column(String(30), nullable=False)
+    schema_version: Mapped[str] = mapped_column(String(30), nullable=False)
+    engine_version: Mapped[str] = mapped_column(String(30), nullable=False)
+    definition: Mapped[dict] = mapped_column(JsonType, nullable=False)
+    content_hash: Mapped[str] = mapped_column(String(64), nullable=False)
+    approval_status: Mapped[str] = mapped_column(String(20), default="draft", nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now, nullable=False)
+
+
 class StorySession(Base):
     __tablename__ = "sessions"
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=uid)
     token_hash: Mapped[str] = mapped_column(String(64), nullable=False)
+    story_version_id: Mapped[str | None] = mapped_column(ForeignKey("story_versions.id", name="fk_session_story_version"), nullable=True)
+    engine_version: Mapped[str | None] = mapped_column(String(30), nullable=True)
+    mode: Mapped[str | None] = mapped_column(String(20), nullable=True)
     provider: Mapped[str] = mapped_column(String(20), default="demo", nullable=False)
     model_id: Mapped[str] = mapped_column(String(100), default="demo", nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now, nullable=False)
@@ -36,7 +57,8 @@ class Node(Base):
     session_id: Mapped[str] = mapped_column(ForeignKey("sessions.id"), nullable=False, index=True)
     parent_id: Mapped[str | None] = mapped_column(ForeignKey("nodes.id"), nullable=True, index=True)
     depth: Mapped[int] = mapped_column(Integer, nullable=False)
-    scene_id: Mapped[str] = mapped_column(String(8), nullable=False)
+    story_version_id: Mapped[str | None] = mapped_column(ForeignKey("story_versions.id", name="fk_node_story_version"), nullable=True)
+    scene_id: Mapped[str] = mapped_column(String(64), nullable=False)
     state_snapshot: Mapped[dict] = mapped_column(JsonType, nullable=False)
     rendered_scene: Mapped[dict] = mapped_column(JsonType, nullable=False)
     canon_version: Mapped[str] = mapped_column(String(30), nullable=False)

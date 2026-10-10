@@ -22,7 +22,19 @@ def validate_change(change: StateChange) -> None:
         raise StoryValidationError("invalid relation key")
 
 
-def apply_state_changes(parent_state: dict, scene_id: str, changes: list[StateChange]) -> dict:
+def apply_state_changes(parent_state: dict, scene_id: str | None = None,
+                        changes: list[StateChange] | None = None, *, story=None, action: dict | None = None):
+    engine = parent_state.get("engine_version")
+    if engine == "investigation-1":
+        if story is None or action is None or scene_id is not None or changes is not None:
+            raise StoryValidationError("investigation_requires_story_and_action")
+        from app.investigation import _adjudicate
+        from app.story_schema import Story
+        return _adjudicate(Story.model_validate(story.model_dump()), parent_state, action)
+    if engine is not None or parent_state.get("schema_version", 1) != 1:
+        raise StoryValidationError("unsupported_state_version")
+    if story is not None or action is not None or scene_id is None or changes is None:
+        raise StoryValidationError("legacy_requires_scene_and_changes")
     validate_transition(parent_state["scene_id"], scene_id)
     state = deepcopy(parent_state)
     for change in changes:

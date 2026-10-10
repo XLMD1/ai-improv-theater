@@ -15,3 +15,6 @@ coverage/
 *.sqlite3
 .local_pg/
 .npm-cache/
+
+.superpowers/
+runtime/
