@@ -26,7 +26,7 @@
 
 ### 阶段 1：故事数据与规则
 
-当前状态：阶段 1 已验收。用户于 2026-10-10 批准完整[雾港样本](design/mist-harbor-draft-review.md)，已冻结为 1.0.0；完整后端测试 88 项通过，批准版本规则评测 30/30、兼容评测 9/9。见[批准与冻结日志](development-log/2026-10-10-stage-1-approval.md)及[批准版本评测](evaluation/2026-10-10-stage-1-approved-results.md)。阶段 2 已开始设计准备，代码尚未实现。
+当前状态：阶段 1 已验收。用户于 2026-10-10 批准完整[雾港样本](design/mist-harbor-draft-review.md)，已冻结为 1.0.0；完整后端测试 88 项通过，批准版本规则评测 30/30、兼容评测 9/9。见[批准与冻结日志](development-log/2026-10-10-stage-1-approval.md)及[批准版本评测](evaluation/2026-10-10-stage-1-approved-results.md)。阶段 2 已接入后端创建与调查 API；阶段 1 历史数字保留，阶段 2 的新增验证独立记录。
 
 - [x] 固定版本化故事协议、服务端声明式规则及调查状态，区分行动回合和地点切换。
 - [x] 建立实体引用、地点可达性、证据依赖及三个结局可达性校验，明确语义检查的输入和验收方式。
@@ -40,7 +40,7 @@
 
 ### 阶段 2：自定义故事与普通流水线
 
-当前状态：用户已确认[阶段 2 专题设计](design/stage-2-custom-stories.md)；[实施计划](design/stage-2-implementation-plan.md)待审阅和选择执行方式，代码实现及验收尚未开始。工作记录见[设计准备日志](development-log/2026-10-10-stage-2-design.md)。
+当前状态：用户已确认[阶段 2 专题设计](design/stage-2-custom-stories.md)及[实施计划](design/stage-2-implementation-plan.md)，选择顺序实施与一次独立审查。后端创建、调查流水线、执行记录和故障评测已实现并进行自动验证；真实 ancient/modern/future 路径和人工剧情核查未执行通过，阶段整体保持未验收。见[实施日志](development-log/2026-10-10-stage-2.md)及[实测报告](evaluation/2026-10-10-stage-2-results.md)。
 
 - [ ] 实现背景与年代生成、结构/规则/语义检查、至多一次设定修复、无剧透简介及玩家确认；批准故事版本固定。
 - [ ] 实现“AI 理解行动 → 服务端裁决 → AI 演绎回应”，覆盖调查、追问、出示证据、移动及最终抉择。
