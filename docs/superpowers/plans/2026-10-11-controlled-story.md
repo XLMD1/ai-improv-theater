@@ -1,6 +1,6 @@
 # Controlled Story Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:executing-plans 在当前会话逐任务实施。用户此前已选顺序执行，不重新选择执行方式；本计划待用户审阅，尚未实施。步骤使用复选框，验收未通过不得勾选完成。
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:executing-plans 在当前会话逐任务实施。用户此前已选顺序执行，不重新选择执行方式；用户已于 2026-10-11 确认本计划，按实测记录实施进度。步骤使用复选框，验收未通过不得勾选完成。
 
 **Goal:** 通过受控调查骨架与严格内容协议交付阶段 2 自定义故事，并完成原三背景创建、九结局路径与人工核查。
 
@@ -73,7 +73,7 @@
 
 **Interfaces:** Consumes 现有 `Story`, `StrictModel`, `canonical_hash`, `check_reachability`。Produces `BLUEPRINT_VERSION`, `BLUEPRINT_SHA256`, `ControlledStoryContent`, `load_blueprint_template(story_id: str, story_version: str, setting: str, era: str) -> Story`, `parse_story_content(raw: str) -> ControlledStoryContent`。
 
-- [ ] Step 1：写 RED 测试，两个不同 UUID 模板 ID 完全分离，3/5/3、所有引用合法，证明 passed、三个见证均 21 步；缺额外字段及重复 JSON 键拒绝。
+- [x] Step 1：写 RED 测试，两个不同 UUID 模板 ID 完全分离，3/5/3、所有引用合法，证明 passed、三个见证均 21 步；缺额外字段及重复 JSON 键拒绝。
 
 ```python
 def test_blueprint_has_frozen_reachable_structure():
@@ -86,8 +86,8 @@ def test_blueprint_has_frozen_reachable_structure():
     assert proof.states_checked == 70
 ```
 
-- [ ] Step 2：在 `backend/` 运行 `python -m pytest tests/test_controlled_story.py -q`，Expected：新模块/协议缺失而失败。不得用别的导入异常代替真实 RED。
-- [ ] Step 3：冻结模板，中性说明准确描述指令、偏转、主动破坏、救援、隐瞒和受保护者六类事实。生成 32 hex UUID 前缀，递归仅映射模板 ID 字段/事实键/话题引用，保留原关系；校验资源 SHA256，不匹配或未知版本报 `blueprint_version_mismatch`。实现上述严格内容模型，重复 JSON 键检查用下列入口，受控内容 schema 版本不能改旧 Story。
+- [x] Step 2：在 `backend/` 运行 `python -m pytest tests/test_controlled_story.py -q`，Expected：新模块/协议缺失而失败。不得用别的导入异常代替真实 RED。
+- [x] Step 3：冻结模板，中性说明准确描述指令、偏转、主动破坏、救援、隐瞒和受保护者六类事实。生成 32 hex UUID 前缀，递归仅映射模板 ID 字段/事实键/话题引用，保留原关系；校验资源 SHA256，不匹配或未知版本报 `blueprint_version_mismatch`。实现上述严格内容模型，重复 JSON 键检查用下列入口，受控内容 schema 版本不能改旧 Story。
 
 ```python
 def reject_duplicate_keys(pairs):
@@ -100,8 +100,8 @@ def reject_duplicate_keys(pairs):
 ```
 
 JSON 在该 hook 检查后，Pydantic 仍用父类 `model_validate_json` 保持 UUID/严格 JSON 类型语义；错误详情通过现有脱敏审计路径。资源严格 envelope 只含 `blueprint_version`、`source_story_hash`、`template`，template 按现有 Story 校验；模块校验冻结文件原始 bytes 的 SHA256。模板 SHA256 在生成资源后实际计算并写入模块/断言，不填写猜测值；资源来自固定批准 hash `dbdb37eb57b2eaf90eddfb42246189920147fa94adfeef85cf43598bcbd3ce79`，原 fixture 不修改。提供器返回重复 JSON 键的集成负例还须断言 output_validation、原稿可修复、已产生 usage 保留，不能只测纯解析函数。
-- [ ] Step 4：增加未知资源版本/hash、错误/重复/超长 ID、额外 action_rules/conditions 字段的具体负例；重跑同一套件 Expected：全部通过，无 provider 调用。记录实际模板 hash/状态数。
-- [ ] Step 5：仅暂存上述资源/模块/测试/文档，提交 `feat: 冻结受控调查骨架与内容协议`。
+- [x] Step 4：增加未知资源版本/hash、错误/重复/超长 ID、额外 action_rules/conditions 字段的具体负例；重跑同一套件 Expected：全部通过，无 provider 调用。记录实际模板 hash/状态数。
+- [x] Step 5：仅暂存上述资源/模块/测试/文档，提交 `feat: 冻结受控调查骨架与内容协议`。
 
 ## Task 2：纯组装与内容操作注册
 
@@ -169,4 +169,4 @@ def require_slots(group, actual, expected):
 
 规格覆盖：Task 1 骨架/严格内容，Task 2 纯组装/独立操作，Task 3 创建/修复/恢复/失败审计，Task 4 固定评测/来源/审查/真实与人工。Review Focus 五项均在对应任务有负例或回放断言。没有新增依赖、产品开关、规则执行语言、测试外真库重置或重复 benchmark 入口。
 
-原样本只读检查是现有能力的验证，不能作为新骨架已完成。生产骨架 hash、完整测试计数、模型质量/时延与人工人数都要实施后实际记录；不预填结果。等待用户审阅该计划，保留此前顺序执行方式。
+原样本只读检查是现有能力的验证，不能作为新骨架已完成。生产骨架 hash、完整测试计数、模型质量/时延与人工人数都要实施后实际记录；不预填结果。用户已确认该计划，保留此前顺序执行方式；完成项仅指其记录的实现/检查，不代替阶段验收。

@@ -2,6 +2,8 @@
 
 日期：2026-10-10；设计版本：1。
 状态：用户于 2026-10-10 确认设计及[实施计划](stage-2-implementation-plan.md)，选择当前会话顺序实施和一次最终独立审查。后端实现及模拟验证已开展；真实三类背景路径和人工剧情核查未通过，阶段 2 尚未验收。实际结果见[实施日志](../development-log/2026-10-10-stage-2.md)。
+
+2026-10-11 用户批准[受控骨架方案 A](stage-2-controlled-story-proposal.md)及[详细实施计划](../superpowers/plans/2026-10-11-controlled-story.md)。新默认创建改为服务器固定规则关系、模型填写内容并纯组装 Story；旧完整 Story v2 操作保留用于无协议标记的旧任务。以下数量、身份、严格校验、一次修复、费用/Trace 和批准门槛仍适用，具体变更与兼容以该补充为准；尚未据新设计宣称验收。
 依据：[阶段计划](../03-development-plan.md)、[故事规则](stage-1-story-rules.md)、[运行可靠性](runtime-reliability.md)、[评测口径](../evaluation/task-success-baseline.md)。
 
 ## 1. 目标、范围与实施顺序
