@@ -104,3 +104,56 @@ def test_changed_or_unknown_blueprint_is_not_loaded(tmp_path,mutation):
     with patch.object(module,'BLUEPRINT_PATH',file),patch.object(module,'BLUEPRINT_SHA256',digest):
         with pytest.raises(ValueError):
             template()
+
+
+@pytest.mark.parametrize('group',['characters','locations','objects','evidence','disclosures','commitments',
+                                  'action_feedback','event_feedback','endings','truth'])
+@pytest.mark.parametrize('kind',['missing','extra'])
+def test_assembly_rejects_missing_or_unknown_slots(group,kind):
+    from app.story_content import assemble_story_content,parse_story_content
+    story = template()
+    data = content_data(story)
+    slots = data['truth']['facts'] if group=='truth' else data[group]
+    value = slots.pop(next(iter(slots)))
+    if kind=='extra':
+        slots['unknown_slot'] = value
+    with pytest.raises(ValueError,match='content_slots'):
+        assemble_story_content(story,parse_story_content(json.dumps(data,ensure_ascii=False)))
+
+
+@pytest.mark.parametrize('field,value',[('story_id','00000000-0000-0000-0000-000000000002'),
+                ('story_version','draft-2'),('setting','different'),('era','future')])
+def test_assembly_rejects_content_for_a_different_request(field,value):
+    from app.story_content import assemble_story_content,parse_story_content
+    story = template()
+    data = content_data(story)
+    data[field] = value
+    with pytest.raises(ValueError,match='content_identity'):
+        assemble_story_content(story,parse_story_content(json.dumps(data,ensure_ascii=False)))
+
+
+def test_assembly_changes_content_without_mutating_structure_or_source():
+    from app.story_content import assemble_story_content,parse_story_content
+    from app.story_schema import canonical_hash
+    from app.story_validation import check_reachability
+    original = template()
+    before = canonical_hash(original)
+    data = content_data(original)
+    data['title'] = '新故事'
+    data['characters'][original.protagonist_id]['name'] = '新主角'
+    data['truth']['facts'][next(iter(data['truth']['facts']))] = '新事实内容'
+    result = assemble_story_content(original,parse_story_content(json.dumps(data,ensure_ascii=False)))
+    assert result.title == '新故事' and result.characters[0].name == '新主角'
+    assert result.truth.facts[next(iter(data['truth']['facts']))] == '新事实内容'
+    assert result.protagonist_id == original.protagonist_id
+    assert [(x.id,x.exits) for x in result.locations] == [(x.id,x.exits) for x in original.locations]
+    assert [(x.id,x.location_id) for x in result.objects] == [(x.id,x.location_id) for x in original.objects]
+    assert [(x.id,x.fact_ids) for x in result.evidence] == [(x.id,x.fact_ids) for x in original.evidence]
+    assert [(x.id,x.initial_location_id,x.known_fact_ids,x.secret_fact_ids) for x in result.characters] == [
+        (x.id,x.initial_location_id,x.known_fact_ids,x.secret_fact_ids) for x in original.characters]
+    assert [(r.action,r.conditions,r.effects,r.once) for r in result.action_rules] == [
+        (r.action,r.conditions,r.effects,r.once) for r in original.action_rules]
+    assert [(e.id,e.conditions,e.effects) for e in result.events] == [(e.id,e.conditions,e.effects) for e in original.events]
+    assert [(e.id,e.conditions) for e in result.endings] == [(e.id,e.conditions) for e in original.endings]
+    assert canonical_hash(original) == before
+    assert check_reachability(result).status == 'passed'

@@ -37,12 +37,16 @@ def test_story_operations_have_separate_strict_schemas_and_budgets():
     from app.story_operations import register_story_operations, OUTPUT_BUDGETS
     registry = ToolRegistry()
     register_story_operations(registry)
-    assert set(registry.specs) == {('story.generate','v2'),('story.repair','v2'),('story.semantic_check','v1'),('scene.semantic_check','v1')}
+    assert set(registry.specs) == {('story.generate','v2'),('story.repair','v2'),('story.content_generate','v1'),
+                                 ('story.content_repair','v1'),('story.semantic_check','v1'),('scene.semantic_check','v1')}
     assert registry.get('story.generate','v2').input_schema != registry.get('story.repair','v2').input_schema
     assert registry.get('story.generate','v2').timeout_seconds == 120
     assert registry.get('story.repair','v2').timeout_seconds == 120
     assert registry.get('story.semantic_check','v1').timeout_seconds == 20
     assert OUTPUT_BUDGETS['story.generate'] == 12000 and OUTPUT_BUDGETS['scene.semantic_check'] == 2000
+    for name in ('story.content_generate','story.content_repair'):
+        assert registry.get(name,'v1').timeout_seconds == 120 and OUTPUT_BUDGETS[name] == 12000
+    assert registry.get('story.content_generate','v1').input_schema != registry.get('story.content_repair','v1').input_schema
 
 
 @pytest.mark.asyncio

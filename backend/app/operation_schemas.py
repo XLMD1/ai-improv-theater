@@ -6,6 +6,7 @@ from pydantic import Field, StringConstraints, field_validator, model_validator
 
 from app.story_schema import Action, EntityId, Story, StrictModel
 from app.story_validation import ReachabilityReport
+from app.story_content import BLUEPRINT_SHA256
 
 
 class StoryGenerateInput(StrictModel):
@@ -23,6 +24,25 @@ class StoryGenerateInput(StrictModel):
 
 
 class StoryRepairInput(StoryGenerateInput):
+    raw_candidate: str = Field(max_length=256_000)
+    issues: list[str] = Field(max_length=20)
+
+
+class ControlledGenerateInput(StoryGenerateInput):
+    blueprint_version: Literal['controlled-investigation-1']
+    blueprint_sha256: str = Field(pattern=r'^[a-f0-9]{64}$')
+    template: Story
+
+    @model_validator(mode='after')
+    def template_identity(self):
+        if self.blueprint_sha256 != BLUEPRINT_SHA256:
+            raise ValueError('blueprint_version_mismatch')
+        if any(getattr(self,field) != getattr(self.template,field) for field in ('story_id','story_version','setting','era')):
+            raise ValueError('template_identity')
+        return self
+
+
+class ControlledRepairInput(ControlledGenerateInput):
     raw_candidate: str = Field(max_length=256_000)
     issues: list[str] = Field(max_length=20)
 

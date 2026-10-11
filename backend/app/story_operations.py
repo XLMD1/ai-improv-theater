@@ -8,14 +8,16 @@ from app.execution import ToolSpec
 from app.local_settings import get_key
 from app.operation_schemas import StoryGenerateInput, StoryRepairInput, StorySemanticInput, SceneSemanticInput, SemanticReport
 from app.operation_schemas import ActionInterpretInput,Interpretation,SceneRenderInput,SceneTextDraft
+from app.operation_schemas import ControlledGenerateInput,ControlledRepairInput
+from app.story_content import ControlledStoryContent
 from app.provider_clients import call_operation_provider
 from app.story_schema import Story
 
-OUTPUT_BUDGETS = {'story.generate':12000,'story.repair':12000,'story.semantic_check':2000,
+OUTPUT_BUDGETS = {'story.generate':12000,'story.repair':12000,'story.content_generate':12000,'story.content_repair':12000,'story.semantic_check':2000,
                   'scene.semantic_check':2000,'action.interpret':300,'scene.render':900}
-PROMPT_VERSION = 'investigation-single-5'
+PROMPT_VERSION = 'investigation-single-6'
 OPERATION_VERSIONS = {name:('v2' if name in ('story.generate','story.repair') else 'v1') for name in OUTPUT_BUDGETS}
-OPERATION_TIMEOUTS = {name:(120 if name in ('story.generate','story.repair') else 20) for name in OUTPUT_BUDGETS}
+OPERATION_TIMEOUTS = {name:(120 if name in ('story.generate','story.repair','story.content_generate','story.content_repair') else 20) for name in OUTPUT_BUDGETS}
 STORY_RULES = ('JSON Schema之外的服务端约束：characters恰好三位，必须包含主角本人完整Character记录和两位NPC；'
               'protagonist_id必须等于characters中主角的id，不能另造列表之外的玩家ID。'
               '所有实体ID与truth.facts键全局唯一。主角不能作为talk/present对象，'
@@ -29,6 +31,8 @@ STORY_RULES = ('JSON Schema之外的服务端约束：characters恰好三位，�
               '修复时优先解决issues指出的字段路径、无效引用和missing_endings等未到达ID，不能仅重写叙述。')
 
 INSTRUCTIONS = {
+    'story.content_generate': '依背景与年代填写调查故事内容。template是服务器冻结的关系与内容说明，不是已生成故事。所有ID、角色位置/知识/秘密引用、证据与事实关联、出口、行动/事件效果和结局条件固定。只返回内容协议的全部槽位，逐字复制指定身份与版本；不得输出规则、状态或改引用。将说明改写为具体且连贯的原创内容：一位主角两位NPC，因果事实符合六项关系，三个结局后果不同。公开简介、外貌、地点/对象描述不泄露未发现事实。证据只支撑绑定的事实，披露/反馈只包含其触发后合法可知的信息；不得把引导说明原样当成故事。',
+    'story.content_repair': '依据issues修复完整内容协议，不输出补丁。目标身份与版本逐字复制输入，不能沿用raw_candidate的旧版本。template关系固定，不能更改任何条件、效果、出口、事实引用或增加槽位。修复内容与事实、证据、角色知识、结局条件的矛盾，以及公开描述或反馈提前泄漏；每个槽位均须完整输出。',
     'story.generate': '生成完整调查故事。固定三角色（含主角）、五地点、三不同后果结局。使用提供的 story_id/story_version 和年代。只使用协议中的声明式规则，所有地点、证据和结局必须可达，目标15–25行动。证据充分支撑固定真相。公开描述不提前泄露未知证据和秘密；反馈只披露该规则合法获得的信息。',
     'story.repair': '依据内部检查意见修复完整故事，保持指定身份和年代。输出完整协议，不输出补丁。不得加入可执行规则代码。确保公开字段无提前剧透，所有证据、地点和三个结局可达。',
     'story.semantic_check': '内部检查故事证据是否支持真相、角色知识矛盾、三个结局不同后果、公开描述及规则反馈是否提前泄露未知事实。规则反馈按触发后的状态评估，不把合法披露误判泄漏。reachability是服务端已执行规则得到的证明；见证路径列行动而非规则ID，同一行动可在不同回合触发不同规则，事件也可改变信任等状态。不要仅因路径没有某个规则ID或忽略事件效果而否定可达性。仍须检查结局叙述有无缺失承诺或证据支持。拒绝依赖未提供信息的推理。返回passed/issues，说明只用于内部审计。',
@@ -46,6 +50,24 @@ def register_operation(registry,name,input_schema,output_schema):
         if name in ('story.generate','story.repair'):
             for field in ('story_id','story_version','setting','era'):
                 output_schema['properties'][field] = {**schema['properties'][field],'const':getattr(value,field)}
+        elif name in ('story.content_generate','story.content_repair'):
+            for field in ('story_id','story_version','setting','era','blueprint_version'):
+                output_schema['properties'][field]['const'] = getattr(value,field)
+            for group,target in [('characters','characters'),('locations','locations'),('objects','objects'),
+                                  ('evidence','evidence'),('disclosures','disclosures'),('commitments','commitments'),
+                                  ('action_feedback','action_rules'),('event_feedback','events'),('endings','endings')]:
+                ids = [item.id for item in getattr(value.template,target)]
+                slots = output_schema['properties'][group]
+                item_schema = deepcopy(next(iter(slots['patternProperties'].values())))
+                slots.update(properties={i:deepcopy(item_schema) for i in ids},required=ids,additionalProperties=False)
+                slots.pop('patternProperties',None)
+            truth = deepcopy(output_schema['$defs']['Truth'])
+            facts = truth['properties']['facts']
+            item_schema = deepcopy(next(iter(facts['patternProperties'].values())))
+            facts.update(properties={i:deepcopy(item_schema) for i in value.template.truth.facts},
+                         required=list(value.template.truth.facts),additionalProperties=False)
+            facts.pop('patternProperties',None)
+            output_schema['properties']['truth'] = truth
         elif name=='scene.render':
             speakers = [c.id for c in value.public_world.characters]
             if speakers:
@@ -67,6 +89,8 @@ def register_operation(registry,name,input_schema,output_schema):
 
 def register_story_operations(registry):
     for name,inp,out in [('story.generate',StoryGenerateInput,Story),('story.repair',StoryRepairInput,Story),
+                         ('story.content_generate',ControlledGenerateInput,ControlledStoryContent),
+                         ('story.content_repair',ControlledRepairInput,ControlledStoryContent),
                          ('story.semantic_check',StorySemanticInput,SemanticReport),
                          ('scene.semantic_check',SceneSemanticInput,SemanticReport)]:
         register_operation(registry,name,inp,out)

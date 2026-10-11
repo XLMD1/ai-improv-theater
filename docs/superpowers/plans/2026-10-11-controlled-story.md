@@ -109,7 +109,7 @@ JSON 在该 hook 检查后，Pydantic 仍用父类 `model_validate_json` 保持 
 
 **Interfaces:** Consumes Task 1 协议和模板；Produces `assemble_story_content(template: Story, content: ControlledStoryContent) -> Story`, `ControlledGenerateInput`, `ControlledRepairInput`，操作 `story.content_generate.v1` / `story.content_repair.v1`。
 
-- [ ] Step 1：写 RED 断言：逐组缺失或未知键、身份/年代/版本/背景错配拒绝，原模板不变，组装前后结构投影相同。合法修改只作用于文本；带状态/条件的内容在协议层即拒绝。
+- [x] Step 1：写 RED 断言：逐组缺失或未知键、身份/年代/版本/背景错配拒绝，原模板不变，组装前后结构投影相同。合法修改只作用于文本；带状态/条件的内容在协议层即拒绝。
 
 ```python
 def test_compilation_never_changes_exits_or_effects(controlled_template, controlled_content):
@@ -124,8 +124,8 @@ def test_compilation_never_changes_exits_or_effects(controlled_template, control
 ```
 
 `controlled_template` 与 `controlled_content` fixtures 在该测试文件定义：模板调用 Task 1，内容取模板全部允许文本字段形成严格字典，身份字段使用同一请求；不导入数据库。
-- [ ] Step 2：运行 `python -m pytest tests/test_controlled_story.py tests/test_story_prompt_identity.py -q`，Expected：组装/新注册项尚缺失，失败。
-- [ ] Step 3：纯函数先比较身份与每组实际/预期键集，分别报告组名、missing/extra ID；复制模板、逐字段填文本，最后 `Story.model_validate`。不通过删除未知键或合并内容修复候选。
+- [x] Step 2：运行 `python -m pytest tests/test_controlled_story.py tests/test_story_prompt_identity.py -q`，Expected：组装/新注册项尚缺失，失败。
+- [x] Step 3：纯函数先比较身份与每组实际/预期键集，分别报告组名、missing/extra ID；复制模板、逐字段填文本，最后 `Story.model_validate`。不通过删除未知键或合并内容修复候选。
 
 ```python
 def require_slots(group, actual, expected):
@@ -133,9 +133,9 @@ def require_slots(group, actual, expected):
         raise ValueError(f'content_slots:{group}:missing={sorted(set(expected)-set(actual))}:extra={sorted(set(actual)-set(expected))}')
 ```
 
-- [ ] Step 4：`ControlledGenerateInput` 继承现有生成身份入参，增加严格 `blueprint_version`、64 位 `blueprint_sha256`、`template: Story`，入参校验模板身份与顶层相同。修复入参再加 `raw_candidate`（256,000 字符上限）与 `issues`（最多 20）。注册两项新操作，输出为严格 `ControlledStoryContent`，timeout=120/max attempts=3/安全瞬态分类和外部非幂等策略保持；预算仍 12,000。旧 `story.generate.v2`/`story.repair.v2` 与其他 v1 都保留。
-- [ ] Step 5：内容提示 schema 固定四个身份字段与骨架版本；把各组 dict 的 properties/required 明确为模板 ID，additionalProperties=false，truth.facts 同理。传入模板仅作为内容关系指导，提示不能输出规则。`PROMPT_VERSION` 使用新的实际版本 `investigation-single-6`；旧完整生成兼容操作保留原完整 Story 说明，元数据区分旧操作而非抹除旧 Trace。使用统一 adapter，不在组装函数或 UI 调 provider。
-- [ ] Step 6：捕获假 provider 请求，断言请求中各组 ID/结构和输出 schema 的身份/槽位约束；同一注册项连用两份模板无 schema 污染。运行 Step 2 同一命令 Expected：全部通过。提交 `feat: 组装受控故事并注册内容操作`。
+- [x] Step 4：`ControlledGenerateInput` 继承现有生成身份入参，增加严格 `blueprint_version`、64 位 `blueprint_sha256`、`template: Story`，入参校验模板身份与顶层相同。修复入参再加 `raw_candidate`（256,000 字符上限）与 `issues`（最多 20）。注册两项新操作，输出为严格 `ControlledStoryContent`，timeout=120/max attempts=3/安全瞬态分类和外部非幂等策略保持；预算仍 12,000。旧 `story.generate.v2`/`story.repair.v2` 与其他 v1 都保留。
+- [x] Step 5：内容提示 schema 固定四个身份字段与骨架版本；把各组 dict 的 properties/required 明确为模板 ID，additionalProperties=false，truth.facts 同理。传入模板仅作为内容关系指导，提示不能输出规则。`PROMPT_VERSION` 使用新的实际版本 `investigation-single-6`；旧完整生成兼容操作保留原完整 Story 说明，元数据区分旧操作而非抹除旧 Trace。使用统一 adapter，不在组装函数或 UI 调 provider。
+- [x] Step 6：捕获假 provider 请求，断言请求中各组 ID/结构和输出 schema 的身份/槽位约束；同一注册项连用两份模板无 schema 污染。运行 Step 2 同一命令 Expected：全部通过。提交 `feat: 组装受控故事并注册内容操作`。
 
 ## Task 3：创建检查点与一次内容修复
 

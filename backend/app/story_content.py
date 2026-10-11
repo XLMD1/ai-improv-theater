@@ -119,3 +119,29 @@ def load_blueprint_template(story_id: str,story_version: str,setting: str,era: s
     data = remap(source)
     data.update(story_id=story_id,story_version=story_version,setting=setting,era=era)
     return Story.model_validate(data)
+
+
+def require_slots(group,actual,expected):
+    if set(actual) != set(expected):
+        raise ValueError(f'content_slots:{group}:missing={sorted(set(expected)-set(actual))}:extra={sorted(set(actual)-set(expected))}')
+
+
+def assemble_story_content(template: Story,content: ControlledStoryContent) -> Story:
+    for field in ('story_id','story_version','setting','era'):
+        if getattr(template,field) != getattr(content,field):
+            raise ValueError(f'content_identity:{field}')
+    data = template.model_dump(mode='json')
+    values = content.model_dump(mode='json')
+    for group in ('characters','locations','objects','evidence','endings'):
+        require_slots(group,values[group],[item['id'] for item in data[group]])
+        for item in data[group]:
+            item.update(values[group][item['id']])
+    for group,target,field in [('disclosures','disclosures','public_text'),('commitments','commitments','public_text'),
+                               ('action_feedback','action_rules','feedback'),('event_feedback','events','feedback')]:
+        require_slots(group,values[group],[item['id'] for item in data[target]])
+        for item in data[target]:
+            item[field] = values[group][item['id']]
+    require_slots('truth',values['truth']['facts'],data['truth']['facts'])
+    for field in ('title','public_intro','truth'):
+        data[field] = values[field]
+    return Story.model_validate(data)

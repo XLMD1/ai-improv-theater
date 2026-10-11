@@ -61,3 +61,52 @@ def test_scene_prompt_limits_dialogue_to_current_speaker_ids(count):
         assert schema['$defs']['SceneDialogue']['properties']['character_id'].get('enum')==[f'npc_{i}' for i in range(count)]
     else:
         assert schema['properties']['dialogue']['maxItems']==0
+
+
+@pytest.mark.parametrize('operation',['story.content_generate','story.content_repair'])
+def test_content_prompt_binds_slots_and_does_not_reuse_another_story_schema(operation):
+    import asyncio,time
+    from types import SimpleNamespace
+    from app.execution import ToolRegistry
+    from app.operation_schemas import ControlledGenerateInput,ControlledRepairInput
+    from app.story_content import BLUEPRINT_SHA256,BLUEPRINT_VERSION,load_blueprint_template
+    from app.story_operations import register_story_operations
+    from app.provider_clients import ProviderOutcome
+    from test_controlled_story import content_data
+    registry = ToolRegistry()
+    register_story_operations(registry)
+    captured=[]
+    async def provider(*args):
+        captured.append(args[3])
+        return ProviderOutcome('{}',1,1,request_sent=True)
+    with patch('app.story_operations.call_operation_provider',side_effect=provider),patch('app.story_operations.get_key',return_value='fixture-key'):
+        for suffix in ('1','2'):
+            story = load_blueprint_template('00000000-0000-0000-0000-00000000000'+suffix,'draft-2','固定背景','ancient')
+            args = {key:getattr(story,key) for key in ('story_id','story_version','setting','era')}
+            args.update(blueprint_version=BLUEPRINT_VERSION,blueprint_sha256=BLUEPRINT_SHA256,template=story)
+            value = ControlledRepairInput(**args,raw_candidate='{}',issues=['fix']) if operation.endswith('repair') else ControlledGenerateInput(**args)
+            spec = registry.get(operation,'v1')
+            assert spec is not None and spec.timeout_seconds==120 and spec.max_attempts==3
+            asyncio.run(spec.handler(value,SimpleNamespace(provider='deepseek',model_id='deepseek-flash',deadline=time.monotonic()+120)))
+            schema = json.loads(captured[-1].split('\n输出schema：',1)[1].split('\n输入数据：',1)[0])
+            assert {field:schema['properties'][field].get('const') for field in ('story_id','story_version','setting','era')} == {
+                field:getattr(story,field) for field in ('story_id','story_version','setting','era')}
+            for group,values in content_data(story).items():
+                if isinstance(values,dict) and group!='truth':
+                    assert set(schema['properties'][group]['required']) == set(values)
+                    assert set(schema['properties'][group]['properties']) == set(values)
+                    assert schema['properties'][group]['additionalProperties'] is False
+            assert schema['properties']['truth']['properties']['facts']['required'] == list(story.truth.facts)
+            assert 'action_rules' not in schema['properties']
+
+
+def test_content_operation_rejects_template_identity_and_hash_mismatch():
+    from app.operation_schemas import ControlledGenerateInput
+    from app.story_content import BLUEPRINT_SHA256,BLUEPRINT_VERSION
+    from test_controlled_story import template
+    story = template()
+    args = {key:getattr(story,key) for key in ('story_id','story_version','setting','era')}
+    args.update(blueprint_version=BLUEPRINT_VERSION,blueprint_sha256=BLUEPRINT_SHA256,template=story)
+    for key,value in [('story_version','draft-2'),('blueprint_sha256','f'*64)]:
+        with pytest.raises(ValueError):
+            ControlledGenerateInput(**{**args,key:value})
