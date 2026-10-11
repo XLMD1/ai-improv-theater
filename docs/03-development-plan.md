@@ -42,7 +42,7 @@
 
 当前状态：用户已确认[阶段 2 专题设计](design/stage-2-custom-stories.md)及[实施计划](design/stage-2-implementation-plan.md)，选择顺序实施与一次独立审查。后端创建、调查流水线、执行记录和故障评测已实现并进行自动验证；真实 ancient/modern/future 路径和人工剧情核查未执行通过，阶段整体保持未验收。见[实施日志](development-log/2026-10-10-stage-2.md)及[实测报告](evaluation/2026-10-10-stage-2-results.md)。
 
-2026-10-11 补充：[最新补充实测](evaluation/2026-10-11-stage-2-supplement-results.md)记录完整后端 176 项、模拟 10/10、规则 30/30、兼容 9/9；真实 prompt 3 固定清单 0/12，主角归属诊断已修复，prompt 4 真实完整路径及人工核查待执行。历史失败、费用和批准节点均保留，不据自动检查勾选本阶段。
+2026-10-11 补充：[最新补充实测](evaluation/2026-10-11-stage-2-supplement-results.md)记录完整后端最新 180 项；模拟 10/10、规则 30/30、兼容 9/9 分别保留各自实测版本。有效 prompt 4 真实固定清单 1/12，prompt 5 发言约束已通过回归但未真实验证。用户已批准[受控规则骨架方案 A](design/stage-2-controlled-story-proposal.md)，[详细实施计划](superpowers/plans/2026-10-11-controlled-story.md)待审阅，生成架构尚未变更。历史失败、费用和批准节点均保留，真实路径及人工核查尚未通过，不据自动检查勾选本阶段。
 
 - [ ] 实现背景与年代生成、结构/规则/语义检查、至多一次设定修复、无剧透简介及玩家确认；批准故事版本固定。
 - [ ] 实现“AI 理解行动 → 服务端裁决 → AI 演绎回应”，覆盖调查、追问、出示证据、移动及最终抉择。
