@@ -44,7 +44,7 @@
 
 2026-10-11 补充：[最新补充实测](evaluation/2026-10-11-stage-2-supplement-results.md)记录完整后端最新 180 项；模拟 10/10、规则 30/30、兼容 9/9 分别保留各自实测版本。有效 prompt 4 真实固定清单 1/12，prompt 5 发言约束已通过回归但未真实验证。用户已批准[受控规则骨架方案 A](design/stage-2-controlled-story-proposal.md)，[详细实施计划](superpowers/plans/2026-10-11-controlled-story.md)已确认并开始实施，受控创建集成已通过自动检查，真实与人工验收尚未完成。历史失败、费用和批准节点均保留，真实路径及人工核查尚未通过，不据自动检查勾选本阶段。
 
-2026-10-11 受控方案实施：[最新受控结果](evaluation/2026-10-11-stage-2-controlled-story-results.md)记录审查修复后完整后端 241 项、规则 30/30、兼容 9/9、固定模拟顺序重跑 10/10。真实固定清单 3/12（三创建通过、九叙事路径失败），人工核查未完成。用户已批准[回合呈现 R1](design/stage-2-controlled-scenes-proposal.md)，[实施计划](superpowers/plans/2026-10-11-approved-feedback.md)待审阅；尚未实施，阶段 2 保持未验收。
+2026-10-11 受控方案实施：[最新受控结果](evaluation/2026-10-11-stage-2-controlled-story-results.md)记录审查修复后完整后端 241 项、规则 30/30、兼容 9/9、固定模拟顺序重跑 10/10。真实固定清单 3/12（三创建通过、九叙事路径失败），人工核查未完成。用户已批准[回合呈现 R1](design/stage-2-controlled-scenes-proposal.md)及[实施计划](superpowers/plans/2026-10-11-approved-feedback.md)，正在顺序实施，阶段 2 保持未验收。
 
 - [ ] 实现背景与年代生成、结构/规则/语义检查、至多一次设定修复、无剧透简介及玩家确认；批准故事版本固定。
 - [ ] 新故事实现已批准 R1“AI 理解自由行动（按钮直接映射）→ 服务端裁决 → 已审核反馈直接呈现”，覆盖调查、追问、出示证据、移动及最终抉择；保留旧故事的模型演绎兼容路径。

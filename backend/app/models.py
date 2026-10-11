@@ -37,6 +37,16 @@ class StoryVersion(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now, nullable=False)
 
 
+class StoryPresentation(Base):
+    __tablename__ = "story_presentations"
+    __table_args__ = (CheckConstraint("narration_protocol = 'approved-feedback-1'",
+                                     name="ck_narration_protocol"),)
+
+    story_version_id: Mapped[str] = mapped_column(String(36), ForeignKey("story_versions.id"), primary_key=True)
+    narration_protocol: Mapped[str] = mapped_column(String(40), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now, nullable=False)
+
+
 class StorySession(Base):
     __tablename__ = "sessions"
 
