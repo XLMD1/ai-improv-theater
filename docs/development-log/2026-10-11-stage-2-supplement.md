@@ -35,3 +35,5 @@ Ruling: 修复提示绑定请求顶层身份字段，语义提示说明见证行
 增加 missing_protagonist 创建修复回归，RED 1 failed；schema 描述/提示明确三人包含主角，校验错误列出实际角色 ID，GREEN 23 passed。prompt=investigation-single-4；字段类型、实体数量、状态规则和冻结样本 hash 未改。没有修改任何已批准故事。
 
 完整后端 176 passed、7 warnings，34.20 秒，git diff --check 通过。无协议字段/迁移变化；本轮新真实调用将在提交后执行，未通过前仍不标记阶段 2 验收完成。
+
+提交 9e83621 后固定模拟清单 10/10、37.860 秒（2e1c5b48bde244d38c24f682359829b2），Alembic check 无新增操作。prompt 4 真实终端已打开，只在用户本地隐藏输入密钥后运行；密钥随旧轮次结束已清除，未持久化或读取 .env。当前仍等待该输入，不新增外部调用。

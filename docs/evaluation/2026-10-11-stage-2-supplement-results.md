@@ -13,6 +13,7 @@
 | runtime_simulated（审查修复前） | 10/10，34.922 秒，6c9d84077b694c7e825bf0f8cd8ab2f2 |
 | runtime_simulated（审查修复后） | 10/10，39.578 秒，add66ff4ab8948649e6ac66861f53503 |
 | runtime_simulated（身份与恢复修复后） | 10/10，38.656 秒，92a16fac535942ff8c89cd560e7aee0a；验证未提交工作树，HEAD 为 8cf1cfa |
+| runtime_simulated（主角归属修复后） | 10/10，37.860 秒，2e1c5b48bde244d38c24f682359829b2；提交 9e83621，prompt 4 |
 | 恢复后的规则/兼容独立评测 | 30/30（17.484 秒，8012f06a84404c669184a85a85d5d4fa）/9/9（10.875 秒，f74092e2048c4d059deb79a8c898df74），提交 f795b93 |
 | 原真实请求人工核账 | 1 次、0.02 CNY、input 5,088/output 4,510/total 9,598；来源：用户核对控制台 |
 | 原始调用及失败报告 | outcome_unknown/uncertain 与 NULL 原 usage 保留；SHA256 不变，0/12 不改 |
@@ -50,3 +51,5 @@ prompt 2 轮次 bf2b431b70b4414bb2a5289a5d222952 在用户暂停时未落盘完�
 提交 f795b93、固定清单不变，轮次 5aa96af3aa60498f986fc2a3b5cecb2e：0/12、12 error，93.547 秒。三个创建 story_repair_exhausted，九条路径 creation_dependency_failed；6 次调用均 known/completed，input 46,926/output 25,402，保守估算 0.334201 CNY；全库有效预算 0.864144 CNY。没有新增根节点，人工核查 0。
 
 实际逐字段核查证明六稿 characters 都是三位 NPC，protagonist_id 均不在其中，且没有任何 character_id 字段引用该主角。修复稿版本均为指定 draft-2，说明身份版本绑定生效；仍然无有效故事。已纠正此前将该通用错误解释为 NPC 专属字段引用的判断。进一步改为明确的 protagonist_id 缺失反馈（含实际 characters ID），schema/prompt 明确一主角加两 NPC；prompt 升至 investigation-single-4，模型候选仍完整校验，至多一次修复。新增回归 RED 1 failed、GREEN 23 passed（包含冻结样本/hash），实际质量仍待原清单验证。
+
+prompt 4 本地自动检查：完整后端 176 passed，固定模拟清单 10/10，Alembic check 无新增操作。真实评测本地隐藏输入终端已准备；密钥未输入前不发起请求。阶段仍未验收，不以自动测试替代真实三背景完整路径及人工核查。
