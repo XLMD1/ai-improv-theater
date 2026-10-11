@@ -8,7 +8,7 @@
 
 **Tech Stack:** Python 3.11+、Pydantic 2、FastAPI、SQLAlchemy 2、Alembic、PostgreSQL、asyncio、pytest；不增加队列或编排框架。
 
-**Spec:** [已确认的阶段 2 设计](stage-2-custom-stories.md)，用户于 2026-10-10 明确回复“我已确认”并确认实施计划及推荐执行方式。相关约束：[运行可靠性](runtime-reliability.md)、[评测](../evaluation/task-success-baseline.md)。后端任务 1–7 已实施，任务 8 的真实路径及人工核查仍待验收；实现不等于阶段完成。
+**Spec:** [已确认的阶段 2 设计](stage-2-custom-stories.md)，用户于 2026-10-10 明确回复“我已确认”并确认实施计划及推荐执行方式。相关约束：[运行可靠性](runtime-reliability.md)、[评测](../evaluation/task-success-baseline.md)。后端任务 1–7 已实施；任务 8 原动态叙事验收失败记录保留，后续已批准方案 A/R1/v2 完成固定真实 12/12 及一位用户五项剧情核查，阶段 2 已验收，见[最新结果](../evaluation/2026-10-11-stage-2-approved-feedback-results.md)。下面原步骤保留其历史要求，不将旧动态叙事勾选为真实通过。
 
 ## Global Constraints
 

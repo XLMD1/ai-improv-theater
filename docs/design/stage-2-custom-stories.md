@@ -3,7 +3,7 @@
 最新补充以用户已批准的[呈现 R1 与候选序号修复](stage-2-controlled-scenes-proposal.md)为准：R1 新回合直接呈现已审核反馈，自由输入使用 action.interpret.v2 只选当前公开候选序号；旧模型叙事故事保留 action.interpret.v1 和生成/审核路径。创建提示、规则与一次内容修复不变，以下历史 v1 表述适用于兼容路径，不据设计声明验收通过。
 
 日期：2026-10-10；设计版本：1。
-状态：用户于 2026-10-10 确认设计及[实施计划](stage-2-implementation-plan.md)，选择当前会话顺序实施和一次最终独立审查。后端实现及模拟验证已开展；真实三类背景路径和人工剧情核查未通过，阶段 2 尚未验收。实际结果见[实施日志](../development-log/2026-10-10-stage-2.md)。
+状态：用户于 2026-10-10 确认设计及[实施计划](stage-2-implementation-plan.md)，选择当前会话顺序实施和一次最终独立审查。后端及模拟验证已完成；后续用户批准的方案 A/R1/v2 固定真实清单 12/12，一位实际用户核查三故事及九路径五项均通过，阶段 2 已验收。历史动态叙事失败保留，最新记录见[反馈呈现结果](../evaluation/2026-10-11-stage-2-approved-feedback-results.md)。实际结果见[实施日志](../development-log/2026-10-10-stage-2.md)。
 
 2026-10-11 用户批准[受控骨架方案 A](stage-2-controlled-story-proposal.md)及[详细实施计划](../superpowers/plans/2026-10-11-controlled-story.md)。新默认创建改为服务器固定规则关系、模型填写内容并纯组装 Story；旧完整 Story v2 操作保留用于无协议标记的旧任务。以下数量、身份、严格校验、一次修复、费用/Trace 和批准门槛仍适用，具体变更与兼容以该补充为准；尚未据新设计宣称验收。
 依据：[阶段计划](../03-development-plan.md)、[故事规则](stage-1-story-rules.md)、[运行可靠性](runtime-reliability.md)、[评测口径](../evaluation/task-success-baseline.md)。
@@ -68,7 +68,7 @@ GET /session 为调查会话增加 lifecycle、root_node_id 和当前创建任�
 
 ## 5. 调查回合协议和生成上下文
 
-2026-10-11 用户已批准[回合呈现 R1](stage-2-controlled-scenes-proposal.md)，创建与回合分派已实现并通过模拟回归，真实与人工验收待完成：后续 controlled-content-2 故事在不可变 story_presentations 中固定 approved-feedback-1，accepted 回合逐字呈现已有 Adjudication.feedback（已含合法事件/结局），dialogue=[]，不再每轮生成/审核。按钮不依赖密钥，自由输入继续注册理解与费用保护。下面模型叙事协议继续适用于旧无呈现记录的 model-scene-1 故事；不将旧故事改为 R1，也不把失败候选改造成 R1 回退。创建校验、玩家过滤、确定性裁决、60 秒截止时间及第 6 节提交/回放门槛保持。完整人工核查仍须判断创建反馈的事实支持、触发时可知性与结局差异。
+2026-10-11 用户已批准[回合呈现 R1](stage-2-controlled-scenes-proposal.md)，创建与回合分派已通过模拟回归，后续 v2 理解的真实清单 12/12 及一位用户剧情核查通过：后续 controlled-content-2 故事在不可变 story_presentations 中固定 approved-feedback-1，accepted 回合逐字呈现已有 Adjudication.feedback（已含合法事件/结局），dialogue=[]，不再每轮生成/审核。按钮不依赖密钥，自由输入继续注册理解与费用保护。下面模型叙事协议继续适用于旧无呈现记录的 model-scene-1 故事；不将旧故事改为 R1，也不把失败候选改造成 R1 回退。创建校验、玩家过滤、确定性裁决、60 秒截止时间及第 6 节提交/回放门槛保持。完整人工核查仍须判断创建反馈的事实支持、触发时可知性与结局差异。
 
 沿用 POST /turns 的外部 Action(type=option|text,value<=500)，调查会话分派到新任务服务。按钮 ID 必须属于选中父节点保存的服务器选项；每个节点内部保存 option_id → 规范化行动的映射，玩家仅看到不透明 option_id 和公开 label。按钮直接取服务器行动，不调用行动理解；自由输入通过注册操作理解为调查、交流、出示、移动或抉择。无法映射时返回 uninterpretable 的明确反馈，不凭空创造规则。
 
