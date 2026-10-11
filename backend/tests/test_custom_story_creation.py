@@ -110,7 +110,7 @@ def test_malformed_story_repairs_once_then_fails_without_root():
         c.delete('/local-settings/keys/deepseek')
 
 
-@pytest.mark.parametrize('fault',['npc_reference','unreachable_ending'])
+@pytest.mark.parametrize('fault',['npc_reference','unreachable_ending','missing_protagonist'])
 def test_repair_receives_specific_internal_errors_and_can_fix_one_candidate(fault):
     seen = []
     async def provider(*args):
@@ -124,6 +124,8 @@ def test_repair_receives_specific_internal_errors_and_can_fix_one_candidate(faul
             data.update(story_id=inp['story_id'],story_version=inp['story_version'],setting=inp['setting'],era=inp['era'])
             if fault=='npc_reference':
                 data['endings'][0]['conditions']['all'].append({'op':'trust_at_least','character_id':data['protagonist_id'],'value':1})
+            elif fault=='missing_protagonist':
+                data['protagonist_id'] = 'missing_player'
             else:
                 for place in data['locations'][:2]:
                     data['endings'][0]['conditions']['all'].append({'op':'at_location','location_id':place['id']})
@@ -140,6 +142,10 @@ def test_repair_receives_specific_internal_errors_and_can_fix_one_candidate(faul
             assert any('invalid reference: character_id=' in e['message'] for issue in details
                        for e in issue.get('errors',[]))
             assert all('input' not in e and 'ctx' not in e for issue in details for e in issue.get('errors',[]))
+        elif fault=='missing_protagonist':
+            messages = [e['message'] for issue in details for e in issue.get('errors',[])]
+            assert any('protagonist_id=missing_player' in message and 'characters' in message
+                       and all(c['id'] in message for c in sample_data()['characters']) for message in messages)
         else:
             assert any(sample_data()['endings'][0]['id'] in issue.get('missing_endings',[]) for issue in details)
         assert c.get('/tree',headers=headers).json()==[]

@@ -12,10 +12,12 @@ from app.story_schema import Story
 
 OUTPUT_BUDGETS = {'story.generate':12000,'story.repair':12000,'story.semantic_check':2000,
                   'scene.semantic_check':2000,'action.interpret':300,'scene.render':900}
-PROMPT_VERSION = 'investigation-single-3'
+PROMPT_VERSION = 'investigation-single-4'
 OPERATION_VERSIONS = {name:('v2' if name in ('story.generate','story.repair') else 'v1') for name in OUTPUT_BUDGETS}
 OPERATION_TIMEOUTS = {name:(120 if name in ('story.generate','story.repair') else 20) for name in OUTPUT_BUDGETS}
-STORY_RULES = ('JSON Schema之外的服务端约束：所有实体ID与truth.facts键全局唯一。主角不能作为talk/present对象，'
+STORY_RULES = ('JSON Schema之外的服务端约束：characters恰好三位，必须包含主角本人完整Character记录和两位NPC；'
+              'protagonist_id必须等于characters中主角的id，不能另造列表之外的玩家ID。'
+              '所有实体ID与truth.facts键全局唯一。主角不能作为talk/present对象，'
               '也不能出现在trust_at_least、trust_delta、disclosure或commitment的character_id中；这些只能引用两位NPC。'
               'NPC始终在initial_location_id，不能自行移动。调查对象必须在当前地点；交流/出示要求NPC在场，'
               '出示还要求先发现证据。移动只走当前地点已开放的exit。conditions.all为逻辑与，空列表为真。'
