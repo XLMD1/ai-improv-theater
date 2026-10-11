@@ -37,6 +37,16 @@ class StoryVersion(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now, nullable=False)
 
 
+class StoryPresentation(Base):
+    __tablename__ = "story_presentations"
+    __table_args__ = (CheckConstraint("narration_protocol = 'approved-feedback-1'",
+                                     name="ck_narration_protocol"),)
+
+    story_version_id: Mapped[str] = mapped_column(String(36), ForeignKey("story_versions.id"), primary_key=True)
+    narration_protocol: Mapped[str] = mapped_column(String(40), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now, nullable=False)
+
+
 class StorySession(Base):
     __tablename__ = "sessions"
 
@@ -64,6 +74,7 @@ class Node(Base):
     canon_version: Mapped[str] = mapped_column(String(30), nullable=False)
     prompt_version: Mapped[str] = mapped_column(String(30), nullable=False)
     model_id: Mapped[str] = mapped_column(String(100), nullable=False)
+    investigation_options: Mapped[dict | None] = mapped_column(JsonType, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now, nullable=False)
 
 
@@ -92,6 +103,8 @@ class Run(Base):
     status: Mapped[str] = mapped_column(String(20), default="queued", nullable=False)
     node_id: Mapped[str | None] = mapped_column(ForeignKey("nodes.id"), nullable=True)
     error_code: Mapped[str | None] = mapped_column(String(80), nullable=True)
+    trace_id: Mapped[str | None] = mapped_column(String(36), nullable=True)
+    trace_seq: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now, nullable=False)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now, onupdate=now, nullable=False)
 
@@ -110,13 +123,76 @@ class RunEvent(Base):
 
 class LLMCall(Base):
     __tablename__ = "llm_calls"
+    __table_args__ = (CheckConstraint("(run_id IS NOT NULL AND creation_task_id IS NULL) OR (run_id IS NULL AND creation_task_id IS NOT NULL)", name="ck_call_task"),)
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=uid)
-    run_id: Mapped[str] = mapped_column(ForeignKey("runs.id"), nullable=False, index=True)
+    run_id: Mapped[str | None] = mapped_column(ForeignKey("runs.id"), nullable=True, index=True)
+    creation_task_id: Mapped[str | None] = mapped_column(ForeignKey("story_tasks.id"), nullable=True)
+    trace_id: Mapped[str | None] = mapped_column(String(36), nullable=True)
+    span_id: Mapped[str | None] = mapped_column(String(36), nullable=True)
+    attempt_id: Mapped[str | None] = mapped_column(String(36), nullable=True, unique=True)
+    call_status: Mapped[str] = mapped_column(String(30), default="completed", nullable=False)
+    usage_status: Mapped[str] = mapped_column(String(30), default="known", nullable=False)
     provider: Mapped[str] = mapped_column(String(20), nullable=False)
     model_id: Mapped[str] = mapped_column(String(100), nullable=False)
-    input_tokens: Mapped[int] = mapped_column(Integer, nullable=False)
-    output_tokens: Mapped[int] = mapped_column(Integer, nullable=False)
-    estimated_cost_cny = mapped_column(Numeric(12, 6), nullable=False)
+    input_tokens: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    output_tokens: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    estimated_cost_cny = mapped_column(Numeric(12, 6), nullable=True)
     price_version: Mapped[str] = mapped_column(String(40), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now, nullable=False)
+
+
+class StoryTask(Base):
+    __tablename__ = "story_tasks"
+    __table_args__ = (UniqueConstraint("session_id", "idempotency_key", name="uq_creation_key"),)
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=uid)
+    session_id: Mapped[str] = mapped_column(ForeignKey("sessions.id"), nullable=False, index=True)
+    story_id: Mapped[str] = mapped_column(String(36), nullable=False)
+    source_task_id: Mapped[str | None] = mapped_column(ForeignKey("story_tasks.id"), nullable=True)
+    idempotency_key: Mapped[str] = mapped_column(String(80), nullable=False)
+    request: Mapped[dict] = mapped_column(JsonType, nullable=False)
+    status: Mapped[str] = mapped_column(String(30), default="queued", nullable=False)
+    stage: Mapped[str] = mapped_column(String(30), default="generate", nullable=False)
+    checkpoint: Mapped[dict] = mapped_column(JsonType, default=dict, nullable=False)
+    repair_count: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    candidate_version_id: Mapped[str | None] = mapped_column(ForeignKey("story_versions.id"), nullable=True)
+    root_node_id: Mapped[str | None] = mapped_column(ForeignKey("nodes.id"), nullable=True)
+    trace_id: Mapped[str | None] = mapped_column(String(36), nullable=True)
+    trace_seq: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    error_code: Mapped[str | None] = mapped_column(String(80), nullable=True)
+    deadline_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now, nullable=False)
+
+
+class StoryTaskEvent(Base):
+    __tablename__ = "story_task_events"
+    __table_args__ = (UniqueConstraint("task_id", "seq", name="uq_creation_event_seq"),)
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=uid)
+    task_id: Mapped[str] = mapped_column(ForeignKey("story_tasks.id"), nullable=False)
+    seq: Mapped[int] = mapped_column(Integer, nullable=False)
+    event: Mapped[str] = mapped_column(String(40), nullable=False)
+    payload: Mapped[dict] = mapped_column(JsonType, nullable=False)
+
+
+class ExecutionTrace(Base):
+    __tablename__ = "execution_traces"
+    __table_args__ = (
+        UniqueConstraint("trace_id", "seq", name="uq_trace_seq"),
+        CheckConstraint("(run_id IS NOT NULL AND creation_task_id IS NULL) OR (run_id IS NULL AND creation_task_id IS NOT NULL)", name="ck_trace_task"),
+    )
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=uid)
+    trace_id: Mapped[str] = mapped_column(String(36), nullable=False, index=True)
+    span_id: Mapped[str | None] = mapped_column(String(36), nullable=True)
+    parent_span_id: Mapped[str | None] = mapped_column(String(36), nullable=True)
+    seq: Mapped[int] = mapped_column(Integer, nullable=False)
+    run_id: Mapped[str | None] = mapped_column(ForeignKey("runs.id"), nullable=True)
+    creation_task_id: Mapped[str | None] = mapped_column(ForeignKey("story_tasks.id"), nullable=True)
+    session_id: Mapped[str] = mapped_column(ForeignKey("sessions.id"), nullable=False)
+    node_id: Mapped[str | None] = mapped_column(ForeignKey("nodes.id"), nullable=True)
+    llm_call_id: Mapped[str | None] = mapped_column(ForeignKey("llm_calls.id"), nullable=True)
+    event_type: Mapped[str] = mapped_column(String(40), nullable=False)
+    attempt: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    duration_ms: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    error_code: Mapped[str | None] = mapped_column(String(80), nullable=True)
+    payload: Mapped[dict] = mapped_column(JsonType, nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now, nullable=False)

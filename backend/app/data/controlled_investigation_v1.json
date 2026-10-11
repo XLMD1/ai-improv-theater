@@ -1,0 +1,923 @@
+{
+  "blueprint_version": "controlled-investigation-1",
+  "source_story_hash": "dbdb37eb57b2eaf90eddfb42246189920147fa94adfeef85cf43598bcbd3ce79",
+  "template": {
+    "schema_version": "investigation-story-1",
+    "story_id": "d127cc9c-5049-4b15-96b6-c47545a68f1e",
+    "story_version": "1.0.0",
+    "title": "受控调查骨架",
+    "setting": "待生成背景",
+    "era": "modern",
+    "public_intro": "调查一宗存在争议的失踪事件；公开介绍人物与调查邀请，不提前揭示事实。",
+    "protagonist_id": "lin_lan",
+    "start_location_id": "waiting_hall",
+    "characters": [
+      {
+        "id": "lin_lan",
+        "name": "调查主角",
+        "goal": "查清失踪与责任，凭证据判断。",
+        "taboos": [
+          "不以未经核实的推测定罪。"
+        ],
+        "appearance": "依年代生成人物外貌，不含秘密或证据结论。",
+        "initial_location_id": "waiting_hall",
+        "known_fact_ids": [],
+        "secret_fact_ids": []
+      },
+      {
+        "id": "zhou_yan",
+        "name": "掌握调度信息的见证者",
+        "goal": "保护受威胁者并核实记录。",
+        "taboos": [
+          "不提前披露秘密和受保护者地址。"
+        ],
+        "appearance": "依年代生成人物外貌，不含秘密或证据结论。",
+        "initial_location_id": "lighthouse",
+        "known_fact_ids": [
+          "fact_order",
+          "fact_redirect",
+          "fact_rescue",
+          "fact_survivors"
+        ],
+        "secret_fact_ids": [
+          "fact_cover"
+        ]
+      },
+      {
+        "id": "shen_zhixia",
+        "name": "与失踪者关系密切的见证者",
+        "goal": "查清失踪者的行动与去向。",
+        "taboos": [
+          "不提前披露未发现事实。"
+        ],
+        "appearance": "依年代生成人物外貌，不含秘密或证据结论。",
+        "initial_location_id": "dock",
+        "known_fact_ids": [
+          "fact_cut",
+          "fact_rescue"
+        ],
+        "secret_fact_ids": [
+          "fact_cover"
+        ]
+      }
+    ],
+    "locations": [
+      {
+        "id": "waiting_hall",
+        "name": "调查地点1",
+        "description": "依背景生成公开环境，不能提前给出未发现证据或事实；名称应对应本地对象。",
+        "exits": [
+          {
+            "location_id": "archive",
+            "conditions": {
+              "all": [
+                {
+                  "op": "has_evidence",
+                  "evidence_id": "press_note",
+                  "expected": true
+                }
+              ]
+            }
+          }
+        ]
+      },
+      {
+        "id": "archive",
+        "name": "调查地点2",
+        "description": "依背景生成公开环境，不能提前给出未发现证据或事实；名称应对应本地对象。",
+        "exits": [
+          {
+            "location_id": "waiting_hall",
+            "conditions": {
+              "all": []
+            }
+          },
+          {
+            "location_id": "dock",
+            "conditions": {
+              "all": [
+                {
+                  "op": "has_evidence",
+                  "evidence_id": "altered_order",
+                  "expected": true
+                }
+              ]
+            }
+          }
+        ]
+      },
+      {
+        "id": "dock",
+        "name": "调查地点3",
+        "description": "依背景生成公开环境，不能提前给出未发现证据或事实；名称应对应本地对象。",
+        "exits": [
+          {
+            "location_id": "archive",
+            "conditions": {
+              "all": []
+            }
+          },
+          {
+            "location_id": "bell_tower",
+            "conditions": {
+              "all": [
+                {
+                  "op": "has_disclosure",
+                  "disclosure_id": "rescue_signals",
+                  "expected": true
+                }
+              ]
+            }
+          }
+        ]
+      },
+      {
+        "id": "bell_tower",
+        "name": "调查地点4",
+        "description": "依背景生成公开环境，不能提前给出未发现证据或事实；名称应对应本地对象。",
+        "exits": [
+          {
+            "location_id": "dock",
+            "conditions": {
+              "all": []
+            }
+          },
+          {
+            "location_id": "lighthouse",
+            "conditions": {
+              "all": [
+                {
+                  "op": "has_evidence",
+                  "evidence_id": "keeper_key",
+                  "expected": true
+                }
+              ]
+            }
+          }
+        ]
+      },
+      {
+        "id": "lighthouse",
+        "name": "调查地点5",
+        "description": "依背景生成公开环境，不能提前给出未发现证据或事实；名称应对应本地对象。",
+        "exits": [
+          {
+            "location_id": "bell_tower",
+            "conditions": {
+              "all": []
+            }
+          }
+        ]
+      }
+    ],
+    "objects": [
+      {
+        "id": "notice",
+        "location_id": "waiting_hall",
+        "name": "公开告示载体",
+        "description": "可观察的对象外观；不能在调查前公开其证据内容。"
+      },
+      {
+        "id": "satchel",
+        "location_id": "waiting_hall",
+        "name": "主角随身线索载体",
+        "description": "可观察的对象外观；不能在调查前公开其证据内容。"
+      },
+      {
+        "id": "register",
+        "location_id": "archive",
+        "name": "登记资料",
+        "description": "可观察的对象外观；不能在调查前公开其证据内容。"
+      },
+      {
+        "id": "tide_chart",
+        "location_id": "archive",
+        "name": "路线记录",
+        "description": "可观察的对象外观；不能在调查前公开其证据内容。"
+      },
+      {
+        "id": "carbon_copy",
+        "location_id": "archive",
+        "name": "指令副本",
+        "description": "可观察的对象外观；不能在调查前公开其证据内容。"
+      },
+      {
+        "id": "mooring",
+        "location_id": "dock",
+        "name": "受损装置",
+        "description": "可观察的对象外观；不能在调查前公开其证据内容。"
+      },
+      {
+        "id": "chest",
+        "location_id": "dock",
+        "name": "改造运输容器",
+        "description": "可观察的对象外观；不能在调查前公开其证据内容。"
+      },
+      {
+        "id": "bell_log",
+        "location_id": "bell_tower",
+        "name": "出行时序记录",
+        "description": "可观察的对象外观；不能在调查前公开其证据内容。"
+      },
+      {
+        "id": "recorder",
+        "location_id": "bell_tower",
+        "name": "当事人通信载体",
+        "description": "可观察的对象外观；不能在调查前公开其证据内容。"
+      },
+      {
+        "id": "service_hatch",
+        "location_id": "bell_tower",
+        "name": "隐蔽保管处",
+        "description": "可观察的对象外观；不能在调查前公开其证据内容。"
+      },
+      {
+        "id": "lens",
+        "location_id": "lighthouse",
+        "name": "方向设置装置",
+        "description": "可观察的对象外观；不能在调查前公开其证据内容。"
+      },
+      {
+        "id": "logbook",
+        "location_id": "lighthouse",
+        "name": "救援名册",
+        "description": "可观察的对象外观；不能在调查前公开其证据内容。"
+      }
+    ],
+    "evidence": [
+      {
+        "id": "ferry_record",
+        "description": "异常限制通行的公开记录显示某一批运输得到特别许可，支持危险指令事实。",
+        "fact_ids": [
+          "fact_order"
+        ]
+      },
+      {
+        "id": "press_note",
+        "description": "主角携带的线索指向登记资料及危险运输的时间；仅支持指令事实，不直接给出救援真相。",
+        "fact_ids": [
+          "fact_order"
+        ]
+      },
+      {
+        "id": "cargo_manifest",
+        "description": "登记资料与另一本记录矛盾，证明有权者把危险物资伪装为普通货物。",
+        "fact_ids": [
+          "fact_order"
+        ]
+      },
+      {
+        "id": "tide_table",
+        "description": "路线资料显示另有可安全救援的方向，标记支持第一位NPC保护性偏转。",
+        "fact_ids": [
+          "fact_redirect"
+        ]
+      },
+      {
+        "id": "altered_order",
+        "description": "危险指令原件与第一位NPC的偏转批注，同时支持指令与改向救援。",
+        "fact_ids": [
+          "fact_order",
+          "fact_redirect"
+        ]
+      },
+      {
+        "id": "fresh_cut",
+        "description": "装置切断或损坏痕迹与失踪者工具吻合，支持主动破坏而非自然事故。",
+        "fact_ids": [
+          "fact_cut"
+        ]
+      },
+      {
+        "id": "empty_crate",
+        "description": "原运输容器被改造以装载被救者，留下多人获救痕迹，不再承载危险物资。",
+        "fact_ids": [
+          "fact_rescue"
+        ]
+      },
+      {
+        "id": "bell_times",
+        "description": "时序记录显示失踪者两次出发一次返回，支持先救人后再次出发失踪，不证明死亡。",
+        "fact_ids": [
+          "fact_rescue"
+        ]
+      },
+      {
+        "id": "radio_tape",
+        "description": "保存的当事人通信同时印证保护性改向、主动破坏与救援失踪；不要加入其余事实。",
+        "fact_ids": [
+          "fact_redirect",
+          "fact_rescue",
+          "fact_cut"
+        ]
+      },
+      {
+        "id": "keeper_key",
+        "description": "保管处的威胁材料解释两位NPC隐瞒记录是为保护受威胁家属。",
+        "fact_ids": [
+          "fact_cover"
+        ]
+      },
+      {
+        "id": "lens_angle",
+        "description": "装置的最终方向设置独立印证保护性偏转，不能引出新的未定义秘密。",
+        "fact_ids": [
+          "fact_redirect"
+        ]
+      },
+      {
+        "id": "rescue_list",
+        "description": "救援名册记载获救者及失踪者最后出发；获救者共同签署核实材料，敏感地址需要保护。",
+        "fact_ids": [
+          "fact_rescue",
+          "fact_survivors"
+        ]
+      }
+    ],
+    "truth": {
+      "text": "六项事实必须连成完整因果：危险指令、保护性偏转、主动破坏、救援失踪、因威胁隐瞒、共同核实及地址保护；依年代创作具体人物与事件，不宣称失踪者死亡。",
+      "facts": {
+        "fact_order": "有权者下达危险指令，在限制正常通行时伪装运输危险物资。",
+        "fact_redirect": "第一位NPC违背该指令，改变指引或路线以帮助救援，没有执行危险运输原目标。",
+        "fact_cut": "失踪者主动破坏运输装置，阻止危险物资出发；不是自然损坏。",
+        "fact_rescue": "失踪者救回一批受困者，之后再次寻找他人而失踪；没有可靠死亡证据。",
+        "fact_cover": "两位NPC因受保护者家属受到威胁而隐瞒或涂改关键记录。",
+        "fact_survivors": "受保护者留下共同签署的核实材料和敏感地址，愿意共同核查但公开地址会危及他们。"
+      }
+    },
+    "disclosures": [
+      {
+        "id": "warning",
+        "character_id": "shen_zhixia",
+        "fact_ids": [
+          "fact_cover"
+        ],
+        "public_text": "第二位NPC承认受保护者家属一直被威胁，要求核实运输容器；仅披露隐瞒原因。"
+      },
+      {
+        "id": "rescue_signals",
+        "character_id": "shen_zhixia",
+        "fact_ids": [
+          "fact_rescue"
+        ],
+        "public_text": "第二位NPC从改造容器确认救援信号，解释失踪者救人后再次出发，建议核查时序记录。"
+      },
+      {
+        "id": "confession",
+        "character_id": "zhou_yan",
+        "fact_ids": [
+          "fact_order",
+          "fact_redirect",
+          "fact_cover"
+        ],
+        "public_text": "第一位NPC承认危险指令、违令改向救援和隐瞒记录；不把失踪推断为死亡。"
+      },
+      {
+        "id": "last_warning",
+        "character_id": "zhou_yan",
+        "fact_ids": [
+          "fact_cover",
+          "fact_survivors"
+        ],
+        "public_text": "第一位NPC交代共同核实材料与敏感地址，要求保护受威胁者；仅披露隐瞒与受保护者事实。"
+      }
+    ],
+    "commitments": [
+      {
+        "id": "verify_together",
+        "character_id": "zhou_yan",
+        "public_text": "第一位NPC承诺联系受保护者共同核实；主角承诺避免传播未核实指控和敏感地址。"
+      }
+    ],
+    "action_rules": [
+      {
+        "id": "inspect_notice",
+        "action": {
+          "type": "investigate",
+          "object_id": "notice"
+        },
+        "conditions": {
+          "all": []
+        },
+        "effects": [
+          {
+            "op": "discover_evidence",
+            "evidence_id": "ferry_record"
+          }
+        ],
+        "once": true,
+        "feedback": "异常限制通行的公开记录显示某一批运输得到特别许可，支持危险指令事实。"
+      },
+      {
+        "id": "inspect_satchel",
+        "action": {
+          "type": "investigate",
+          "object_id": "satchel"
+        },
+        "conditions": {
+          "all": [
+            {
+              "op": "has_evidence",
+              "evidence_id": "ferry_record",
+              "expected": true
+            }
+          ]
+        },
+        "effects": [
+          {
+            "op": "discover_evidence",
+            "evidence_id": "press_note"
+          }
+        ],
+        "once": true,
+        "feedback": "主角携带的线索指向登记资料及危险运输的时间；仅支持指令事实，不直接给出救援真相。"
+      },
+      {
+        "id": "inspect_register",
+        "action": {
+          "type": "investigate",
+          "object_id": "register"
+        },
+        "conditions": {
+          "all": [
+            {
+              "op": "has_evidence",
+              "evidence_id": "press_note",
+              "expected": true
+            }
+          ]
+        },
+        "effects": [
+          {
+            "op": "discover_evidence",
+            "evidence_id": "cargo_manifest"
+          }
+        ],
+        "once": true,
+        "feedback": "登记资料与另一本记录矛盾，证明有权者把危险物资伪装为普通货物。"
+      },
+      {
+        "id": "inspect_tide_chart",
+        "action": {
+          "type": "investigate",
+          "object_id": "tide_chart"
+        },
+        "conditions": {
+          "all": [
+            {
+              "op": "has_evidence",
+              "evidence_id": "cargo_manifest",
+              "expected": true
+            }
+          ]
+        },
+        "effects": [
+          {
+            "op": "discover_evidence",
+            "evidence_id": "tide_table"
+          }
+        ],
+        "once": true,
+        "feedback": "路线资料显示另有可安全救援的方向，标记支持第一位NPC保护性偏转。"
+      },
+      {
+        "id": "inspect_carbon_copy",
+        "action": {
+          "type": "investigate",
+          "object_id": "carbon_copy"
+        },
+        "conditions": {
+          "all": [
+            {
+              "op": "has_evidence",
+              "evidence_id": "tide_table",
+              "expected": true
+            }
+          ]
+        },
+        "effects": [
+          {
+            "op": "discover_evidence",
+            "evidence_id": "altered_order"
+          }
+        ],
+        "once": true,
+        "feedback": "危险指令原件与第一位NPC的偏转批注，同时支持指令与改向救援。"
+      },
+      {
+        "id": "inspect_mooring",
+        "action": {
+          "type": "investigate",
+          "object_id": "mooring"
+        },
+        "conditions": {
+          "all": [
+            {
+              "op": "has_evidence",
+              "evidence_id": "altered_order",
+              "expected": true
+            }
+          ]
+        },
+        "effects": [
+          {
+            "op": "discover_evidence",
+            "evidence_id": "fresh_cut"
+          }
+        ],
+        "once": true,
+        "feedback": "装置切断或损坏痕迹与失踪者工具吻合，支持主动破坏而非自然事故。"
+      },
+      {
+        "id": "inspect_chest",
+        "action": {
+          "type": "investigate",
+          "object_id": "chest"
+        },
+        "conditions": {
+          "all": [
+            {
+              "op": "has_evidence",
+              "evidence_id": "fresh_cut",
+              "expected": true
+            }
+          ]
+        },
+        "effects": [
+          {
+            "op": "discover_evidence",
+            "evidence_id": "empty_crate"
+          }
+        ],
+        "once": true,
+        "feedback": "原运输容器被改造以装载被救者，留下多人获救痕迹，不再承载危险物资。"
+      },
+      {
+        "id": "inspect_bell_log",
+        "action": {
+          "type": "investigate",
+          "object_id": "bell_log"
+        },
+        "conditions": {
+          "all": [
+            {
+              "op": "has_evidence",
+              "evidence_id": "empty_crate",
+              "expected": true
+            }
+          ]
+        },
+        "effects": [
+          {
+            "op": "discover_evidence",
+            "evidence_id": "bell_times"
+          }
+        ],
+        "once": true,
+        "feedback": "时序记录显示失踪者两次出发一次返回，支持先救人后再次出发失踪，不证明死亡。"
+      },
+      {
+        "id": "inspect_recorder",
+        "action": {
+          "type": "investigate",
+          "object_id": "recorder"
+        },
+        "conditions": {
+          "all": [
+            {
+              "op": "has_evidence",
+              "evidence_id": "bell_times",
+              "expected": true
+            }
+          ]
+        },
+        "effects": [
+          {
+            "op": "discover_evidence",
+            "evidence_id": "radio_tape"
+          }
+        ],
+        "once": true,
+        "feedback": "保存的当事人通信同时印证保护性改向、主动破坏与救援失踪；不要加入其余事实。"
+      },
+      {
+        "id": "inspect_service_hatch",
+        "action": {
+          "type": "investigate",
+          "object_id": "service_hatch"
+        },
+        "conditions": {
+          "all": [
+            {
+              "op": "has_evidence",
+              "evidence_id": "radio_tape",
+              "expected": true
+            }
+          ]
+        },
+        "effects": [
+          {
+            "op": "discover_evidence",
+            "evidence_id": "keeper_key"
+          }
+        ],
+        "once": true,
+        "feedback": "保管处的威胁材料解释两位NPC隐瞒记录是为保护受威胁家属。"
+      },
+      {
+        "id": "inspect_lens",
+        "action": {
+          "type": "investigate",
+          "object_id": "lens"
+        },
+        "conditions": {
+          "all": [
+            {
+              "op": "has_evidence",
+              "evidence_id": "keeper_key",
+              "expected": true
+            }
+          ]
+        },
+        "effects": [
+          {
+            "op": "discover_evidence",
+            "evidence_id": "lens_angle"
+          }
+        ],
+        "once": true,
+        "feedback": "装置的最终方向设置独立印证保护性偏转，不能引出新的未定义秘密。"
+      },
+      {
+        "id": "inspect_logbook",
+        "action": {
+          "type": "investigate",
+          "object_id": "logbook"
+        },
+        "conditions": {
+          "all": [
+            {
+              "op": "has_evidence",
+              "evidence_id": "lens_angle",
+              "expected": true
+            }
+          ]
+        },
+        "effects": [
+          {
+            "op": "discover_evidence",
+            "evidence_id": "rescue_list"
+          }
+        ],
+        "once": true,
+        "feedback": "救援名册记载获救者及失踪者最后出发；获救者共同签署核实材料，敏感地址需要保护。"
+      },
+      {
+        "id": "hear_warning",
+        "action": {
+          "type": "talk",
+          "character_id": "shen_zhixia",
+          "topic_id": "warning"
+        },
+        "conditions": {
+          "all": [
+            {
+              "op": "has_evidence",
+              "evidence_id": "altered_order",
+              "expected": true
+            }
+          ]
+        },
+        "effects": [
+          {
+            "op": "disclose",
+            "disclosure_id": "warning"
+          },
+          {
+            "op": "trust_delta",
+            "character_id": "shen_zhixia",
+            "value": 1
+          }
+        ],
+        "once": true,
+        "feedback": "第二位NPC承认受保护者家属一直被威胁，要求核实运输容器；仅披露隐瞒原因。"
+      },
+      {
+        "id": "compare_crate",
+        "action": {
+          "type": "present",
+          "character_id": "shen_zhixia",
+          "evidence_id": "empty_crate"
+        },
+        "conditions": {
+          "all": [
+            {
+              "op": "has_disclosure",
+              "disclosure_id": "warning",
+              "expected": true
+            }
+          ]
+        },
+        "effects": [
+          {
+            "op": "disclose",
+            "disclosure_id": "rescue_signals"
+          },
+          {
+            "op": "trust_delta",
+            "character_id": "shen_zhixia",
+            "value": 1
+          }
+        ],
+        "once": true,
+        "feedback": "第二位NPC从改造容器确认救援信号，解释失踪者救人后再次出发，建议核查时序记录。"
+      },
+      {
+        "id": "question_keeper",
+        "action": {
+          "type": "present",
+          "character_id": "zhou_yan",
+          "evidence_id": "radio_tape"
+        },
+        "conditions": {
+          "all": [
+            {
+              "op": "has_evidence",
+              "evidence_id": "rescue_list",
+              "expected": true
+            }
+          ]
+        },
+        "effects": [
+          {
+            "op": "disclose",
+            "disclosure_id": "confession"
+          },
+          {
+            "op": "trust_delta",
+            "character_id": "zhou_yan",
+            "value": 1
+          }
+        ],
+        "once": true,
+        "feedback": "第一位NPC承认危险指令、违令改向救援和隐瞒记录；不把失踪推断为死亡。"
+      },
+      {
+        "id": "agree_verification",
+        "action": {
+          "type": "talk",
+          "character_id": "zhou_yan",
+          "topic_id": "verification"
+        },
+        "conditions": {
+          "all": [
+            {
+              "op": "has_disclosure",
+              "disclosure_id": "confession",
+              "expected": true
+            },
+            {
+              "op": "has_disclosure",
+              "disclosure_id": "last_warning",
+              "expected": true
+            }
+          ]
+        },
+        "effects": [
+          {
+            "op": "record_commitment",
+            "commitment_id": "verify_together"
+          }
+        ],
+        "once": true,
+        "feedback": "第一位NPC承诺联系受保护者共同核实；主角承诺避免传播未核实指控和敏感地址。"
+      }
+    ],
+    "events": [
+      {
+        "id": "keeper_intervenes",
+        "conditions": {
+          "all": [
+            {
+              "op": "at_location",
+              "location_id": "lighthouse"
+            },
+            {
+              "op": "has_evidence",
+              "evidence_id": "keeper_key",
+              "expected": true
+            }
+          ]
+        },
+        "effects": [
+          {
+            "op": "disclose",
+            "disclosure_id": "last_warning"
+          }
+        ],
+        "feedback": "第一位NPC交代共同核实材料与敏感地址，要求保护受威胁者；仅披露隐瞒与受保护者事实。"
+      }
+    ],
+    "endings": [
+      {
+        "id": "publish_truth",
+        "conditions": {
+          "all": [
+            {
+              "op": "at_location",
+              "location_id": "lighthouse"
+            },
+            {
+              "op": "has_evidence",
+              "evidence_id": "rescue_list",
+              "expected": true
+            },
+            {
+              "op": "has_evidence",
+              "evidence_id": "cargo_manifest",
+              "expected": true
+            },
+            {
+              "op": "has_disclosure",
+              "disclosure_id": "confession",
+              "expected": true
+            },
+            {
+              "op": "has_commitment",
+              "commitment_id": "verify_together",
+              "expected": true
+            }
+          ]
+        },
+        "title": "公开核实真相",
+        "consequence": "依已核实证据公开危险指令、救援与隐瞒，遮去敏感地址；权力责任得到调查，两位NPC的隐瞒也须承担后果。"
+      },
+      {
+        "id": "guard_together",
+        "conditions": {
+          "all": [
+            {
+              "op": "at_location",
+              "location_id": "lighthouse"
+            },
+            {
+              "op": "has_evidence",
+              "evidence_id": "rescue_list",
+              "expected": true
+            },
+            {
+              "op": "has_disclosure",
+              "disclosure_id": "rescue_signals",
+              "expected": true
+            },
+            {
+              "op": "has_commitment",
+              "commitment_id": "verify_together",
+              "expected": true
+            },
+            {
+              "op": "trust_at_least",
+              "character_id": "shen_zhixia",
+              "value": 2
+            }
+          ]
+        },
+        "title": "共同保护与核查",
+        "consequence": "与NPC和获救者保管副本、建立核查及保护机制，约定公开期限；保护者得到缓冲，公共责任暂未完成追究。"
+      },
+      {
+        "id": "sink_secret",
+        "conditions": {
+          "all": [
+            {
+              "op": "at_location",
+              "location_id": "lighthouse"
+            },
+            {
+              "op": "has_evidence",
+              "evidence_id": "rescue_list",
+              "expected": true
+            },
+            {
+              "op": "has_evidence",
+              "evidence_id": "altered_order",
+              "expected": true
+            },
+            {
+              "op": "has_disclosure",
+              "disclosure_id": "last_warning",
+              "expected": true
+            },
+            {
+              "op": "has_commitment",
+              "commitment_id": "verify_together",
+              "expected": true
+            }
+          ]
+        },
+        "title": "封存责任",
+        "consequence": "主角改变先前承诺，放弃公开追责并处理公开副本以暂保家属；官方错误解释仍在，失踪者无法公开昭雪。"
+      }
+    ]
+  }
+}

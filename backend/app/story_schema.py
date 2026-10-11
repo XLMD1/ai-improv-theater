@@ -209,9 +209,10 @@ class Story(StrictModel):
     setting: Text
     era: Text
     public_intro: Text
-    protagonist_id: EntityId
+    protagonist_id: EntityId = Field(description='必须引用 characters 中主角本人的 id；主角也是三位角色之一。')
     start_location_id: EntityId
-    characters: Annotated[list[Character], Field(min_length=3, max_length=3)]
+    characters: Annotated[list[Character], Field(min_length=3, max_length=3,
+        description='恰好三位：一位主角的完整 Character 记录，加两位 NPC。必须包含 id 等于 protagonist_id 的角色。')]
     locations: Annotated[list[Location], Field(min_length=5, max_length=5)]
     objects: list[InvestigationObject]
     evidence: list[Evidence]
@@ -261,6 +262,9 @@ class Story(StrictModel):
                 field = next(key for key in type(effect).model_fields if key in groups)
                 ref(field, getattr(effect, field), effect.op == "trust_delta")
 
+        if self.protagonist_id not in groups["character_id"]:
+            raise ValueError(f"protagonist_id={self.protagonist_id} is missing from characters "
+                             f"{sorted(groups['character_id'])}; characters must include protagonist and exactly two NPCs")
         ref("character_id", self.protagonist_id)
         ref("location_id", self.start_location_id)
         for character in self.characters:

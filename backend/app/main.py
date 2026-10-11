@@ -23,6 +23,8 @@ from app.state import StoryValidationError
 @asynccontextmanager
 async def lifespan(_app: FastAPI):
     interrupt_unfinished()
+    from app.story_creation import interrupt_creation_tasks
+    interrupt_creation_tasks()
     yield
 
 
@@ -50,6 +52,9 @@ def current_session(authorization: str = Header(default=""), db: Session = Depen
 
 
 def public_node(node: Node) -> dict:
+    if node.state_snapshot.get('engine_version') == 'investigation-1':
+        from app.investigation_jobs import public_investigation_node
+        return public_investigation_node(node)
     return {
         "id": node.id, "session_id": node.session_id, "parent_id": node.parent_id,
         "depth": node.depth, "scene_id": node.scene_id,
@@ -113,6 +118,13 @@ def new_session(request: SessionCreateRequest | None = None):
 
 @app.get("/session")
 def get_session(session: StorySession = Depends(current_session)):
+    if session.engine_version == 'investigation-1':
+        from app.models import StoryTask
+        with SessionLocal() as db:
+            task = db.scalar(select(StoryTask).where(StoryTask.session_id == session.id).order_by(StoryTask.created_at.desc()))
+            return {'provider':session.provider,'model_id':session.model_id,'engine_version':session.engine_version,
+                    'lifecycle':task.status if task else 'empty','root_node_id':task.root_node_id if task else None,
+                    'task_id':task.id if task else None}
     return {"provider": session.provider, "model_id": session.model_id}
 
 
@@ -129,6 +141,9 @@ def get_node_events(node_id: str, session: StorySession = Depends(current_sessio
     node = db.get(Node, node_id)
     if not node or node.session_id != session.id:
         raise HTTPException(status_code=404, detail="Node not found")
+    if node.state_snapshot.get('engine_version') == 'investigation-1':
+        from app.investigation_jobs import public_investigation_events
+        return public_investigation_events(db,node)
     events = db.scalars(select(TurnEvent).where(TurnEvent.node_id == node_id).order_by(TurnEvent.created_at)).all()
     return [{"event_type": event.event_type, "payload": event.payload} for event in events]
 
@@ -212,3 +227,7 @@ async def stream_run(
             await asyncio.sleep(0.4)
 
     return StreamingResponse(events(), media_type="text/event-stream", headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"})
+
+
+from app.story_api import create_router
+app.include_router(create_router(current_session,db_session))

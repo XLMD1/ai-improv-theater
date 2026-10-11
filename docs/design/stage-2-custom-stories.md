@@ -1,7 +1,11 @@
 # 阶段 2：自定义故事与普通流水线设计
 
+最新补充以用户已批准的[呈现 R1 与候选序号修复](stage-2-controlled-scenes-proposal.md)为准：R1 新回合直接呈现已审核反馈，自由输入使用 action.interpret.v2 只选当前公开候选序号；旧模型叙事故事保留 action.interpret.v1 和生成/审核路径。创建提示、规则与一次内容修复不变，以下历史 v1 表述适用于兼容路径，不据设计声明验收通过。
+
 日期：2026-10-10；设计版本：1。
-状态：用户于 2026-10-10 明确回复“我已确认”，书面设计已确认；[实施计划](stage-2-implementation-plan.md)待审阅及选择执行方式，阶段 2 实现与验收尚未开始。
+状态：用户于 2026-10-10 确认设计及[实施计划](stage-2-implementation-plan.md)，选择当前会话顺序实施和一次最终独立审查。后端及模拟验证已完成；后续用户批准的方案 A/R1/v2 固定真实清单 12/12，一位实际用户核查三故事及九路径五项均通过，阶段 2 已验收。历史动态叙事失败保留，最新记录见[反馈呈现结果](../evaluation/2026-10-11-stage-2-approved-feedback-results.md)。实际结果见[实施日志](../development-log/2026-10-10-stage-2.md)。
+
+2026-10-11 用户批准[受控骨架方案 A](stage-2-controlled-story-proposal.md)及[详细实施计划](../superpowers/plans/2026-10-11-controlled-story.md)。新默认创建改为服务器固定规则关系、模型填写内容并纯组装 Story；旧完整 Story v2 操作保留用于无协议标记的旧任务。以下数量、身份、严格校验、一次修复、费用/Trace 和批准门槛仍适用，具体变更与兼容以该补充为准；尚未据新设计宣称验收。
 依据：[阶段计划](../03-development-plan.md)、[故事规则](stage-1-story-rules.md)、[运行可靠性](runtime-reliability.md)、[评测口径](../evaluation/task-success-baseline.md)。
 
 ## 1. 目标、范围与实施顺序
@@ -64,9 +68,11 @@ GET /session 为调查会话增加 lifecycle、root_node_id 和当前创建任�
 
 ## 5. 调查回合协议和生成上下文
 
+2026-10-11 用户已批准[回合呈现 R1](stage-2-controlled-scenes-proposal.md)，创建与回合分派已通过模拟回归，后续 v2 理解的真实清单 12/12 及一位用户剧情核查通过：后续 controlled-content-2 故事在不可变 story_presentations 中固定 approved-feedback-1，accepted 回合逐字呈现已有 Adjudication.feedback（已含合法事件/结局），dialogue=[]，不再每轮生成/审核。按钮不依赖密钥，自由输入继续注册理解与费用保护。下面模型叙事协议继续适用于旧无呈现记录的 model-scene-1 故事；不将旧故事改为 R1，也不把失败候选改造成 R1 回退。创建校验、玩家过滤、确定性裁决、60 秒截止时间及第 6 节提交/回放门槛保持。完整人工核查仍须判断创建反馈的事实支持、触发时可知性与结局差异。
+
 沿用 POST /turns 的外部 Action(type=option|text,value<=500)，调查会话分派到新任务服务。按钮 ID 必须属于选中父节点保存的服务器选项；每个节点内部保存 option_id → 规范化行动的映射，玩家仅看到不透明 option_id 和公开 label。按钮直接取服务器行动，不调用行动理解；自由输入通过注册操作理解为调查、交流、出示、移动或抉择。无法映射时返回 uninterpretable 的明确反馈，不凭空创造规则。
 
-行动理解只得到公开世界、当前公开选项对应的可执行行动和最近三个祖先回合，不得到真相、未知证据、规则条件或内部 Trace。严格输出为判别联合：recognized（一个阶段 1 Action）或 unrecognized；识别出的行动还须确定性校验实体、地点和条件。玩家文本按数据编码，不拼接为系统指令。
+行动理解只得到公开世界、当前公开选项对应的可执行行动及同序公开标签（action_labels）和最近三个祖先回合，不得到真相、未知证据、规则条件或内部 Trace。标签使模型可以将公开地点名和交流序号对应到服务器行动，不依赖猜测内部 ID。严格输出为判别联合：recognized（一个阶段 1 Action）或 unrecognized；识别出的行动还须确定性校验实体、地点和条件。玩家文本按数据编码，不拼接为系统指令。
 
 通过 apply_state_changes(parent_state,story=story,action=action) 得到完整裁决，包括事件闭包及后继快照。invalid/repeat/precondition_failed 或 uninterpretable 使用确定性反馈节点，不调用叙事模型，父状态完全不变。accepted 才调用叙事生成；模型出参只有 narration（1–1200 字）、dialogue（0–2 条，每条 character_id、1–280 字 text 和固定情绪枚举），禁止 state_changes、scene_id、选项或规则字段。
 
@@ -82,7 +88,7 @@ GET /session 为调查会话增加 lifecycle、root_node_id 和当前创建任�
 
 任务加载父节点后保存身份、版本与快照；提交时锁定 run/session 并重新核对任务状态、截止时间和父节点归属。按同一规范化行动重新计算裁决，必须与先前结果一致。一个事务提交不可变 Node、TurnEvent、run 终态及批准后 SSE；任何失败无新节点或部分状态。
 
-Node.scene_id 使用服务器 location_id，story_version_id 绑定该局版本，canon_version 保存故事版本；新 prompt_version 使用 investigation-single-1。TurnEvent 分别记录玩家输入、行动理解、确定性裁决、披露/承诺/主动事件和批准场景；内部快照保留阶段 1 完整协议。
+Node.scene_id 使用服务器 location_id，story_version_id 绑定该局版本，canon_version 保存故事版本；首次 prompt 为 investigation-single-1，真实失败后完善内部校验反馈与规则说明使用 investigation-single-2。旧节点不改写。TurnEvent 分别记录玩家输入、行动理解、确定性裁决、披露/承诺/主动事件和批准场景；内部快照保留阶段 1 完整协议。
 
 调查节点的玩家 state_snapshot 只包含版本身份、当前地点、action_turn、已发现证据/披露/承诺 ID、trust 和 ending_id，不输出 applied_once_rules、fired_events、规则条件或隐藏定义。调查事件和世界接口使用各自字段白名单；内部 option 映射不进入 public_node。旧节点响应保持原协议。
 
@@ -90,9 +96,9 @@ GET /nodes、节点事件、/tree、run 查询/SSE 均核对会话归属。scene
 
 ## 7. 执行器、费用和内部 Trace
 
-ToolSpec 与 ToolResult 遵循运行可靠性设计，每项独立严格入参/出参。注册 story.generate.v1、story.repair.v1、action.interpret.v1、scene.render.v1、story.semantic_check.v1、scene.semantic_check.v1；语义操作因入参不同分开注册。未分类普通异常为 internal_error，取消继续传播。普通规则函数保持内部函数，不包装为模型工具。
+ToolSpec 与 ToolResult 遵循运行可靠性设计，每项独立严格入参/出参。生成与修复使用第 11 节已确认的 story.generate.v2、story.repair.v2；action.interpret.v1、scene.render.v1、story.semantic_check.v1、scene.semantic_check.v1 保持短操作策略，旧 v1 Trace 不改写。语义操作因入参不同分开注册。未分类普通异常为 internal_error，取消继续传播。普通规则函数保持内部函数，不包装为模型工具。
 
-每个文字 attempt 最多 20 秒且不超过剩余任务时间；行动全部阶段 60 秒，创建执行区间 300 秒。候选输出解析、规则工作进程及语义检查均受区间墙钟上限约束；等待玩家确认不计入外部执行区间。允许安全重试总共最多三次、0.5/1 秒基准加 0–0.25 秒抖动，并遵守 Retry-After 和剩余时间。401/403、非法输出、未知结果的读超时/5xx 不自动重试。
+完整故事生成/修复 v2 attempt 最多 120 秒；其余文字 attempt 最多 20 秒，均不得超过剩余任务时间。行动全部阶段 60 秒，创建执行区间 300 秒。候选输出解析、规则工作进程及语义检查均受区间墙钟上限约束；等待玩家确认不计入外部执行区间。允许安全重试总共最多三次、0.5/1 秒基准加 0–0.25 秒抖动，并遵守 Retry-After 和剩余时间。401/403、非法输出、未知结果的读超时/5xx 不自动重试。
 
 适配器按操作传入输出预算，旧路径保留 900 token；新故事生成/修复设计预算为 12,000 token，行动理解为 300、叙事为 900、语义检查为 2,000。接入时须核对所选受控模型支持这些参数，并验证完整样本不被截断；不支持时先修订设计，不能静默降到旧 900 token。玩家不能传入预算或任意模型 ID。
 
@@ -134,3 +140,21 @@ llm_calls.run_id 改可空，增加 creation_task_id、trace/span/attempt 关联
 - 真实路径：古代、近现代、未来分别实际生成并确认，在各故事保存的三结局见证路径上从根节点分支走完；至少一条包含自由文本的完整路径。仅用规范化规则行动或脚本映射按钮不算自由文本理解通过。记录模型/prompt/价格/故事版本、各调用及任务耗时、usage/费用和人工语义核查人数。
 - 评测入口使用 evals/run_stage2.py 和固定清单，明确 runtime_simulated/real_model 的分母、输入及预期。模型生成后的故事及见证路径在游玩评测开始前冻结；生成失败也计入该背景创建任务分母，不能只挑成功故事。无密钥、未实现、跳过和失败均不能算成功；不把确定性规则通过率当 AI 任务成功率。
 - 开发日志记录实际结果、失败明细及相关提交；未完成真实路径则保留阶段 2 未验收状态。前端本阶段不改，不据后端验收宣称配图、最终体验或新入口可用。
+
+## 11. 首次真实评测后的补充方案（已确认）
+
+状态：用户已回复“按补充方案继续”，实施中，尚未验收；第 7 节同步新策略。首次真实生成 20,016 ms 超时；用户核对控制台后报告该请求消费 0.02 CNY、输入 5,088、输出 4,510、总 token 9,598。目标是保留失败审计、正确计入消费并解除已核账请求的阻断，再用原固定清单评测。
+
+2026-10-11 暂停后恢复裁定：修复稿必须逐字使用修复输入顶层的 story_id/story_version/setting/era，不从旧稿递增版本；输出 schema 固定这些字段，原服务端身份校验仍保留。语义检查须按行动而非规则 ID 阅读确定性见证路径，并考虑事件效果；仍可否决不受状态支持的剧情。评测确认后复用任务已保存的通过证明，不再次搜索；逐案例保存无密钥、无会话凭据的进度文件，未完成整轮不生成成功率报告。原固定清单、修复次数、失败记录和验收门槛不改。
+
+真实 prompt 3 六稿均把主角排除于 characters，说明原通用 character_id 错误不能区分缺失主角与非法 NPC 引用。校验须明确指出 protagonist_id 必须引用 characters 中的一员，并列出实际角色 ID；schema 及生成提示明确 characters 恰为一位主角和两位 NPC。该修改只改善既有约束说明，不允许第四角色或主角参与 NPC 专属规则；仍为完整 Story 生成与至多一次修复，不调整架构或放宽验收。
+
+prompt 4 的路径检查发现 scene.render 输入没有区分主角与 NPC。修复该既有边界：仅在叙事生成输入的 public_world.characters 中列出当前 NPC，公开世界 API 不改；提示 schema 明确允许发言的 ID，无 NPC 时 dialogue 长度为零，每个 NPC 至多一条对白。候选仍经过现有角色、重复发言及语义校验，不能通过删改违规候选或增加重试来通过验收。自由生成规则的进一步方案另写草案，未审定前不改生成架构。
+
+1. 通过仅本地操作者可用的核账入口，在现有独立 Trace 事务中追加 versioned usage_reconciled 事件，严格输入为调用 ID、明确来源 user_reported_provider_console、总 token 和实际 CNY 金额；可同时提供非负输入/输出 token，二者必须成对且合计等于总量。不改原 LLMCall 的 outcome_unknown、NULL token/估算、价格版本或原 attempt 结果；不补写剧情。按所属任务锁保证同一调用核账幂等，相同值重复无新增费用，冲突拒绝。只允许核对已经收尾且 uncertain 的调用；无关/已知调用、非法金额或缺来源拒绝。原始失败 report.json 不改写。
+2. 预算读取包含核账金额；只有该调用存在有效核账事件时解除其 cost_unconfirmed，其他未知调用和审计缺失继续阻断。核账来源是用户陈述，不冒充供应商 API 验证；报表分开显示已知输入/输出、已核账总 token/实际金额和仍未知的调用。80/100 CNY 门槛不变。不新增玩家 HTTP 接口，不启用原子预留或图片。
+3. story.generate/story.repair 新执行策略版本 v2 单次最多 120 秒，HTTP 和墙钟上限均使用同一操作策略且不得超过任务剩余时间；创建执行区间仍为 300 秒。生成/修复输出预算仍为 12,000，prompt 不改。行动理解、叙事和语义检查保留 v1、单次 20 秒，行动总限时仍为 60 秒。未知结果不自动重试，单次内容修复上限保持一次。更长限时可能降低过早取消，但不保证可玩质量或供应商完成时间。
+
+先用失败测试覆盖核账前阻断、后续预算计费、并发/重复不重计、冲突/非法输入拒绝、其他未知调用继续阻断、原账本与节点不变；执行策略测试覆盖生成与短操作区分、适配器限时一致及剩余截止时间截断。通过相关和完整后端测试后，在同一 stage2_real_test 上核对原调用，显式运行新一轮固定 12 项评测；保留首轮 0/12，不换库规避未知费用。同步运行可靠性设计及实测日志，再记录新轮真实结果。
+
+真实 v2 轮 0/12 的只读诊断发现：古代两结局不可达，另外两局违规引用主角；原修复只得到泛化错误码。修复输入须保留有界内部校验详情：schema 的路径/类型/消息（不含原输入或异常 context），以及可达性状态和未到达地点/证据/结局 ID。失败详情仍需脱敏，只用于内部 Trace 和设定修复，不进入玩家 API。生成/修复提示补充 JSON Schema 不能表达的现有规则：全局 ID 唯一、NPC 引用限制、角色固定地点、条件合取及证据/信任的确定性获得方式。不改 Story 协议、规则校验门槛或一次修复上限；新 prompt 版本明确记录，旧轮保留分母。

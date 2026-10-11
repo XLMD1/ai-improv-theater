@@ -81,10 +81,17 @@ def _recent_turns(db, parent_node_id: str) -> list[dict]:
 
 
 def create_run(session_id: str, parent_node_id: str, action: Action, key: str) -> tuple[Run, bool]:
+    with SessionLocal() as db:
+        engine = db.get(StorySession,session_id).engine_version
+    if engine == 'investigation-1':
+        from app.investigation_jobs import create_investigation_run
+        return create_investigation_run(session_id,parent_node_id,action,key)
+    if engine not in (None,'legacy-1'):
+        raise StoryValidationError('unsupported_engine')
     if not 1 <= len(key) <= 80:
         raise StoryValidationError("invalid Idempotency-Key")
     with SessionLocal.begin() as db:
-        db.execute(select(StorySession).where(StorySession.id == session_id).with_for_update()).scalar_one()
+        locked_session = db.execute(select(StorySession).where(StorySession.id == session_id).with_for_update()).scalar_one()
         existing = db.scalar(select(Run).where(Run.session_id == session_id, Run.idempotency_key == key))
         if existing:
             if existing.parent_node_id != parent_node_id or existing.action != action.model_dump():
@@ -115,6 +122,13 @@ def create_run(session_id: str, parent_node_id: str, action: Action, key: str) -
 
 
 async def process_run(run_id: str) -> None:
+    with SessionLocal() as db:
+        run = db.get(Run,run_id)
+        engine = db.get(StorySession,run.session_id).engine_version if run else None
+    if engine == 'investigation-1':
+        from app.investigation_jobs import process_investigation_run
+        await process_investigation_run(run_id)
+        return
     with SessionLocal.begin() as db:
         run = db.get(Run, run_id)
         if not run or run.status != RunStatus.QUEUED:
