@@ -40,6 +40,8 @@
 
 ### 阶段 2：自定义故事与普通流水线
 
+最新补充状态：action.interpret.v2 候选序号修复已提交 69328a2，完整后端 297/297、固定模拟 10/10。v2 首次真实清单 0/12 是三个创建鉴权失败、九路径未执行，尚未验证 v2 行动理解；原 R1 的 11/12 保留。待用户重新输入有效密钥、原清单真实通过及真人核查，阶段 2 仍未验收，详见[最新反馈呈现结果](evaluation/2026-10-11-stage-2-approved-feedback-results.md)。
+
 当前状态：用户已确认[阶段 2 专题设计](design/stage-2-custom-stories.md)及[实施计划](design/stage-2-implementation-plan.md)，选择顺序实施与一次独立审查。后端创建、调查流水线、执行记录和故障评测已实现并进行自动验证；真实 ancient/modern/future 路径和人工剧情核查未执行通过，阶段整体保持未验收。见[实施日志](development-log/2026-10-10-stage-2.md)及[实测报告](evaluation/2026-10-10-stage-2-results.md)。
 
 2026-10-11 补充：[最新补充实测](evaluation/2026-10-11-stage-2-supplement-results.md)记录完整后端最新 180 项；模拟 10/10、规则 30/30、兼容 9/9 分别保留各自实测版本。有效 prompt 4 真实固定清单 1/12，prompt 5 发言约束已通过回归但未真实验证。用户已批准[受控规则骨架方案 A](design/stage-2-controlled-story-proposal.md)，[详细实施计划](superpowers/plans/2026-10-11-controlled-story.md)已确认并开始实施，受控创建集成已通过自动检查，真实与人工验收尚未完成。历史失败、费用和批准节点均保留，真实路径及人工核查尚未通过，不据自动检查勾选本阶段。
