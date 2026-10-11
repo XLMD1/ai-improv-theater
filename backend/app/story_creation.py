@@ -23,6 +23,8 @@ from app.operation_schemas import validate_semantic_report
 from app.reachability_worker import validate_reachability
 from app.story_operations import PROMPT_VERSION, OPERATION_VERSIONS, register_story_operations
 from app.story_schema import Story, StrictModel
+from app.story_content import BLUEPRINT_VERSION,BLUEPRINT_SHA256,load_blueprint_template,parse_story_content,assemble_story_content
+from app.story_validation import ReachabilityReport
 from app.story_versions import load_story_version, save_story_version
 
 
@@ -96,7 +98,9 @@ def create_creation_task(session_id,request,key):
         if db.scalar(select(StoryTask.id).where(StoryTask.session_id == session_id,
                          StoryTask.status.in_(['queued','running','awaiting_confirmation']))):
             raise CreationError('creation_already_pending')
-        task = StoryTask(session_id=session_id,story_id=str(uuid4()),idempotency_key=key,request=request.model_dump())
+        task = StoryTask(session_id=session_id,story_id=str(uuid4()),idempotency_key=key,request=request.model_dump(),
+                         checkpoint={'creation_protocol':'controlled-content-1','blueprint_version':BLUEPRINT_VERSION,
+                                     'blueprint_sha256':BLUEPRINT_SHA256,'prompt_version':PROMPT_VERSION})
         db.add(task)
         db.flush()
         append_creation_event(db,task,'queued',{})
@@ -145,6 +149,18 @@ async def process_creation_task(task_id):
             context.deadline = deadline
             registry = ToolRegistry()
             register_story_operations(registry)
+            protocol = checkpoint.get('creation_protocol')
+            controlled = protocol == 'controlled-content-1'
+            if protocol is not None and not controlled or controlled and (
+                    checkpoint.get('blueprint_version') != BLUEPRINT_VERSION or
+                    checkpoint.get('blueprint_sha256') != BLUEPRINT_SHA256 or
+                    checkpoint.get('prompt_version') != PROMPT_VERSION):
+                raise CreationError('creation_protocol_mismatch')
+            if protocol is None and any(key in checkpoint for key in ('blueprint_version','blueprint_sha256','prompt_version','content_raw')):
+                raise CreationError('creation_protocol_mismatch')
+            context.recorder.event(context.task,'creation_protocol_selected',{
+                key:checkpoint[key] for key in ('creation_protocol','blueprint_version','blueprint_sha256','prompt_version')
+                if key in checkpoint})
             if task.source_task_id:
                 with SessionLocal() as db:
                     source = db.get(StoryTask,task.source_task_id)
@@ -153,7 +169,31 @@ async def process_creation_task(task_id):
                                                                        'source_trace_id':source_trace_id})
             while True:
                 version = 'draft-2' if repair_count else 'draft-1'
-                if 'raw' not in checkpoint:
+                if controlled:
+                    try:
+                        template = load_blueprint_template(story_id,version,**request)
+                    except (ValueError,OSError) as error:
+                        raise CreationError('blueprint_version_mismatch') from error
+                    content_input = {'story_id':story_id,'story_version':version,**request,
+                                     'blueprint_version':BLUEPRINT_VERSION,'blueprint_sha256':BLUEPRINT_SHA256,
+                                     'template':template.model_dump()}
+                    if 'content_raw' not in checkpoint:
+                        if checkpoint.get('content_started'):
+                            raise CreationError('creation_checkpoint_incomplete')
+                        checkpoint = {**checkpoint,'content_started':True}
+                        _checkpoint(task_id,checkpoint,'generate')
+                        result = await execute(registry,'story.content_generate','v1',content_input,context)
+                        invalid = isinstance(result,ToolFailure)
+                        if invalid and result.error_code != 'output_validation':
+                            if not context.stopped and result.error_code != 'storage_failure':
+                                checkpoint = {**checkpoint,'content_started':False}
+                                _checkpoint(task_id,checkpoint,'generate')
+                            raise CreationError(result.error_code)
+                        raw = result.raw_candidate if invalid else result.output.model_dump_json()
+                        checkpoint = {**checkpoint,'content_raw':context.recorder.redact(raw),
+                                      'content_output_invalid':invalid,'content_started':False}
+                        _checkpoint(task_id,checkpoint,'validate')
+                elif 'raw' not in checkpoint:
                     result = await execute(registry,'story.generate',OPERATION_VERSIONS['story.generate'],
                               {'story_id':story_id,'story_version':version,**request},context)
                     if isinstance(result,ToolFailure):
@@ -166,10 +206,20 @@ async def process_creation_task(task_id):
                     _checkpoint(task_id,checkpoint,'validate')
                 issues = []
                 try:
-                    story = Story.model_validate_json(checkpoint['raw'])
+                    if controlled:
+                        if checkpoint.get('content_output_invalid'):
+                            raise ValueError('content_output_validation')
+                        story = assemble_story_content(template,parse_story_content(checkpoint['content_raw']))
+                        if 'raw' not in checkpoint:
+                            checkpoint = {**checkpoint,'raw':story.model_dump_json()}
+                            _checkpoint(task_id,checkpoint,'validate')
+                    else:
+                        story = Story.model_validate_json(checkpoint['raw'])
                     if story.story_id != story_id or story.story_version != version or story.era != request['era'] or story.setting != request['setting']:
                         raise ValueError('candidate_identity_or_setting')
-                    proof = await validate_reachability(story,context.deadline)
+                    proof = (ReachabilityReport.model_validate(checkpoint['proof'])
+                             if controlled and checkpoint.get('semantic_passed') and checkpoint.get('proof')
+                             else await validate_reachability(story,context.deadline))
                     if proof.status != 'passed':
                         issues = [json.dumps({'kind':'reachability',**proof.model_dump(mode='json',
                                    exclude={'ending_paths','locations','evidence'})},ensure_ascii=False)]
@@ -201,12 +251,23 @@ async def process_creation_task(task_id):
                 repair_count = 1
                 checkpoint = {**checkpoint,'repair_started':True,'semantic_passed':False}
                 _checkpoint(task_id,checkpoint,'repair',repair_count=1)
-                repaired = await execute(registry,'story.repair',OPERATION_VERSIONS['story.repair'],
-                              {'story_id':story_id,'story_version':'draft-2',**request,
-                               'raw_candidate':checkpoint['raw'],'issues':issues[:20]},context)
+                if controlled:
+                    repair_template = load_blueprint_template(story_id,'draft-2',**request)
+                    repaired = await execute(registry,'story.content_repair','v1',
+                               {**content_input,'story_version':'draft-2','template':repair_template.model_dump(),
+                                'raw_candidate':checkpoint['content_raw'],'issues':issues[:20]},context)
+                else:
+                    repaired = await execute(registry,'story.repair',OPERATION_VERSIONS['story.repair'],
+                                  {'story_id':story_id,'story_version':'draft-2',**request,
+                                   'raw_candidate':checkpoint['raw'],'issues':issues[:20]},context)
                 if isinstance(repaired,ToolFailure):
                     raise CreationError('story_repair_exhausted' if repaired.error_code=='output_validation' else repaired.error_code)
-                checkpoint = {'raw':repaired.output.model_dump_json(),'repair_done':True}
+                if controlled:
+                    checkpoint = {key:value for key,value in checkpoint.items()
+                                  if key not in ('raw','proof','content_raw','content_output_invalid')}
+                    checkpoint.update(content_raw=repaired.output.model_dump_json(),repair_done=True,content_output_invalid=False)
+                else:
+                    checkpoint = {'raw':repaired.output.model_dump_json(),'repair_done':True}
                 _checkpoint(task_id,checkpoint,'validate')
             context.recorder.event(context.task,'story_validated',{'story_id':story_id,'story_version':version})
             if time.monotonic() >= context.deadline:
@@ -278,7 +339,8 @@ def confirm_creation(session_id,task_id,request):
                     state_snapshot=state,rendered_scene={'scene_id':story.start_location_id,'narration':story.public_intro,
                                                         'dialogue':[],'options':options,'fallback':False},
                     investigation_options=mapping,story_version_id=row.id,canon_version=story.story_version,
-                    prompt_version=PROMPT_VERSION,model_id=f'{session.provider}:{session.model_id}')
+                    prompt_version=task.checkpoint.get('prompt_version','investigation-single-legacy'),
+                    model_id=f'{session.provider}:{session.model_id}')
         db.add(root)
         db.flush()
         row.approval_status = 'approved'

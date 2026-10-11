@@ -13,6 +13,22 @@ import pytest
 import asyncio
 
 
+@pytest.fixture(autouse=True)
+def legacy_creation_protocol():
+    """This module retains the pre-content persisted-task compatibility contract."""
+    from app.db import SessionLocal
+    from app.models import StoryTask
+    from app.story_creation import create_creation_task
+    def create_legacy(*args):
+        task,created = create_creation_task(*args)
+        if created:
+            with SessionLocal.begin() as db:
+                db.get(StoryTask,task.id).checkpoint = {}
+        return task,created
+    with patch('app.story_api.create_creation_task',side_effect=create_legacy):
+        yield
+
+
 def client():
     assert importlib.util.find_spec('app.story_creation'), 'creation pipeline missing'
     from app.main import app
@@ -30,7 +46,10 @@ def create_session(c):
 async def successful_provider(provider,model,key,prompt,budget,timeout):
     from app.provider_clients import ProviderOutcome
     inp = json.loads(prompt.split('\n输入数据：',1)[1])
-    if 'story_id' in inp:
+    if 'template' in inp:
+        from test_controlled_story import content_data
+        result = content_data(inp['template'])
+    elif 'story_id' in inp:
         result = sample_data()
         result.update(story_id=inp['story_id'],story_version=inp['story_version'],setting=inp['setting'],era=inp['era'])
     elif 'candidate' in inp or 'reachability' in inp:

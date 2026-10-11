@@ -11,3 +11,11 @@ Ruling: 对唯一冻结 JSON 资源固定 LF — Windows core.autocrlf 会改变
 Ruling: 补充现有注册表断言的两项内容操作 — 旧集合与批准扩展不符 — 所有旧操作检查保留，没有放宽校验。
 
 本轮仅独立 stage2_prompt_test 用于数据库测试，未新调用模型、未重跑真实清单。当前 prompt=investigation-single-6；真实内容质量未验证。
+
+任务 3：干净 RED 13 failed/20 passed；创建/兼容/恢复相关 GREEN 34 passed、19.96 秒，加入取消检查后完整后端 239 passed、7 warnings、56.55 秒。首次绿色运行仅一个测试因未按 Trace seq 排序而失败，明确排序后修正；无产品逻辑放宽。新任务固定 controlled-content-1、骨架版本/hash 与 prompt，旧无标记任务保持完整 Story v2。失效版本与骨架调用前拒绝，语义连续否决或修复仍非法均不提交版本/根，重复确认不调用 provider。
+
+Ruling: 模拟库切换到 stage2_controlled_test — 一项 RED 假供应商配置产生模拟 uncertain 行，修正假供应商并保留 stage2_prompt_test 的原记录 — 代价是增加独立模拟库；真实库 stage2_real_test 不变。
+
+Ruling: 输出失败标记与脱敏内容一起保存 — JSON 脱敏会规范化重复键，不能因此接受原无效输出 — 增加一个内部标记，仍至多一次修复。生成意图先保存；若成功用量已记录而内容检查点写失败，恢复报 creation_checkpoint_incomplete，不盲重发。保留玩家输入、Trace 与用量，该极少见存储失败窗口不提供自动重新生成。
+
+旧任务未记录创建 prompt 时，新批准根明确标为 investigation-single-legacy，不能猜测当年的 prompt；已有批准根原样返回。取消测试记录 uncertain 并检查无节点，随后仅清理该测试自行建立的模拟会话记录；不删除真实用量。

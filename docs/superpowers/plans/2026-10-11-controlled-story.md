@@ -143,13 +143,13 @@ def require_slots(group, actual, expected):
 
 **Interfaces:** Consumes Task 2 注册操作/解析/纯组装；Produces 新任务默认 `creation_protocol='controlled-content-1'`，内部 checkpoint 保存 `blueprint_version`, `blueprint_sha256`, `prompt_version`, `content_raw` 和已有 `raw/proof/semantic_passed/repair_*`。无新 HTTP 字段或数据库迁移。
 
-- [ ] Step 1：写新默认 API RED 测试：实际设置 fixture key，严格假 provider 产生内容；创建 awaiting_confirmation 前无节点，确认幂等只得一个根。假 provider 在内容生成输出含 action_rules/缺槽位时一次修复，第二次仍错则失败无节点；语义 veto 也只能修复一次。
-- [ ] Step 2：保留原完整 Story v2 故障回归。在旧测试模块用明确兼容 fixture，patch `story_api.create_creation_task`：原函数创建 queued 任务后，在路由 dispatch 之前把该测试任务 checkpoint 清空，再返回；模拟旧持久化任务。不能给生产新增开关。共享 `successful_provider` 识别新入参 template 返回内容，旧入参仍返回 Story；新的默认/API/runner 测试放在 `test_stage2_evaluation.py`，使原固定模拟清单确实执行到新边界。
-- [ ] Step 3：在 `backend/` 运行 `python -m pytest tests/test_custom_story_creation.py tests/test_stage2_evaluation.py -q`，Expected：新默认/检查点/修复分派断言失败，旧兼容回归仍覆盖原含义。
-- [ ] Step 4：新任务创建时固定协议与 hash。process 在已持有原 300 秒 deadline 的 while 内分派：旧无标记 checkpoint 走原完整 Story v2；新协议调用内容操作、先由执行入口保存 attempt/usage，再持久化脱敏原始内容、parse/assemble，进入现有 Story/身份/有界 proof/语义检查。未知协议/hash 在外部调用前拒绝。恢复原标记，不升级或重建已通过内容。
-- [ ] Step 5：修复使用目标 draft-2 新模板、原 `content_raw` 和有界脱敏 issues，输出仍为内容；每次 checkpoint 更新保留协议/provenance，清除旧 raw/proof/semantic_passed 后重新组装与全检查。repair_count/repair_started/repair_done 均沿用原至多一次和恢复限制。确认根节点使用任务固定 prompt，不改变已经保存的根。
-- [ ] Step 6：补充取消/重启、未知协议/骨架、已知费用失败/未知费用阻断、usage 已存而检查点未写、错误修复版本、公开任务不暴露 raw/proof/secret 的负例；断言 provider 次数、无新增失败节点和父状态不变。确认重复回放/恢复已通过检查点不重新生成内容；既有 approved 结果原样返回。
-- [ ] Step 7：重跑 Step 3 同一命令 Expected：全部通过；`python -m pytest -q` Expected：完整后端全部通过，记录实际数字和警告。提交 `feat: 接入受控内容创建与检查点恢复`。
+- [x] Step 1：写新默认 API RED 测试：实际设置 fixture key，严格假 provider 产生内容；创建 awaiting_confirmation 前无节点，确认幂等只得一个根。假 provider 在内容生成输出含 action_rules/缺槽位时一次修复，第二次仍错则失败无节点；语义 veto 也只能修复一次。
+- [x] Step 2：保留原完整 Story v2 故障回归。在旧测试模块用明确兼容 fixture，patch `story_api.create_creation_task`：原函数创建 queued 任务后，在路由 dispatch 之前把该测试任务 checkpoint 清空，再返回；模拟旧持久化任务。不能给生产新增开关。共享 `successful_provider` 识别新入参 template 返回内容，旧入参仍返回 Story；新的默认/API/runner 测试放在 `test_stage2_evaluation.py`，使原固定模拟清单确实执行到新边界。
+- [x] Step 3：在 `backend/` 运行 `python -m pytest tests/test_custom_story_creation.py tests/test_stage2_evaluation.py -q`，Expected：新默认/检查点/修复分派断言失败，旧兼容回归仍覆盖原含义。
+- [x] Step 4：新任务创建时固定协议与 hash。process 在已持有原 300 秒 deadline 的 while 内分派：旧无标记 checkpoint 走原完整 Story v2；新协议调用内容操作、先由执行入口保存 attempt/usage，再持久化脱敏原始内容、parse/assemble，进入现有 Story/身份/有界 proof/语义检查。未知协议/hash 在外部调用前拒绝。恢复原标记，不升级或重建已通过内容。
+- [x] Step 5：修复使用目标 draft-2 新模板、原 `content_raw` 和有界脱敏 issues，输出仍为内容；每次 checkpoint 更新保留协议/provenance，清除旧 raw/proof/semantic_passed 后重新组装与全检查。repair_count/repair_started/repair_done 均沿用原至多一次和恢复限制。确认根节点使用任务固定 prompt，不改变已经保存的根。
+- [x] Step 6：补充取消/重启、未知协议/骨架、已知费用失败/未知费用阻断、usage 已存而检查点未写、错误修复版本、公开任务不暴露 raw/proof/secret 的负例；断言 provider 次数、无新增失败节点和父状态不变。确认重复回放/恢复已通过检查点不重新生成内容；既有 approved 结果原样返回。
+- [x] Step 7：重跑 Step 3 同一命令 Expected：全部通过；`python -m pytest -q` Expected：完整后端全部通过，记录实际数字和警告。提交 `feat: 接入受控内容创建与检查点恢复`。
 
 ## Task 4：固定评测、审查与真实人工验收
 
