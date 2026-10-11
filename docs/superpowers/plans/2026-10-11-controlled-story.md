@@ -157,8 +157,8 @@ def require_slots(group, actual, expected):
 
 **Interfaces:** Consumes Task 3 默认创建，保存 Story/proof、registry/provenance；Produces 含 `creation_protocol`, `blueprint_version`, `blueprint_sha256` 的新真实报告/冻结文件及明确人工记录。历史报告/节点/usage 不改。
 
-- [ ] Step 1：写 runner RED 测试，受控默认能确认并用公共按钮/文字走冻结三结局，冻结文件/报告包含骨架来源；provider 不因加载 trace/回放再次调用。命令 `python -m pytest tests/test_stage2_evaluation.py -q`，Expected：新增 provenance 断言失败。
-- [ ] Step 2：只加来源元数据，不能改清单、取样、分母或语义门槛。继续按保存 proof，无重复 BFS；保留逐项进度、失败 error_code 与人工人数初始 0。模拟无法证明自然语言质量，拒绝把假 provider passed 当人工评审。
+- [x] Step 1：写 runner RED 测试，受控默认能确认并用公共按钮/文字走冻结三结局，冻结文件/报告包含骨架来源；provider 不因加载 trace/回放再次调用。命令 `python -m pytest tests/test_stage2_evaluation.py -q`，Expected：新增 provenance 断言失败。
+- [x] Step 2：只加来源元数据，不能改清单、取样、分母或语义门槛。继续按保存 proof，无重复 BFS；保留逐项进度、失败 error_code 与人工人数初始 0。模拟无法证明自然语言质量，拒绝把假 provider passed 当人工评审。
 - [ ] Step 3：启动本任务自己的 55438 集群；模拟/迁移只用 stage2_prompt_test，真实继续 stage2_real_test。运行完整后端、`python -m alembic check`、根目录 `python evals/run_stage1.py --suite rules` / `--suite legacy` / `python evals/run_stage2.py --suite runtime_simulated`。Expected：各套件全部通过、迁移无新操作；失败则明确诊断修复，不补写结果。
 - [ ] Step 4：只对本计划的已验证变更做一次独立最终审查，提供设计/计划/起止 commit/实测。按严重性完成一次必要修复，RED→GREEN 与受影响套件；不重审原完整阶段或重复发实现者审查。
 - [ ] Step 5：真实调用前核对官方模型/输出模式/参数与价格版本。打开本地隐藏输入终端，经原 runner `--suite real_model --prompt-key`；不能从聊天/.env/旧进程读取密钥。原 12 案例全部执行，同一真实数据库保留历史消费，报告实际节点/路径/usage/时延/恢复，未知费用先核账再新调用。

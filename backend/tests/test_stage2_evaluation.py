@@ -79,6 +79,11 @@ def test_real_runner_harness_freezes_story_then_uses_public_text_and_buttons(tmp
         assert progress['complete'] is True and progress['cases']==results
         assert results[0]['root_node_id'] and results[0]['task_id'] and results[0]['session_id']
         assert 'fixture-private-key' not in json.dumps(progress) and 'Authorization' not in json.dumps(progress)
+        from app.story_content import BLUEPRINT_SHA256,BLUEPRINT_VERSION
+        frozen=json.loads((tmp_path/'ancient-frozen.json').read_text(encoding='utf-8'))
+        for key,value in [('creation_protocol','controlled-content-1'),('blueprint_version',BLUEPRINT_VERSION),
+                          ('blueprint_sha256',BLUEPRINT_SHA256)]:
+            assert frozen[key]==value and results[0][key]==value
     finally:
         clear_key('deepseek')
 
@@ -102,6 +107,22 @@ def test_report_separates_original_usage_operator_evidence_and_unconfirmed_calls
         assert Decimal(summary['estimated_cost_cny'])==0
     finally:
         cleanup_records()
+
+
+def test_real_report_records_creation_provenance_even_without_success(monkeypatch,tmp_path):
+    import os
+    from app.local_settings import clear_key
+    from app.story_content import BLUEPRINT_SHA256,BLUEPRINT_VERSION
+    module=runner()
+    monkeypatch.setattr(module,'ROOT',tmp_path)
+    clear_key('deepseek')
+    monkeypatch.setenv('CONTROLLED_TEST_DATABASE',os.environ['DATABASE_URL'])
+    report,path=module.run_suite('real_model','CONTROLLED_TEST_DATABASE')
+    assert report['summary']['total']==12 and report['summary']['succeeded']==0
+    assert report['manual_reviewers']==0
+    assert report['creation_protocol']=='controlled-content-1'
+    assert report['blueprint_version']==BLUEPRINT_VERSION and report['blueprint_sha256']==BLUEPRINT_SHA256
+    assert json.loads(path.read_text(encoding='utf-8'))['blueprint_sha256']==BLUEPRINT_SHA256
 
 
 def test_controlled_default_creation_freezes_protocol_and_approval_replays_without_provider():

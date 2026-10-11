@@ -19,3 +19,9 @@ Ruling: 模拟库切换到 stage2_controlled_test — 一项 RED 假供应商配
 Ruling: 输出失败标记与脱敏内容一起保存 — JSON 脱敏会规范化重复键，不能因此接受原无效输出 — 增加一个内部标记，仍至多一次修复。生成意图先保存；若成功用量已记录而内容检查点写失败，恢复报 creation_checkpoint_incomplete，不盲重发。保留玩家输入、Trace 与用量，该极少见存储失败窗口不提供自动重新生成。
 
 旧任务未记录创建 prompt 时，新批准根明确标为 investigation-single-legacy，不能猜测当年的 prompt；已有批准根原样返回。取消测试记录 uncertain 并检查无节点，随后仅清理该测试自行建立的模拟会话记录；不删除真实用量。
+
+任务 4 评测来源：RED 2 failed/21 passed；新增字段后 GREEN 23 passed、13.47 秒。完整后端 240 passed、7 warnings、44.19 秒，Alembic check 无新增操作。报告/冻结文件注明 creation_protocol、blueprint_version/hash 与实际创建 prompt；原清单 hash、取样与分母保持，人工人数仍 0。
+
+真实调用前只读快照原库 4 节点/2 故事版本，预算 1.248071 CNY、未知费用与未完成审计均无阻断。快照为忽略目录 runtime/stage2-test/controlled-before-real.json；新调用后须逐项核对原 hash。
+
+2026-10-11 核对[官方 Chat API](https://api-docs.deepseek.com/api/create-chat-completion/)与[官方英文价格](https://api-docs.deepseek.com/quick_start/pricing/)：deepseek-flash 对应 DeepSeek-V4.1-Flash，支持非思考与 json_object，输出上限支持 12,000 token。价格页网页工具超时后直接只读获取官方页面，峰时缓存未命中输入 USD 0.30/百万、输出 USD 1.20/百万，与既有保守估算表一致；沿用价格版本及固定 7.5 换算，不当作实际账单或周末实际价格。未调用模型。

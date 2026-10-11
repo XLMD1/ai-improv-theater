@@ -110,6 +110,11 @@ def execute_real_cases(cases,output):
                         raise ValueError('task_creation_failed')
                     result['task_id'] = task.json()['task_id']
                     task = _poll(client,'/story-tasks/'+task.json()['task_id'],headers,310)
+                    with SessionLocal() as db:
+                        checkpoint = db.get(StoryTask,task['id']).checkpoint
+                        provenance = {key:checkpoint[key] for key in ('creation_protocol','blueprint_version','blueprint_sha256','prompt_version')
+                                      if key in checkpoint}
+                    result.update(provenance)
                     if task['status']!='awaiting_confirmation':
                         raise ValueError(task['error_code'] or 'creation_not_ready')
                     confirmed = client.post('/story-tasks/'+task['id']+'/confirm',headers=headers,
@@ -124,7 +129,7 @@ def execute_real_cases(cases,output):
                         if proof['status']!='passed':
                             raise ValueError('approved_proof_missing')
                         paths = proof['ending_paths']
-                    frozen = {'story':story.model_dump(),'paths':paths,'content_hash':task['content_hash']}
+                    frozen = {'story':story.model_dump(),'paths':paths,'content_hash':task['content_hash'],**provenance}
                     blob = json.dumps(frozen,ensure_ascii=False,sort_keys=True).encode('utf-8')
                     (output/(case['era']+'-frozen.json')).write_bytes(blob)
                     saved[case['era']] = (headers,root_id,story,paths)
@@ -223,6 +228,7 @@ def run_suite(suite,database_url_env):
     from app.models import ExecutionTrace,LLMCall
     from app.costs import EXECUTION_PRICE_VERSION,budget_status
     from app.story_operations import PROMPT_VERSION,OPERATION_VERSIONS,OPERATION_TIMEOUTS
+    from app.story_content import BLUEPRINT_VERSION,BLUEPRINT_SHA256
     with create_engine(url).connect() as connection,Session(bind=connection) as db:
         query = select(LLMCall).where(LLMCall.created_at>=started_at)
         calls = db.scalars(query).all()
@@ -237,6 +243,7 @@ def run_suite(suite,database_url_env):
               'git_commit':commit.stdout.strip(),'manifest_sha256':hashlib.sha256(MANIFEST.read_bytes()).hexdigest(),
               'model_version':'deepseek-flash','prompt_version':PROMPT_VERSION,'price_version':EXECUTION_PRICE_VERSION,
               'operation_versions':OPERATION_VERSIONS,'operation_timeout_seconds':OPERATION_TIMEOUTS,
+              'creation_protocol':'controlled-content-1','blueprint_version':BLUEPRINT_VERSION,'blueprint_sha256':BLUEPRINT_SHA256,
               'timestamp':datetime.now(timezone.utc).isoformat(),'duration_ms':round((time.monotonic()-started)*1000,3),
               'manual_reviewers':0,'summary':summarize(results),'cases':results,'usage':usage,'database_budget':budget}
     path = output/'report.json'
