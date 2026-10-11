@@ -66,7 +66,7 @@ GET /session 为调查会话增加 lifecycle、root_node_id 和当前创建任�
 
 ## 5. 调查回合协议和生成上下文
 
-2026-10-11 用户已批准[回合呈现 R1](stage-2-controlled-scenes-proposal.md)，尚未实施：后续 controlled-content-2 故事在不可变 story_presentations 中固定 approved-feedback-1，accepted 回合逐字呈现已有 Adjudication.feedback（已含合法事件/结局），dialogue=[]，不再每轮生成/审核。按钮不依赖密钥，自由输入继续注册理解与费用保护。下面模型叙事协议继续适用于旧无呈现记录的 model-scene-1 故事；不将旧故事改为 R1，也不把失败候选改造成 R1 回退。创建校验、玩家过滤、确定性裁决、60 秒截止时间及第 6 节提交/回放门槛保持。完整人工核查仍须判断创建反馈的事实支持、触发时可知性与结局差异。
+2026-10-11 用户已批准[回合呈现 R1](stage-2-controlled-scenes-proposal.md)，创建与回合分派已实现并通过模拟回归，真实与人工验收待完成：后续 controlled-content-2 故事在不可变 story_presentations 中固定 approved-feedback-1，accepted 回合逐字呈现已有 Adjudication.feedback（已含合法事件/结局），dialogue=[]，不再每轮生成/审核。按钮不依赖密钥，自由输入继续注册理解与费用保护。下面模型叙事协议继续适用于旧无呈现记录的 model-scene-1 故事；不将旧故事改为 R1，也不把失败候选改造成 R1 回退。创建校验、玩家过滤、确定性裁决、60 秒截止时间及第 6 节提交/回放门槛保持。完整人工核查仍须判断创建反馈的事实支持、触发时可知性与结局差异。
 
 沿用 POST /turns 的外部 Action(type=option|text,value<=500)，调查会话分派到新任务服务。按钮 ID 必须属于选中父节点保存的服务器选项；每个节点内部保存 option_id → 规范化行动的映射，玩家仅看到不透明 option_id 和公开 label。按钮直接取服务器行动，不调用行动理解；自由输入通过注册操作理解为调查、交流、出示、移动或抉择。无法映射时返回 uninterpretable 的明确反馈，不凭空创造规则。
 

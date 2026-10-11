@@ -90,7 +90,7 @@ def execute_real_cases(cases,output):
     from app.main import app
     from app.db import SessionLocal
     from app.models import Node,StoryTask
-    from app.story_versions import load_story_version
+    from app.story_versions import load_narration_protocol,load_story_version
     saved = {}
     results = []
     with TestClient(app) as client:
@@ -112,7 +112,7 @@ def execute_real_cases(cases,output):
                     task = _poll(client,'/story-tasks/'+task.json()['task_id'],headers,310)
                     with SessionLocal() as db:
                         checkpoint = db.get(StoryTask,task['id']).checkpoint
-                        provenance = {key:checkpoint[key] for key in ('creation_protocol','blueprint_version','blueprint_sha256','prompt_version')
+                        provenance = {key:checkpoint[key] for key in ('creation_protocol','narration_protocol','blueprint_version','blueprint_sha256','prompt_version')
                                       if key in checkpoint}
                     result.update(provenance)
                     if task['status']!='awaiting_confirmation':
@@ -124,7 +124,12 @@ def execute_real_cases(cases,output):
                     root_id = confirmed.json()['root']['id']
                     result['root_node_id'] = root_id
                     with SessionLocal() as db:
-                        story = load_story_version(db,db.get(Node,root_id).story_version_id)
+                        version_id = db.get(Node,root_id).story_version_id
+                        story = load_story_version(db,version_id)
+                        narration = load_narration_protocol(db,version_id)
+                        if narration != provenance.get('narration_protocol'):
+                            raise ValueError('presentation_protocol_mismatch')
+                        provenance['narration_protocol'] = narration
                         proof = db.get(StoryTask,task['id']).checkpoint['proof']
                         if proof['status']!='passed':
                             raise ValueError('approved_proof_missing')
@@ -132,12 +137,15 @@ def execute_real_cases(cases,output):
                     frozen = {'story':story.model_dump(),'paths':paths,'content_hash':task['content_hash'],**provenance}
                     blob = json.dumps(frozen,ensure_ascii=False,sort_keys=True).encode('utf-8')
                     (output/(case['era']+'-frozen.json')).write_bytes(blob)
-                    saved[case['era']] = (headers,root_id,story,paths)
+                    saved[case['era']] = (headers,root_id,story,paths,provenance)
                     result.update(story_hash=task['content_hash'],paths_sha256=hashlib.sha256(blob).hexdigest())
                 else:
                     if case['era'] not in saved:
                         raise ValueError('creation_dependency_failed')
-                    headers,parent,story,paths = saved[case['era']]
+                    headers,parent,story,paths,provenance = saved[case['era']]
+                    result.update(root_node_id=parent,**provenance)
+                    with SessionLocal() as db:
+                        result['session_id'] = db.get(Node,parent).session_id
                     ending,path = sorted(paths.items())[case['index']]
                     for normalized in path:
                         with SessionLocal() as db:
@@ -161,7 +169,7 @@ def execute_real_cases(cases,output):
                     with SessionLocal() as db:
                         if db.get(Node,parent).state_snapshot['ending_id']!=ending:
                             raise ValueError('wrong_ending')
-                    result.update(ending_id=ending,actions=len(path),free_text=case['free_text'])
+                    result.update(ending_id=ending,actions=len(path),free_text=case['free_text'],terminal_node_id=parent)
                 result['status'] = 'succeeded'
             except (ValueError,KeyError,StopIteration) as error:
                 # Stable codes only; never persist exception/provider diagnostics.
@@ -200,6 +208,23 @@ def usage_summary(db,calls):
             'actual_reconciled_cost_cny':str(actual),'budget_accounted_cost_cny':str(accounted)}
 
 
+def operation_usage_summary(db,calls,attempts):
+    groups = {}
+    for attempt in attempts:
+        operation = attempt.payload['operation']
+        groups.setdefault(operation,[]).append(attempt.id)
+    result = {}
+    attributed = set()
+    for operation,ids in groups.items():
+        linked = [call for call in calls if call.attempt_id in ids]
+        attributed.update(call.id for call in linked)
+        result[operation] = {'attempts':len(ids),'ledger_calls':len(linked),**usage_summary(db,linked)}
+    unlinked = [call for call in calls if call.id not in attributed]
+    if unlinked:
+        result['unattributed'] = {'attempts':0,'ledger_calls':len(unlinked),**usage_summary(db,unlinked)}
+    return result
+
+
 def run_suite(suite,database_url_env):
     manifest = load_manifest()
     cases = [case for case in manifest['cases'] if case['suite']==suite]
@@ -223,7 +248,7 @@ def run_suite(suite,database_url_env):
         results = execute_real_cases(cases,output)
     else:
         results = [execute_case(case,output,environment) for case in cases]
-    from sqlalchemy import create_engine,func,select
+    from sqlalchemy import create_engine,select
     from sqlalchemy.orm import Session
     from app.models import ExecutionTrace,LLMCall
     from app.costs import EXECUTION_PRICE_VERSION,budget_status
@@ -232,18 +257,20 @@ def run_suite(suite,database_url_env):
     with create_engine(url).connect() as connection,Session(bind=connection) as db:
         query = select(LLMCall).where(LLMCall.created_at>=started_at)
         calls = db.scalars(query).all()
-        attempts = db.scalar(select(func.count()).select_from(ExecutionTrace).where(
+        attempts = db.scalars(select(ExecutionTrace).where(
             ExecutionTrace.event_type=='attempt_started',ExecutionTrace.created_at>=started_at))
-        usage = {'measurement':'retained_ledger_rows','attempts':attempts,'ledger_calls':len(calls),
-                 **usage_summary(db,calls)}
+        attempts = list(attempts)
+        usage = {'measurement':'retained_ledger_rows','attempts':len(attempts),'ledger_calls':len(calls),
+                 'operations':operation_usage_summary(db,calls,attempts),**usage_summary(db,calls)}
         budget = budget_status(db)
     commit = subprocess.run(['git','rev-parse','HEAD'],cwd=ROOT,capture_output=True,text=True,check=False)
     report = {'metric_version':manifest['metric_version'],'run_id':run_id,'suite':suite,
-              'measurement':'simulated_faults' if suite=='runtime_simulated' else 'real_model_paths',
+              'measurement':'simulated_faults' if suite=='runtime_simulated' else 'real_model_with_approved_feedback',
               'git_commit':commit.stdout.strip(),'manifest_sha256':hashlib.sha256(MANIFEST.read_bytes()).hexdigest(),
               'model_version':'deepseek-flash','prompt_version':PROMPT_VERSION,'price_version':EXECUTION_PRICE_VERSION,
               'operation_versions':OPERATION_VERSIONS,'operation_timeout_seconds':OPERATION_TIMEOUTS,
-              'creation_protocol':'controlled-content-1','blueprint_version':BLUEPRINT_VERSION,'blueprint_sha256':BLUEPRINT_SHA256,
+              'creation_protocol':'controlled-content-2','narration_protocol':'approved-feedback-1',
+              'blueprint_version':BLUEPRINT_VERSION,'blueprint_sha256':BLUEPRINT_SHA256,
               'timestamp':datetime.now(timezone.utc).isoformat(),'duration_ms':round((time.monotonic()-started)*1000,3),
               'manual_reviewers':0,'summary':summarize(results),'cases':results,'usage':usage,'database_budget':budget}
     path = output/'report.json'

@@ -78,6 +78,8 @@ def test_real_runner_harness_freezes_story_then_uses_public_text_and_buttons(tmp
         progress = json.loads((tmp_path/'progress.json').read_text(encoding='utf-8'))
         assert progress['complete'] is True and progress['cases']==results
         assert results[0]['root_node_id'] and results[0]['task_id'] and results[0]['session_id']
+        assert all(r['root_node_id'] == results[0]['root_node_id'] and r['terminal_node_id'] for r in results[1:])
+        assert all(r['narration_protocol']=='approved-feedback-1' for r in results)
         assert 'fixture-private-key' not in json.dumps(progress) and 'Authorization' not in json.dumps(progress)
         from app.story_content import BLUEPRINT_SHA256,BLUEPRINT_VERSION
         frozen=json.loads((tmp_path/'ancient-frozen.json').read_text(encoding='utf-8'))
@@ -120,9 +122,36 @@ def test_real_report_records_creation_provenance_even_without_success(monkeypatc
     report,path=module.run_suite('real_model','CONTROLLED_TEST_DATABASE')
     assert report['summary']['total']==12 and report['summary']['succeeded']==0
     assert report['manual_reviewers']==0
-    assert report['creation_protocol']=='controlled-content-1'
+    assert report['creation_protocol']=='controlled-content-2'
+    assert report['narration_protocol']=='approved-feedback-1'
+    assert report['measurement']=='real_model_with_approved_feedback'
+    assert report['usage']['operations']=={}
     assert report['blueprint_version']==BLUEPRINT_VERSION and report['blueprint_sha256']==BLUEPRINT_SHA256
     assert json.loads(path.read_text(encoding='utf-8'))['blueprint_sha256']==BLUEPRINT_SHA256
+
+
+def test_operation_usage_counts_actual_attempts_and_linked_ledger():
+    from test_execution_records import records,cleanup_records,outcome
+    from app.db import SessionLocal
+    from app.models import ExecutionTrace,LLMCall
+    from sqlalchemy import select
+    module=runner()
+    recorder,task,_=records()
+    try:
+        first=recorder.begin_attempt(task,'action.interpret','v1',1,{'text':'公开行动'})
+        recorder.finish_attempt(first,outcome(),None)
+        recorder.begin_attempt(task,'story.content_generate','v1',1,{'setting':'公开背景'})
+        with SessionLocal() as db:
+            calls=db.scalars(select(LLMCall).where(LLMCall.creation_task_id==task.task_id)).all()
+            attempts=db.scalars(select(ExecutionTrace).where(ExecutionTrace.creation_task_id==task.task_id,
+                ExecutionTrace.event_type=='attempt_started')).all()
+            ops=module.operation_usage_summary(db,calls,attempts)
+        assert set(ops)=={'action.interpret','story.content_generate'}
+        assert ops['action.interpret']['attempts']==ops['action.interpret']['ledger_calls']==1
+        assert ops['action.interpret']['input_tokens']==120 and ops['action.interpret']['output_tokens']==80
+        assert ops['story.content_generate']['attempts']==1 and ops['story.content_generate']['ledger_calls']==0
+    finally:
+        cleanup_records()
 
 
 def test_controlled_default_creation_freezes_protocol_and_approval_replays_without_provider():

@@ -162,9 +162,9 @@ else:
 
 **Interfaces:** Consumes Task 2 checkpoint/StoryPresentation/Node/Trace；Produces 含实际 narration_protocol、terminal_node_id、operations 用量分类的新冻结报告，和只读本地人工材料；导出不调用 provider，不增加新 HTTP 接口。
 
-- [ ] Step 1：runner RED：正常新默认报告来源为 controlled-content-2/approved-feedback-1，measurement=real_model_with_approved_feedback；按钮不出现 scene.render/scene.semantic_check 用量，文本路径记录 action.interpret；原固定分母/hash 不变。每条成功路径记录 terminal_node_id、root_node_id 和实际 actions/free_text。新报告 ops 计数从本轮 attempt_started.operation 与关联 LLMCall 聚合，不能用路径数推算调用数；旧报告不改。
-- [ ] Step 2：实施 runner provenance：创建案例读取 checkpoint 与已绑定呈现记录核对；冻结文件和逐案结果保存实际值。报告顶层记录当前默认值与明示 measurement，失败与未知费用仍原样记账，不因全是纯按钮改变成功定义。原输出/进度保留。分别列真实创建、自由输入理解与服务器路径检查，不声称实时叙事模型成功率。
-- [ ] Step 3：写人工材料导出 RED，纯 helper `saved_path(db, terminal_node_id, root_node_id, session_id) -> list[Node]` 只沿父链直到确切根，返回根至终点顺序；错会话、错根、断链或循环报 review_path_invalid，不搜索兄弟节点。集成测试建两个兄弟分支及秘密哨兵，导出某终点不得带另一个分支正文。另测 3/12/缺终点/冻结 hash 不符报告拒绝，不生成“验收完成”文件。
+- [x] Step 1：runner RED：正常新默认报告来源为 controlled-content-2/approved-feedback-1，measurement=real_model_with_approved_feedback；按钮不出现 scene.render/scene.semantic_check 用量，文本路径记录 action.interpret；原固定分母/hash 不变。每条成功路径记录 terminal_node_id、root_node_id 和实际 actions/free_text。新报告 ops 计数从本轮 attempt_started.operation 与关联 LLMCall 聚合，不能用路径数推算调用数；旧报告不改。
+- [x] Step 2：实施 runner provenance：创建案例读取 checkpoint 与已绑定呈现记录核对；冻结文件和逐案结果保存实际值。报告顶层记录当前默认值与明示 measurement，失败与未知费用仍原样记账，不因全是纯按钮改变成功定义。原输出/进度保留。分别列真实创建、自由输入理解与服务器路径检查，不声称实时叙事模型成功率。
+- [x] Step 3：写人工材料导出 RED，纯 helper `saved_path(db, terminal_node_id, root_node_id, session_id) -> list[Node]` 只沿父链直到确切根，返回根至终点顺序；错会话、错根、断链或循环报 review_path_invalid，不搜索兄弟节点。集成测试建两个兄弟分支及秘密哨兵，导出某终点不得带另一个分支正文。另测 3/12/缺终点/冻结 hash 不符报告拒绝，不生成“验收完成”文件。
 
 ```python
 def test_partial_report_cannot_be_exported_as_review_material(tmp_path, monkeypatch):
@@ -179,8 +179,8 @@ def test_partial_report_cannot_be_exported_as_review_material(tmp_path, monkeypa
 ```
 
 `export_review(report_path: Path, database_url_env: str) -> Path` 在导出脚本定义；测试设置 REVIEW_TEST_DATABASE 为隔离 `_test` 库，不能含真实 key。
-- [ ] Step 4：实现 CLI `python evals/export_stage2_review.py --report <本轮report.json> --database-url-env MIGRATION_DATABASE_URL`。复用 validate_database_url；读取报告固定12项全部 succeeded、清单 hash、冻结故事 content_hash 和 terminal/root 归属，再读取已批准保存节点，不运行裁决/工具。仅写 report 所在 `runtime/evals/<run>/human-review.md`；拒绝 runtime/evals 之外报告路径，测试 monkeypatch ROOT 到 tmp_path 建相同结构。材料明确是本地有剧透评审文件：三故事简介、真相/证据关系、三结局、九路径完整已保存正文/对白、实际玩家输入、已发现证据/披露/承诺摘要和核查表；不包含 session token/hash、API key、Trace、失败候选或 connection URL。不会把该文件通过玩家 API/生成上下文提供。
-- [ ] Step 5：新模拟库顺序运行完整 `pytest -q`、`alembic check`、根目录 `evals/run_stage1.py --suite rules`、`--suite legacy`、`evals/run_stage2.py --suite runtime_simulated`，记录实际数量/时延/警告；检查文档本地链接及 `git diff --check`，核对原四草稿/骨架/清单 hash。提交代码与机器结果 `feat: 区分呈现评测来源并导出已保存人工材料`。
+- [x] Step 4：实现 CLI `python evals/export_stage2_review.py --report <本轮report.json> --database-url-env MIGRATION_DATABASE_URL`。复用 validate_database_url；读取报告固定12项全部 succeeded、清单 hash、冻结故事 content_hash 和 terminal/root 归属，再读取已批准保存节点，不运行裁决/工具。仅写 report 所在 `runtime/evals/<run>/human-review.md`；拒绝 runtime/evals 之外报告路径，测试 monkeypatch ROOT 到 tmp_path 建相同结构。材料明确是本地有剧透评审文件：三故事简介、真相/证据关系、三结局、九路径完整已保存正文/对白、实际玩家输入、已发现证据/披露/承诺摘要和核查表；不包含 session token/hash、API key、Trace、失败候选或 connection URL。不会把该文件通过玩家 API/生成上下文提供。
+- [x] Step 5：新模拟库顺序运行完整 `pytest -q`、`alembic check`、根目录 `evals/run_stage1.py --suite rules`、`--suite legacy`、`evals/run_stage2.py --suite runtime_simulated`，记录实际数量/时延/警告；检查文档本地链接及 `git diff --check`，核对原四草稿/骨架/清单 hash。提交代码与机器结果 `feat: 区分呈现评测来源并导出已保存人工材料`。
 - [ ] Step 6：对本补充已验证范围做一次独立最终只读审查，提供起止 commit、规格/计划及实际结果。按严重性完成一次必要修复，以每项 RED→GREEN 和完整受影响套件证明；不重复审查上一轮全部改动，不发每任务审查。记录所有裁定与延期 Minor。未通过修复前不发真实请求。
 - [ ] Step 7：真实前只读快照原库目前所有 34 节点/5 故事版本及旧报告 hash、账本 2.770514 CNY（启动时复核实际值）；增量 upgrade head，只新增表且不回填旧行，旧版本呈现仍 model-scene-1。核对官方供应商模型、参数、价格版本；本地隐藏输入内存密钥，经原 runner `--suite real_model --prompt-key` 执行同一12项，不读取聊天/.env/旧进程。新的结果同时标注新呈现模式，原3/12及所有历史消费保留；未知费用先核账，不能为通过继续换库/采样。
 - [ ] Step 8：只有12项全部成功才运行导出；再次检查原全部节点/版本完整行 hash 和旧报告不变。请至少一位实际人工逐项核对三故事与九路径的证据支持、触发时可知性、无事实冲突、年代合理性、结局差异；真实用户答案与问题写入开发日志/新结果报告，不能把助手诊断算人工。若仍失败则保存明细并定位，保持阶段未验收。
