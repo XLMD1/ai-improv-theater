@@ -42,7 +42,9 @@
 
 当前状态：用户已确认[阶段 2 专题设计](design/stage-2-custom-stories.md)及[实施计划](design/stage-2-implementation-plan.md)，选择顺序实施与一次独立审查。后端创建、调查流水线、执行记录和故障评测已实现并进行自动验证；真实 ancient/modern/future 路径和人工剧情核查未执行通过，阶段整体保持未验收。见[实施日志](development-log/2026-10-10-stage-2.md)及[实测报告](evaluation/2026-10-10-stage-2-results.md)。
 
-2026-10-11 补充：[最新补充实测](evaluation/2026-10-11-stage-2-supplement-results.md)记录完整后端最新 180 项；模拟 10/10、规则 30/30、兼容 9/9 分别保留各自实测版本。有效 prompt 4 真实固定清单 1/12，prompt 5 发言约束已通过回归但未真实验证。用户已批准[受控规则骨架方案 A](design/stage-2-controlled-story-proposal.md)，[详细实施计划](superpowers/plans/2026-10-11-controlled-story.md)已确认并开始实施，受控创建集成与真实验收尚未完成。历史失败、费用和批准节点均保留，真实路径及人工核查尚未通过，不据自动检查勾选本阶段。
+2026-10-11 补充：[最新补充实测](evaluation/2026-10-11-stage-2-supplement-results.md)记录完整后端最新 180 项；模拟 10/10、规则 30/30、兼容 9/9 分别保留各自实测版本。有效 prompt 4 真实固定清单 1/12，prompt 5 发言约束已通过回归但未真实验证。用户已批准[受控规则骨架方案 A](design/stage-2-controlled-story-proposal.md)，[详细实施计划](superpowers/plans/2026-10-11-controlled-story.md)已确认并开始实施，受控创建集成已通过自动检查，真实与人工验收尚未完成。历史失败、费用和批准节点均保留，真实路径及人工核查尚未通过，不据自动检查勾选本阶段。
+
+2026-10-11 受控方案实施：[最新受控结果](evaluation/2026-10-11-stage-2-controlled-story-results.md)记录审查修复后完整后端 241 项、规则 30/30、兼容 9/9、固定模拟顺序重跑 10/10。新默认内容协议已接入；真实固定 12 项及人工核查未通过，阶段 2 复选框保持未完成。
 
 - [ ] 实现背景与年代生成、结构/规则/语义检查、至多一次设定修复、无剧透简介及玩家确认；批准故事版本固定。
 - [ ] 实现“AI 理解行动 → 服务端裁决 → AI 演绎回应”，覆盖调查、追问、出示证据、移动及最终抉择。

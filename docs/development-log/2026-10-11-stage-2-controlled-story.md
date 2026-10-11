@@ -25,3 +25,15 @@ Ruling: 输出失败标记与脱敏内容一起保存 — JSON 脱敏会规范�
 真实调用前只读快照原库 4 节点/2 故事版本，预算 1.248071 CNY、未知费用与未完成审计均无阻断。快照为忽略目录 runtime/stage2-test/controlled-before-real.json；新调用后须逐项核对原 hash。
 
 2026-10-11 核对[官方 Chat API](https://api-docs.deepseek.com/api/create-chat-completion/)与[官方英文价格](https://api-docs.deepseek.com/quick_start/pricing/)：deepseek-flash 对应 DeepSeek-V4.1-Flash，支持非思考与 json_object，输出上限支持 12,000 token。价格页网页工具超时后直接只读获取官方页面，峰时缓存未命中输入 USD 0.30/百万、输出 USD 1.20/百万，与既有保守估算表一致；沿用价格版本及固定 7.5 换算，不当作实际账单或周末实际价格。未调用模型。
+
+提交 a8f83d8 后规则 30/30、17.344 秒，兼容 9/9、12.188 秒，模拟 10/10、48.328 秒；具体报告 ID 见[结果](../evaluation/2026-10-11-stage-2-controlled-story-results.md)。八份相关文档 58 个本地链接无断链，git diff --check 通过，原四份草稿与清单 hash 未变。已发起一次仅覆盖本受控变更的独立只读审查，真实/人工仍待进行。
+
+独立最终审查范围 368d0fc..a8f83d8：Critical 0、Important 1、Minor 0。Important 为供应商成功且已保存已知用量后，执行入口因截止时间返回 task_timeout，但创建检查点清除了生成意图；恢复可能再次付费生成。保持 Important 分级，单次修复保留该超时窗口的 content_started；不改通用执行入口或自动取出 Trace 候选。新增 test_deadline_after_known_usage_cannot_blindly_regenerate_on_resume：RED 在 content_started=False 处失败；相关套件 GREEN 24 passed、1 warning、14.74 秒，验证已知用量一条、无节点、恢复零新增调用。
+
+Ruling: 审查未判断三故事及九路径的自然语言质量 — 留给原固定真实清单与至少一位真实人工评审，自动测试不足以判断 — 代价是阶段 2 仍待验收，不能提前标为完成。
+
+Ruling: 审查未重审早期阶段 2 的所有未改行为 — 本次只审受控改动及集成依赖，完整回归、原规则与旧存档套件负责兼容证据 — 代价是未改变部分仍依赖已有范围的回归，不能声称整项目重新审计。没有延期 Minor，没有发起第二次审查。
+
+验证安排失误：完整 pytest 与固定模拟 runner 同时使用 stage2_controlled_test，应用启动恢复逻辑互相中断运行任务。完整检查 231 passed/10 failed、42.79 秒，模拟报告 159559df08d14bab9acd8795fe9420f5 为 8/10、34.265 秒；失败以 process_restarted 为主要证据。保留该失败报告与用量，不修改产品启动逻辑掩盖测试干扰；两个进程结束后顺序重跑。真实数据库未参与。
+
+顺序重跑完成：完整后端 241 passed、7 warnings、45.76 秒；固定模拟 10/10、52.765 秒，报告 92b32c10d85c4eebb7773aaa314c6c9a，111 项实际断言检查。没有再改产品逻辑，证实同库竞争为上述验证失败来源。原规则/兼容结果不重复计数，真实/人工仍未执行。

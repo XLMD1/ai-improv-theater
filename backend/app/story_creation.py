@@ -185,7 +185,7 @@ async def process_creation_task(task_id):
                         result = await execute(registry,'story.content_generate','v1',content_input,context)
                         invalid = isinstance(result,ToolFailure)
                         if invalid and result.error_code != 'output_validation':
-                            if not context.stopped and result.error_code != 'storage_failure':
+                            if not context.stopped and result.error_code not in ('storage_failure','task_timeout'):
                                 checkpoint = {**checkpoint,'content_started':False}
                                 _checkpoint(task_id,checkpoint,'generate')
                             raise CreationError(result.error_code)

@@ -311,6 +311,48 @@ def test_usage_saved_before_failed_checkpoint_cannot_blindly_regenerate_on_resum
             c.delete('/local-settings/keys/deepseek')
 
 
+def test_deadline_after_known_usage_cannot_blindly_regenerate_on_resume():
+    import asyncio
+    from uuid import uuid4
+    from sqlalchemy import select
+    from app.db import SessionLocal
+    from app.models import StoryTask,LLMCall
+    from app.execution_traces import TraceRecorder
+    from app.story_creation import CreationRequest,create_creation_task,process_creation_task,creation_context
+    from test_custom_story_creation import client,create_session,wait_creation,successful_provider
+    contexts=[]
+    finish_attempt=TraceRecorder.finish_attempt
+    def capture_context(*args):
+        context=creation_context(*args)
+        contexts.append(context)
+        return context
+    def expire_after_usage(recorder,*args):
+        finish_attempt(recorder,*args)
+        contexts[-1].deadline=0
+    with client() as c,patch('app.story_operations.call_operation_provider',side_effect=successful_provider) as provider:
+        headers,session=create_session(c)
+        try:
+            task,_=create_creation_task(session['session_id'],CreationRequest(setting='调查',era='modern'),uuid4().hex)
+            with patch('app.story_creation.creation_context',side_effect=capture_context),patch.object(
+                    TraceRecorder,'finish_attempt',expire_after_usage):
+                asyncio.run(process_creation_task(task.id))
+            result=c.get('/story-tasks/'+task.id,headers=headers).json()
+            assert result['error_code']=='task_timeout' and not contexts[-1].stopped
+            with SessionLocal() as db:
+                row=db.get(StoryTask,task.id)
+                calls=db.scalars(select(LLMCall).where(LLMCall.creation_task_id==task.id)).all()
+                assert len(calls)==1 and calls[0].input_tokens==100 and calls[0].usage_status=='known'
+                assert row.checkpoint['content_started'] and 'content_raw' not in row.checkpoint
+            before=provider.call_count
+            response=c.post('/story-tasks/'+task.id+'/resume',headers={**headers,'Idempotency-Key':uuid4().hex})
+            assert response.status_code==202
+            restored=wait_creation(c,headers,response.json()['task_id'])
+            assert restored['status']=='failed' and restored['error_code']=='creation_checkpoint_incomplete'
+            assert provider.call_count==before==1 and c.get('/tree',headers=headers).json()==[]
+        finally:
+            c.delete('/local-settings/keys/deepseek')
+
+
 def test_unknown_cost_blocks_new_controlled_generation_before_provider():
     from test_execution_records import unknown_call,cleanup_records
     from test_custom_story_creation import client,create_session,prepare
