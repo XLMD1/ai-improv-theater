@@ -53,3 +53,7 @@ prompt 2 轮次 bf2b431b70b4414bb2a5289a5d222952 在用户暂停时未落盘完�
 实际逐字段核查证明六稿 characters 都是三位 NPC，protagonist_id 均不在其中，且没有任何 character_id 字段引用该主角。修复稿版本均为指定 draft-2，说明身份版本绑定生效；仍然无有效故事。已纠正此前将该通用错误解释为 NPC 专属字段引用的判断。进一步改为明确的 protagonist_id 缺失反馈（含实际 characters ID），schema/prompt 明确一主角加两 NPC；prompt 升至 investigation-single-4，模型候选仍完整校验，至多一次修复。新增回归 RED 1 failed、GREEN 23 passed（包含冻结样本/hash），实际质量仍待原清单验证。
 
 prompt 4 本地自动检查：完整后端 176 passed，固定模拟清单 10/10，Alembic check 无新增操作。真实评测本地隐藏输入终端已准备；密钥未输入前不发起请求。阶段仍未验收，不以自动测试替代真实三背景完整路径及人工核查。
+
+## prompt 4 鉴权阻断
+
+用户本地输入后轮次 64985a8526c340cda5a097fd65d59eb9（提交 cb46b60）在 4.297 秒结束，0/12、12 error。三个创建各一次 unauthorized，九路径 creation_dependency_failed；3 次 attempt、0 条新增 usage ledger、input/output 均 0、未确认费用 0，全库预算仍 0.864144 CNY。未生成候选或新增节点；此轮只能证明鉴权阻断有效，不能判断 prompt 4 的生成质量。保留报告，重新输入有效密钥后另建轮次；不会盲重试原失败请求，也不把本地零估算说成供应商账单核验。
