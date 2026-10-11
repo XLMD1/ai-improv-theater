@@ -9,3 +9,13 @@
 先运行新测试，因 StoryPresentation 尚未实现出现 ImportError；实现后相关 36 项通过（3.25 秒，12 条 Alembic 配置弃用警告）。独立 UUID 测试库验证旧故事/节点/事件完整行不变，以及空表降级、已有记录降级保护。
 
 完整后端首次 252 通过、1 失败（43.71 秒）：既有 test_generation_http_and_wall_timeout_share_policy_and_remaining_deadline 的两次实际计时相差 0.016 秒，超出其 0.01 秒断言。未修改时限代码或断言，单项 2/2 通过，再完整重跑 253/253（45.83 秒，13 条既有依赖弃用警告）；alembic check 无新增迁移操作。测试只使用 stage2_presentation_test 和自身临时测试库，未改真实库。
+
+## Task 2：创建与回合分派
+
+新创建默认 controlled-content-2，检查点和不可变呈现记录固定 approved-feedback-1。生成、恢复和确认共享严格协议检查；controlled-content-1 和无标记任务保持旧模式，原内容/schema/骨架/hash/提示不变。确认核对故事归属和协议，不原地升级已有版本。
+
+R1 回合保存完整 Adjudication.feedback，dialogue=[]、fallback=false；按钮无需密钥且没有供应商调用，自由输入仍仅通过 action.interpret 执行。新回合标记服务器呈现来源，并保存 presentation_selected Trace；保留父节点与裁决复核、原子提交、SSE、重放和分支隔离。
+
+先写并运行 API RED，观察缺密钥按钮被拒绝、来源仍是模型、旧协议携带新字段被放行等失败。长文本测试初稿错误地跳过调查前置条件，纠正为告示→信封→移动→账册的真实路径；额外注入 1200 字截断使精确正文断言失败，恢复完整反馈后通过。没有弱化原测试的供应商生成/否决门槛：test_investigation_api 通过显式旧 controlled-content-1 fixture 保留原故障含义；无标记创建兼容测试保留。
+
+相关四文件 63/63（39.50 秒，1 条依赖弃用警告）；完整后端 269/269（53.75 秒，13 条依赖弃用警告）。覆盖无钥匙、费用未知阻断文本但允许纯按钮、401、已知费用后超时、长正文、事件仅一次、分支与重放、取消/过期/事务回滚/旧 worker 不留部分节点。仅模拟供应商，无真实调用或人工验收。

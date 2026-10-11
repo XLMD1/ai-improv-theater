@@ -36,7 +36,7 @@
 
 **Interfaces:** Consumes 现有 Story/canonical_hash、Session、StoryVersion；Produces `StoryPresentation`、`load_narration_protocol(db: Session, version_id: str) -> str` 和 `save_story_version(db, story, *, narration_protocol='model-scene-1') -> StoryVersion`。`load_story_version` 的定义解析/hash 行为不变。
 
-- [ ] Step 1：在新测试文件写 RED，现有 sample_data 创建独立 UUID 故事，覆盖新记录保存、同内容不同协议冲突、未知协议、旧无记录兼容，以及数据库 UPDATE/DELETE 拒绝。示例：
+- [x] Step 1：在新测试文件写 RED，现有 sample_data 创建独立 UUID 故事，覆盖新记录保存、同内容不同协议冲突、未知协议、旧无记录兼容，以及数据库 UPDATE/DELETE 拒绝。示例：
 
 ```python
 def test_presentation_is_fixed_with_version(db):
@@ -51,7 +51,7 @@ def test_presentation_is_fixed_with_version(db):
 
 `db` fixture 使用 SessionLocal，所有相关集成测试仅在 DATABASE_URL 为 PostgreSQL 且数据库名以 `_test` 结尾时运行；纯未知协议单元负例不依赖真实模型。
 
-- [ ] Step 2：启动已有独立集群；仅创建新的 stage2_presentation_test 并迁移至当前 head 0005。命令从工作树 root：
+- [x] Step 2：启动已有独立集群；仅创建新的 stage2_presentation_test 并迁移至当前 head 0005。命令从工作树 root：
 
 ```powershell
 & 'C:\Program Files\PostgreSQL\18\bin\pg_ctl.exe' -D '.\runtime\stage2-test\pgdata' -l '.\runtime\stage2-test\postgres.log' -o '-p 55438 -h 127.0.0.1' start -w
@@ -65,7 +65,7 @@ Set-Location backend
 
 Expected：新模型/参数/加载函数缺失而失败；不因连不上数据库跳过并称通过。若集群已运行，只核对该 pgdata/端口后复用；数据库已存在则检查迁移状态，不重置。
 
-- [ ] Step 3：新增表，revision=0006_story_presentations，down_revision=0005_execution_records。模型形状：
+- [x] Step 3：新增表，revision=0006_story_presentations，down_revision=0005_execution_records。模型形状：
 
 ```python
 class StoryPresentation(Base):
@@ -79,7 +79,7 @@ class StoryPresentation(Base):
 
 迁移建立 BEFORE UPDATE OR DELETE trigger，一律抛 23514；不新增 StoryVersion 列或写任何旧行。0006 downgrade 首先使用 0005 现有审计存在查询，若存在则 `RuntimeError('cannot downgrade execution records')`；其次若呈现记录存在则 `RuntimeError('cannot downgrade presentation records')`，然后才允许删除空表/trigger/function。这样原审计保护测试不在半降级库继续运行。
 
-- [ ] Step 4：扩展 save_story_version，只接受两个已知协议。新版本正常保存定义/hash 后，R1 在同一事务新增 StoryPresentation；旧模式不创建记录。已有版本需比较内容和已保存呈现协议，任何不同报 version_identity_conflict，不能追加记录升级旧版本。加载 helper 无记录返回 model-scene-1，非法已保存值报 presentation_protocol_mismatch；从 db.get 的确切版本记录读取，不扫描 StoryTask。关键检查：
+- [x] Step 4：扩展 save_story_version，只接受两个已知协议。新版本正常保存定义/hash 后，R1 在同一事务新增 StoryPresentation；旧模式不创建记录。已有版本需比较内容和已保存呈现协议，任何不同报 version_identity_conflict，不能追加记录升级旧版本。加载 helper 无记录返回 model-scene-1，非法已保存值报 presentation_protocol_mismatch；从 db.get 的确切版本记录读取，不扫描 StoryTask。关键检查：
 
 ```python
 if narration_protocol not in ('model-scene-1', 'approved-feedback-1'):
@@ -89,8 +89,8 @@ if load_narration_protocol(db, row.id) != narration_protocol:
     raise ValueError('version_identity_conflict')
 ```
 
-- [ ] Step 5：独立迁移测试 fixture 仿照 test_story_versions 的 dedicated UUID `_test` 库方式，先升级 0005，直接插入旧 StoryVersion/节点/事件并保存完整旧列 JSON/hash，再升级 head，确认原行/定义/hash 未变、旧版无呈现记录、加载为 model-scene-1；新增 R1 记录后降级拒绝且记录仍在。空库升级/降级可行；测试结束只清理自身新建的临时测试库，不触及 stage2_real_test。
-- [ ] Step 6：迁移 stage2_presentation_test 至新 head，运行同一 RED 套件以及 `tests/test_story_versions.py tests/test_execution_records.py`、完整 `pytest -q`、`alembic check`。Expected：全部通过，无新增未生成迁移操作。记录实际数字及警告；仅提交该任务文件，`feat: 固定故事呈现协议并保护增量迁移`。
+- [x] Step 5：独立迁移测试 fixture 仿照 test_story_versions 的 dedicated UUID `_test` 库方式，先升级 0005，直接插入旧 StoryVersion/节点/事件并保存完整旧列 JSON/hash，再升级 head，确认原行/定义/hash 未变、旧版无呈现记录、加载为 model-scene-1；新增 R1 记录后降级拒绝且记录仍在。空库升级/降级可行；测试结束只清理自身新建的临时测试库，不触及 stage2_real_test。
+- [x] Step 6：迁移 stage2_presentation_test 至新 head，运行同一 RED 套件以及 `tests/test_story_versions.py tests/test_execution_records.py`、完整 `pytest -q`、`alembic check`。Expected：全部通过，无新增未生成迁移操作。记录实际数字及警告；仅提交该任务文件，`feat: 固定故事呈现协议并保护增量迁移`。
 
 ## Task 2：新创建协议与 R1 回合提交
 
@@ -98,7 +98,7 @@ if load_narration_protocol(db, row.id) != narration_protocol:
 
 **Interfaces:** Consumes Task 1 呈现存储 helper；Produces 新任务 controlled-content-2 检查点与 `approved-feedback-1` 回合 Node、内部 `presentation_selected` Trace；对外 Action/Node 场景结构不变。
 
-- [ ] Step 1：写 API RED，使用 test_custom_story_creation 的 client/create_session/prepare/successful_provider 建立新默认故事并确认；确认后清除密钥，供应商 patch 捕获任何额外请求。按钮应 completed，narration 与保存 adjudication.feedback 逐字相同、dialogue=[]、fallback=false，LLMCall 为零；重复提交同键、节点回放、SSE 补发仍零调用。示例：
+- [x] Step 1：写 API RED，使用 test_custom_story_creation 的 client/create_session/prepare/successful_provider 建立新默认故事并确认；确认后清除密钥，供应商 patch 捕获任何额外请求。按钮应 completed，narration 与保存 adjudication.feedback 逐字相同、dialogue=[]、fallback=false，LLMCall 为零；重复提交同键、节点回放、SSE 补发仍零调用。示例：
 
 ```python
 def test_r1_button_without_key_commits_only_authorized_feedback():
@@ -130,8 +130,8 @@ def test_r1_button_without_key_commits_only_authorized_feedback():
 
 实际测试把下列步骤放在上述同一 client context 内，复用 test_investigation_api.turn(c,headers,parent,action,key=None) 等待任务，不直接调用裁决来代替 HTTP：清除 key；patch provider 为已知成功假响应并记录次数（避免错误假响应产生模拟未知费用）；取 root 第一个按钮；调用 turn；用 SessionLocal 查询 TurnEvent.adjudication 与该 run 的 LLMCall，断言来源/状态/次数；重放原 key 与 GET 节点。尚未实现时 Expected：缺密钥按钮被拒绝或多出叙事调用。
 
-- [ ] Step 2：补充 RED：新协议元数据不符调用前拒绝；controlled-content-1 恢复、无标记兼容、已经 approved 重复确认不升级；长反馈 >1200 字保存完整；事件仅出现一次；自由文本新密钥只调用 action.interpret 一次；401/未知费用/超时无部分节点；无密钥自由文本仍 key_not_configured。测试中 unknown_call/cleanup_records 仅清理该测试新建模拟会话，不删除真实账本。运行 `pytest tests/test_approved_feedback.py tests/test_stage2_evaluation.py -q`，读取失败原因。
-- [ ] Step 3：创建 checkpoint 默认 controlled-content-2，并固定 narration_protocol=approved-feedback-1；process 将 controlled-content-1/2 都派往现有内容操作，新协议检查附加呈现字段，旧协议附加新呈现字段视为不符。PROMPT_VERSION 不变，完整 proof/semantic/一次修复和已知费用后超时保护保持。保存候选版本时，按协议调用 Task 1 save_story_version 的 narration_protocol 参数；确认检查固定记录与 checkpoint 相符，approved 重放返回旧根。
+- [x] Step 2：补充 RED：新协议元数据不符调用前拒绝；controlled-content-1 恢复、无标记兼容、已经 approved 重复确认不升级；长反馈 >1200 字保存完整；事件仅出现一次；自由文本新密钥只调用 action.interpret 一次；401/未知费用/超时无部分节点；无密钥自由文本仍 key_not_configured。测试中 unknown_call/cleanup_records 仅清理该测试新建模拟会话，不删除真实账本。运行 `pytest tests/test_approved_feedback.py tests/test_stage2_evaluation.py -q`，读取失败原因。
+- [x] Step 3：创建 checkpoint 默认 controlled-content-2，并固定 narration_protocol=approved-feedback-1；process 将 controlled-content-1/2 都派往现有内容操作，新协议检查附加呈现字段，旧协议附加新呈现字段视为不符。PROMPT_VERSION 不变，完整 proof/semantic/一次修复和已知费用后超时保护保持。保存候选版本时，按协议调用 Task 1 save_story_version 的 narration_protocol 参数；确认检查固定记录与 checkpoint 相符，approved 重放返回旧根。
 
 ```python
 controlled = protocol in ('controlled-content-1', 'controlled-content-2')
@@ -141,7 +141,7 @@ narration_protocol = ('approved-feedback-1' if protocol == 'controlled-content-2
 row = save_story_version(db, story, narration_protocol=narration_protocol)
 ```
 
-- [ ] Step 4：create_investigation_run 从绑定版本加载呈现协议，只有 R1+option 跳过 configured(provider) 检查；text 及旧模式仍原检查。process 从所选父节点的绑定版本读取协议并记录 presentation_selected，不读取兄弟分支。保留原 try/deadline、裁决、事务内二次裁决、Trace、状态和事件提交。只改 accepted 叙事分派：
+- [x] Step 4：create_investigation_run 从绑定版本加载呈现协议，只有 R1+option 跳过 configured(provider) 检查；text 及旧模式仍原检查。process 从所选父节点的绑定版本读取协议并记录 presentation_selected，不读取兄弟分支。保留原 try/deadline、裁决、事务内二次裁决、Trace、状态和事件提交。只改 accepted 叙事分派：
 
 ```python
 if decision.status == 'accepted' and narration_protocol == 'model-scene-1':
@@ -153,8 +153,8 @@ else:
 ```
 
 不为两行直接呈现另建单用抽象。R1 Node 用 approved-feedback-1/server:approved-feedback-1 标明来源；旧节点新回合依旧 PROMPT_VERSION/provider:model。所有模式保留 scene_validated/node_committed、fallback=false 和批准后 SSE；没有绕过 Trace 存储失败处理。
-- [ ] Step 5：用批准的 sample_data 加 SECRET_SENTINEL 建立 R1 独立版本；移动回合不得包含未发现证据/秘密，发现对应证据才披露。选包含事件的见证路径，assert narration==adjudication.feedback 且事件文本出现一次。长反馈使用原 Story Text 协议合法文本，不能删除尾部来通过 SceneTextDraft 的旧限制。保存父/兄弟原始 JSON，两个分支行动后逐项相等，回放 patch provider 与 apply_state_changes 确认零调用。
-- [ ] Step 6：stage2_evaluation 旧 controlled-content-1 检查改为明确建立旧协议任务的回归；新默认断言为 controlled-content-2。保留全部旧操作/否决测试，不把它们改为新无模型路径后假称原故障通过。必要 helper 按任务 checkpoint 明确设置旧协议，不能依靠 ID 前缀或加生产测试开关。重跑相关与完整后端，记录实际数据；提交 `feat: 接入已审核反馈回合与旧模式兼容`。
+- [x] Step 5：用批准的 sample_data 加 SECRET_SENTINEL 建立 R1 独立版本；移动回合不得包含未发现证据/秘密，发现对应证据才披露。选包含事件的见证路径，assert narration==adjudication.feedback 且事件文本出现一次。长反馈使用原 Story Text 协议合法文本，不能删除尾部来通过 SceneTextDraft 的旧限制。保存父/兄弟原始 JSON，两个分支行动后逐项相等，回放 patch provider 与 apply_state_changes 确认零调用。
+- [x] Step 6：stage2_evaluation 旧 controlled-content-1 检查改为明确建立旧协议任务的回归；新默认断言为 controlled-content-2。保留全部旧操作/否决测试，不把它们改为新无模型路径后假称原故障通过。必要 helper 按任务 checkpoint 明确设置旧协议，不能依靠 ID 前缀或加生产测试开关。重跑相关与完整后端，记录实际数据；提交 `feat: 接入已审核反馈回合与旧模式兼容`。
 
 ## Task 3：可追溯评测、人工材料与验收
 

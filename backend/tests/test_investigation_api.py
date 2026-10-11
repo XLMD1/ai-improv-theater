@@ -11,6 +11,25 @@ from sqlalchemy import select,func
 from test_custom_story_creation import client,create_session,prepare,successful_provider
 
 
+@pytest.fixture(autouse=True)
+def legacy_scene_protocol():
+    """These tests retain provider rendering/veto and its atomic-commit failures."""
+    from app.db import SessionLocal
+    from app.models import StoryTask
+    from app.story_creation import create_creation_task
+    def create_legacy(*args):
+        task,created = create_creation_task(*args)
+        if created:
+            with SessionLocal.begin() as db:
+                row = db.get(StoryTask,task.id)
+                cp = {**row.checkpoint,'creation_protocol':'controlled-content-1'}
+                cp.pop('narration_protocol',None)
+                row.checkpoint = cp
+        return task,created
+    with patch('app.story_api.create_creation_task',side_effect=create_legacy):
+        yield
+
+
 def approved(c):
     headers,session = create_session(c)
     task = prepare(c,headers)

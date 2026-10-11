@@ -25,7 +25,7 @@ from app.story_operations import PROMPT_VERSION, OPERATION_VERSIONS, register_st
 from app.story_schema import Story, StrictModel
 from app.story_content import BLUEPRINT_VERSION,BLUEPRINT_SHA256,load_blueprint_template,parse_story_content,assemble_story_content
 from app.story_validation import ReachabilityReport
-from app.story_versions import load_story_version, save_story_version
+from app.story_versions import load_narration_protocol, load_story_version, save_story_version
 
 
 class CreationError(ValueError):
@@ -99,7 +99,8 @@ def create_creation_task(session_id,request,key):
                          StoryTask.status.in_(['queued','running','awaiting_confirmation']))):
             raise CreationError('creation_already_pending')
         task = StoryTask(session_id=session_id,story_id=str(uuid4()),idempotency_key=key,request=request.model_dump(),
-                         checkpoint={'creation_protocol':'controlled-content-1','blueprint_version':BLUEPRINT_VERSION,
+                         checkpoint={'creation_protocol':'controlled-content-2','narration_protocol':'approved-feedback-1',
+                                     'blueprint_version':BLUEPRINT_VERSION,
                                      'blueprint_sha256':BLUEPRINT_SHA256,'prompt_version':PROMPT_VERSION})
         db.add(task)
         db.flush()
@@ -128,6 +129,26 @@ def creation_context(task,seconds):
                                  session.provider,session.model_id,recorder)
 
 
+def _narration_protocol(checkpoint):
+    protocol = checkpoint.get('creation_protocol')
+    if protocol not in (None,'controlled-content-1','controlled-content-2'):
+        raise CreationError('creation_protocol_mismatch')
+    if protocol is not None and (
+            checkpoint.get('blueprint_version') != BLUEPRINT_VERSION or
+            checkpoint.get('blueprint_sha256') != BLUEPRINT_SHA256 or
+            checkpoint.get('prompt_version') != PROMPT_VERSION):
+        raise CreationError('creation_protocol_mismatch')
+    if protocol is None and any(key in checkpoint for key in ('blueprint_version','blueprint_sha256','prompt_version','content_raw')):
+        raise CreationError('creation_protocol_mismatch')
+    if protocol == 'controlled-content-2':
+        if checkpoint.get('narration_protocol') != 'approved-feedback-1':
+            raise CreationError('creation_protocol_mismatch')
+        return 'approved-feedback-1'
+    if 'narration_protocol' in checkpoint:
+        raise CreationError('creation_protocol_mismatch')
+    return 'model-scene-1'
+
+
 async def process_creation_task(task_id):
     deadline = time.monotonic()+300
     with SessionLocal.begin() as db:
@@ -150,16 +171,10 @@ async def process_creation_task(task_id):
             registry = ToolRegistry()
             register_story_operations(registry)
             protocol = checkpoint.get('creation_protocol')
-            controlled = protocol == 'controlled-content-1'
-            if protocol is not None and not controlled or controlled and (
-                    checkpoint.get('blueprint_version') != BLUEPRINT_VERSION or
-                    checkpoint.get('blueprint_sha256') != BLUEPRINT_SHA256 or
-                    checkpoint.get('prompt_version') != PROMPT_VERSION):
-                raise CreationError('creation_protocol_mismatch')
-            if protocol is None and any(key in checkpoint for key in ('blueprint_version','blueprint_sha256','prompt_version','content_raw')):
-                raise CreationError('creation_protocol_mismatch')
+            controlled = protocol in ('controlled-content-1','controlled-content-2')
+            narration_protocol = _narration_protocol(checkpoint)
             context.recorder.event(context.task,'creation_protocol_selected',{
-                key:checkpoint[key] for key in ('creation_protocol','blueprint_version','blueprint_sha256','prompt_version')
+                key:checkpoint[key] for key in ('creation_protocol','narration_protocol','blueprint_version','blueprint_sha256','prompt_version')
                 if key in checkpoint})
             if task.source_task_id:
                 with SessionLocal() as db:
@@ -276,7 +291,7 @@ async def process_creation_task(task_id):
                 current = owned_task(db,task.session_id,task_id,lock=True)
                 if current.status != 'running':
                     raise CreationError('task_no_longer_running')
-                row = save_story_version(db,story)
+                row = save_story_version(db,story,narration_protocol=narration_protocol)
                 current.candidate_version_id = row.id
                 current.status = 'awaiting_confirmation'
                 current.stage = 'awaiting_confirmation'
@@ -324,8 +339,11 @@ def confirm_creation(session_id,task_id,request):
         task = owned_task(db,session_id,task_id,lock=True)
         row = db.get(StoryVersion,task.candidate_version_id)
         if (row is None or row.id != request.candidate_version_id or row.content_hash != request.content_hash
+                or row.story_id != task.story_id
                 or not task.checkpoint.get('semantic_passed')):
             raise CreationError('candidate_conflict')
+        if load_narration_protocol(db,row.id) != _narration_protocol(task.checkpoint):
+            raise CreationError('presentation_protocol_mismatch')
         if task.status == 'approved':
             root = db.get(Node,task.root_node_id)
             db.expunge(root)

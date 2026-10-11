@@ -16,7 +16,7 @@ from app.models import Node,Run,StorySession,StoryVersion,TurnEvent
 from app.schemas import Action
 from app.state import StoryValidationError,apply_state_changes
 from app.story_operations import PROMPT_VERSION,register_investigation_operations
-from app.story_versions import load_story_version
+from app.story_versions import load_narration_protocol,load_story_version
 
 
 def create_investigation_run(session_id,parent_node_id,action,key):
@@ -43,7 +43,8 @@ def create_investigation_run(session_id,parent_node_id,action,key):
             raise StoryValidationError('ending_cannot_continue')
         if action.type=='option' and action.value not in (parent.investigation_options or {}):
             raise StoryValidationError('invalid_option')
-        if not configured(session.provider):
+        narration_protocol = load_narration_protocol(db,row.id)
+        if not (narration_protocol=='approved-feedback-1' and action.type=='option') and not configured(session.provider):
             raise StoryValidationError('key_not_configured')
         if db.scalar(select(Run.id).where(Run.session_id==session_id,Run.status.in_(['queued','running']))):
             raise StoryValidationError('turn_already_pending')
@@ -110,6 +111,7 @@ async def process_investigation_run(run_id):
         session = db.get(StorySession,run.session_id)
         parent = db.get(Node,run.parent_node_id)
         story = load_story_version(db,parent.story_version_id)
+        narration_protocol = load_narration_protocol(db,parent.story_version_id)
         parent_state = deepcopy(parent.state_snapshot)
         parent_version = parent.story_version_id
         parent_depth = parent.depth
@@ -126,10 +128,11 @@ async def process_investigation_run(run_id):
     try:
         async with asyncio.timeout(60):
             context.recorder.start(context.task)
+            context.recorder.event(context.task,'presentation_selected',{'narration_protocol':narration_protocol})
             normalized = await interpret_action(story,parent_state,mapping,action,recent,registry,context)
             decision = decide(story,parent_state,normalized)
             context.recorder.event(context.task,'adjudicated',decision.model_dump())
-            if decision.status=='accepted':
+            if decision.status=='accepted' and narration_protocol=='model-scene-1':
                 with SessionLocal.begin() as db:
                     current = db.scalar(select(Run).where(Run.id==run.id).with_for_update())
                     if current.status!='running':
@@ -154,7 +157,9 @@ async def process_investigation_run(run_id):
                 node = Node(session_id=session.id,parent_id=saved_parent.id,depth=parent_depth+1,
                              scene_id=scene['scene_id'],state_snapshot=decision.state,rendered_scene=scene,
                              investigation_options=option_mapping,story_version_id=parent_version,
-                             canon_version=story.story_version,prompt_version=PROMPT_VERSION,model_id=f'{provider}:{model_id}')
+                             canon_version=story.story_version,
+                             prompt_version='approved-feedback-1' if narration_protocol=='approved-feedback-1' else PROMPT_VERSION,
+                             model_id='server:approved-feedback-1' if narration_protocol=='approved-feedback-1' else f'{provider}:{model_id}')
                 db.add(node)
                 db.flush()
                 events = [('player_action',context.recorder.redact(action.model_dump())),

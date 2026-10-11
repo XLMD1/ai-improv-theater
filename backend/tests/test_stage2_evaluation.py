@@ -81,7 +81,7 @@ def test_real_runner_harness_freezes_story_then_uses_public_text_and_buttons(tmp
         assert 'fixture-private-key' not in json.dumps(progress) and 'Authorization' not in json.dumps(progress)
         from app.story_content import BLUEPRINT_SHA256,BLUEPRINT_VERSION
         frozen=json.loads((tmp_path/'ancient-frozen.json').read_text(encoding='utf-8'))
-        for key,value in [('creation_protocol','controlled-content-1'),('blueprint_version',BLUEPRINT_VERSION),
+        for key,value in [('creation_protocol','controlled-content-2'),('blueprint_version',BLUEPRINT_VERSION),
                           ('blueprint_sha256',BLUEPRINT_SHA256)]:
             assert frozen[key]==value and results[0][key]==value
     finally:
@@ -140,7 +140,7 @@ def test_controlled_default_creation_freezes_protocol_and_approval_replays_witho
             assert c.get('/tree',headers=headers).json()==[]
             with SessionLocal() as db:
                 cp = db.get(StoryTask,task['id']).checkpoint
-                assert cp['creation_protocol']=='controlled-content-1'
+                assert cp['creation_protocol']=='controlled-content-2'
                 assert cp['blueprint_version']==BLUEPRINT_VERSION and cp['blueprint_sha256']==BLUEPRINT_SHA256
                 assert cp['prompt_version']==PROMPT_VERSION and cp['content_raw'] and cp['proof']['states_checked']==70
                 operations = [t.payload['operation'] for t in db.scalars(select(ExecutionTrace).where(
@@ -206,7 +206,7 @@ def test_controlled_content_repairs_once_with_original_protocol_and_incurred_usa
             assert seen[1]['issues'] and 'raw_candidate' in seen[1]
             with SessionLocal() as db:
                 row = db.get(StoryTask,task['id'])
-                assert row.repair_count==1 and row.checkpoint['creation_protocol']=='controlled-content-1'
+                assert row.repair_count==1 and row.checkpoint['creation_protocol']=='controlled-content-2'
                 calls = db.scalars(select(LLMCall).where(LLMCall.creation_task_id==task['id'])).all()
                 assert len(calls)==(4 if fault.startswith('semantic') else 2 if failed else 3)
                 assert all(call.usage_status=='known' and call.input_tokens==100 for call in calls)
@@ -258,7 +258,7 @@ def test_controlled_restart_reuses_saved_passed_candidate_and_proof():
             with SessionLocal.begin() as db:
                 row=db.get(StoryTask,task.id)
                 cp=dict(row.checkpoint)
-                assert cp['creation_protocol']=='controlled-content-1'
+                assert cp['creation_protocol']=='controlled-content-2'
                 row.status='running'
                 row.candidate_version_id=None
             interrupt_creation_tasks()
@@ -403,7 +403,7 @@ def test_cancelled_controlled_generation_preserves_intent_usage_and_empty_world(
                 with SessionLocal() as db:
                     row=db.get(StoryTask,task.id)
                     calls=db.scalars(select(LLMCall).where(LLMCall.creation_task_id==task.id)).all()
-                    assert row.checkpoint['creation_protocol']=='controlled-content-1' and row.checkpoint['content_started']
+                    assert row.checkpoint['creation_protocol']=='controlled-content-2' and row.checkpoint['content_started']
                     assert not row.candidate_version_id and len(calls)==1 and calls[0].usage_status=='uncertain'
             finally:
                 c.delete('/local-settings/keys/deepseek')
