@@ -1,6 +1,6 @@
 # 阶段 2 已审核反馈呈现评测
 
-状态：R1 代码、独立审查必要修复及机器检查通过，原固定真实 12 项及真人核查待完成；阶段 2 未验收。人工审阅人数 0。本报告不改写原受控模式的 3/12 失败结果。
+状态：R1 代码、独立审查必要修复及机器检查通过；本轮原固定真实清单 11/12，古代自由文本最后一步未通过。真人核查未执行，阶段 2 未验收。人工审阅人数 0。本报告不改写原受控模式的 3/12 失败结果。
 
 ## 机器检查
 
@@ -22,4 +22,29 @@
 
 导出只读本地已批准故事和终点父链，检查完整固定 12 项、清单/故事/冻结路径 hash、故事归属和终点。测试覆盖部分报告、错根、跨会话、断链、循环、兄弟分支正文泄漏、缺终点和哈希不符。模拟供应商下完整导出测试不是实际人工审阅。
 
-后续真实调用只使用原 stage2_real_test，保留旧失败和账本；先快照当前全部旧节点/版本，再迁移新增表，不回填旧版本。原账本上次核对为 2.770514 CNY，真实前须复核。本补充尚无新的真实消费数据，不能预填 token、费用、延迟或真人通过结论。
+本轮真实调用复用原 stage2_real_test，保留旧失败和账本；调用前已复核累计估算 2.770514 CNY、旧 34 节点/5 版本及 9 历史报告并迁移新增表，不回填旧版本。
+
+## R1 原固定清单真实结果
+
+运行 821e5821b3814ac4a931075da2642dd9，提交 b318b8b29f38cbddf78e255f8ca6b78acd99aeb6，210.891 秒。measurement=real_model_with_approved_feedback，模型 deepseek-flash，创建提示 investigation-single-6，controlled-content-2/approved-feedback-1，原骨架和清单 hash 不变。原报告留在 Git 忽略目录 runtime/evals/821e5821b3814ac4a931075da2642dd9/report.json，SHA256=65b84a4db6d561d303670ce77251635a47722e4b0ba04256a2c3a090eb34d6cd。
+
+| 类别 | 成功/固定分母 | 结果 |
+|---|---|---|
+| ancient / modern / future 创建 | 3/3 | 全部生成、校验、显式批准；其中一次内容修复 |
+| 三年代纯按钮结局路径 | 6/6 | 每条 21 行动，终点符合冻结见证 |
+| 三年代完整自由文本路径 | 2/3 | modern、future 通过；ancient 最后一步错误 |
+| 合计 | 11/12 | 1 error，0 failed，0 skipped，退出 1 |
+
+古代路径第 21 步的输入为公开结局标签“共同保护与核查”。action.interpret.v1 返回了旧 talk/verify_together 话题，未选择当前公开 decide/guard_together 候选，裁决为 invalid/unknown_action。runner 报 text_or_button_not_accepted。该已保存拒绝反馈节点的完整 state_snapshot 与所选父节点相同，没有解锁结局或授予证据；局部公开输入诊断保存在同 run 的 failure-diagnosis.json。没有换故事重采样、额外自动修复或改写失败为通过。
+
+| 实际操作 | 调用 | 输入 token | 输出 token | 保守估算 CNY |
+|---|---:|---:|---:|---:|
+| story.content_generate | 3 | 42819 | 15557 | 0.236356 |
+| story.content_repair | 1 | 20868 | 6494 | 0.105399 |
+| story.semantic_check | 3 | 40502 | 27 | 0.091372 |
+| action.interpret | 63 | 163995 | 3101 | 0.396898 |
+| 合计 | 70 | 268184 | 25179 | 0.830025 |
+
+70 attempts 均有对应账本记录，未知/未确认费用均为 0；scene.render/scene.semantic_check 无调用。按既有峰值 USD×7.5 价格版本计价，0.830025 CNY 是保守预算估算，供应商实际账单尚未取得。累计预算估算 3.600539 CNY，预算检查通过。
+
+评测后数据库实测 226 节点、8 故事版本、3 固定呈现记录。原 34 节点/5 版本完整行 hash、9 历史报告 hash 及旧 model-scene-1 模式全部不变。未达到 12/12，未导出 human-review.md，人工人数仍为 0；Task 3 验收步骤保持未完成。
