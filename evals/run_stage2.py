@@ -89,9 +89,8 @@ def execute_real_cases(cases,output):
     from fastapi.testclient import TestClient
     from app.main import app
     from app.db import SessionLocal
-    from app.models import Node
+    from app.models import Node,StoryTask
     from app.story_versions import load_story_version
-    from app.story_validation import check_reachability
     saved = {}
     results = []
     with TestClient(app) as client:
@@ -104,10 +103,12 @@ def execute_real_cases(cases,output):
                     if session.status_code!=201:
                         raise ValueError('session_creation_failed')
                     headers = {'Authorization':'Bearer '+session.json()['token']}
+                    result['session_id'] = session.json()['session_id']
                     task = client.post('/story-tasks',headers={**headers,'Idempotency-Key':uuid4().hex},
                                        json={'setting':case['setting'],'era':case['era']})
                     if task.status_code!=202:
                         raise ValueError('task_creation_failed')
+                    result['task_id'] = task.json()['task_id']
                     task = _poll(client,'/story-tasks/'+task.json()['task_id'],headers,310)
                     if task['status']!='awaiting_confirmation':
                         raise ValueError(task['error_code'] or 'creation_not_ready')
@@ -116,9 +117,13 @@ def execute_real_cases(cases,output):
                     if confirmed.status_code!=200:
                         raise ValueError('confirmation_failed')
                     root_id = confirmed.json()['root']['id']
+                    result['root_node_id'] = root_id
                     with SessionLocal() as db:
                         story = load_story_version(db,db.get(Node,root_id).story_version_id)
-                    paths = check_reachability(story).ending_paths
+                        proof = db.get(StoryTask,task['id']).checkpoint['proof']
+                        if proof['status']!='passed':
+                            raise ValueError('approved_proof_missing')
+                        paths = proof['ending_paths']
                     frozen = {'story':story.model_dump(),'paths':paths,'content_hash':task['content_hash']}
                     blob = json.dumps(frozen,ensure_ascii=False,sort_keys=True).encode('utf-8')
                     (output/(case['era']+'-frozen.json')).write_bytes(blob)
@@ -161,6 +166,10 @@ def execute_real_cases(cases,output):
                 result['error_code'] = 'evaluation_error'
             result['duration_ms'] = round((time.monotonic()-started)*1000,3)
             results.append(result)
+            progress = {'complete':len(results)==len(cases),'cases':results}
+            temporary = output/'progress.tmp'
+            temporary.write_text(json.dumps(progress,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
+            temporary.replace(output/'progress.json')
     return results
 
 

@@ -69,11 +69,16 @@ def test_real_runner_harness_freezes_story_then_uses_public_text_and_buttons(tmp
         return await successful_provider(provider,model,key,prompt,budget,timeout)
     try:
         with patch('app.story_operations.call_operation_provider',side_effect=interpret_public_label),patch.object(module,'_text',
-                side_effect=lambda story,action,mapping,node:next(o['label'] for o in node.rendered_scene['options'] if mapping[o['id']]==action)):
+                side_effect=lambda story,action,mapping,node:next(o['label'] for o in node.rendered_scene['options'] if mapping[o['id']]==action)),patch(
+                'app.story_validation.check_reachability',side_effect=AssertionError('approved proof must not be searched again')):
             results = module.execute_real_cases(cases,tmp_path)
         assert all(r['status']=='succeeded' for r in results),results
         assert results[1]['free_text'] is True and results[2]['free_text'] is False
         assert (tmp_path/'ancient-frozen.json').exists()
+        progress = json.loads((tmp_path/'progress.json').read_text(encoding='utf-8'))
+        assert progress['complete'] is True and progress['cases']==results
+        assert results[0]['root_node_id'] and results[0]['task_id'] and results[0]['session_id']
+        assert 'fixture-private-key' not in json.dumps(progress) and 'Authorization' not in json.dumps(progress)
     finally:
         clear_key('deepseek')
 

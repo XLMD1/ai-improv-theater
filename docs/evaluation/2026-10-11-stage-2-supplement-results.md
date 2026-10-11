@@ -7,9 +7,11 @@
 | 审查竞态回归 | RED：1 failed；GREEN：核账与预算 26 passed |
 | 完整后端 | 171 passed、7 warnings，35.20 秒 |
 | 校验反馈修复后完整后端 | 173 passed、7 warnings，35.76 秒 |
+| 身份约束与评测恢复修复后完整后端 | 175 passed、7 warnings，37.64 秒 |
 | Alembic check | No new upgrade operations detected，无新迁移 |
 | runtime_simulated（审查修复前） | 10/10，34.922 秒，6c9d84077b694c7e825bf0f8cd8ab2f2 |
 | runtime_simulated（审查修复后） | 10/10，39.578 秒，add66ff4ab8948649e6ac66861f53503 |
+| runtime_simulated（身份与恢复修复后） | 10/10，38.656 秒，92a16fac535942ff8c89cd560e7aee0a；验证未提交工作树，HEAD 为 8cf1cfa |
 | 原真实请求人工核账 | 1 次、0.02 CNY、input 5,088/output 4,510/total 9,598；来源：用户核对控制台 |
 | 原始调用及失败报告 | outcome_unknown/uncertain 与 NULL 原 usage 保留；SHA256 不变，0/12 不改 |
 | v2 真实固定清单 | 0/12、12 error，102.812 秒；报告 64ecf68a4a1245a1958aecf5901e3a94 |
@@ -32,3 +34,11 @@
 具体诊断与规则说明修复后，完整后端 173 项通过，prompt=investigation-single-2。下一轮在同一真实库和清单上另建执行记录；旧失败案例不替换、不减分母。新轮真实结果待实际执行，不据合成模型测试宣称成功。
 
 本轮未改前端，未运行前端测试或构建。图片、便携包、OpenAI 与多 Agent 仍按原后续范围。
+
+## 暂停轮次与恢复
+
+prompt 2 轮次 bf2b431b70b4414bb2a5289a5d222952 在用户暂停时未落盘完整报告；只读恢复核查保存在本地忽略目录 prompt2-pause-snapshot.json。古代创建失败，修复稿身份、背景相同但输出 draft-3，未使用指定 draft-2；近现代创建通过自动检查并批准，保留一个根节点及 31,640 状态的确定性证明。其三结局见证长度为 7/14/7，尚未走真实叙事路径；未来未开始。不编造整轮成功率，不将未执行项计为通过，人工核查仍 0。
+
+该轮新增 5 次调用全部 known/completed，输入 30,438、输出 13,617、保守估算 0.191039 CNY；全库有效预算 0.529943 CNY。原未知调用继续由人工核账单列，无新增未知费用。用户暂停后的进程检查无存活评测进程，专用集群正常停止，本次恢复后重新启动同一数据库。
+
+修复输出 schema 固定输入身份、版本、背景与年代，服务端检查不放宽。prompt 升至 investigation-single-3，解释确定性路径列的是行动且须考虑事件效果；语义否决仍保留。评测复用已保存的通过证明并逐项落盘 progress.json，历史失败及固定清单不改。新真实轮次与人工核查仍待执行。
