@@ -55,7 +55,8 @@ async def successful_provider(provider,model,key,prompt,budget,timeout):
     elif 'candidate' in inp or 'reachability' in inp:
         result = {'passed':True,'issues':[]}
     elif 'text' in inp:
-        result = {'result':{'status':'recognized','action':inp['available_actions'][0]}}
+        result = {'result':{'status':'recognized',**({'action_index':0} if 'action.interpret.v2' in prompt
+                                                   else {'action':inp['available_actions'][0]})}}
     else:
         result = {'narration':inp['adjudication_feedback'][:1200],'dialogue':[]}
     return ProviderOutcome(json.dumps(result,ensure_ascii=False),100,100,request_sent=True)

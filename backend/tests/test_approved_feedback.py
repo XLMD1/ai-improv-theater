@@ -61,6 +61,8 @@ def test_r1_free_text_uses_only_registered_interpret_and_requires_key():
                 ops = [row.payload['operation'] for row in db.scalars(select(ExecutionTrace).where(
                     ExecutionTrace.run_id == run['id'], ExecutionTrace.event_type == 'attempt_started'))]
                 assert ops == ['action.interpret']
+                assert db.scalar(select(ExecutionTrace).where(ExecutionTrace.run_id == run['id'],
+                    ExecutionTrace.event_type == 'attempt_started')).payload['version'] == 'v2'
                 assert len(db.scalars(select(LLMCall).where(LLMCall.run_id == run['id'])).all()) == 1
             assert provider.call_count == before + 1
             c.delete('/local-settings/keys/deepseek')

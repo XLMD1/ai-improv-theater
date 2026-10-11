@@ -29,7 +29,7 @@ def test_render_schema_cannot_set_state_or_location_and_operations_have_budgets(
     from app.story_operations import register_investigation_operations,OUTPUT_BUDGETS
     registry = ToolRegistry()
     register_investigation_operations(registry)
-    assert set(registry.specs) == {(name,'v1') for name in ('action.interpret','scene.render','scene.semantic_check')}
+    assert set(registry.specs) == {(name,'v1') for name in ('action.interpret','scene.render','scene.semantic_check')} | {('action.interpret','v2')}
     assert OUTPUT_BUDGETS['action.interpret'] == 300 and OUTPUT_BUDGETS['scene.render'] == 900
 
 

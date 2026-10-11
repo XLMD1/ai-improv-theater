@@ -40,22 +40,28 @@ class GenerationError(ValueError):
     pass
 
 
-async def interpret_action(story,state,mapping,action,recent_turns,registry,context):
+async def interpret_action(story,state,mapping,action,recent_turns,registry,context,*,version='v1'):
     if action.type == 'option':
         if action.value not in mapping:
             raise GenerationError('invalid_option')
         return mapping[action.value]
     public_options,current_mapping = build_public_options(story,state)
     labels = {tuple(sorted(current_mapping[o['id']].items())):o['label'] for o in public_options}
-    result = await execute(registry,'action.interpret','v1',
+    candidates = list(mapping.values())
+    result = await execute(registry,'action.interpret',version,
                            {'public_world':public_projection(story,state),'text':action.value,
-                            'available_actions':list(mapping.values()),
-                            'action_labels':[labels[tuple(sorted(value.items()))] for value in mapping.values()],
+                            'available_actions':candidates,
+                            'action_labels':[labels[tuple(sorted(value.items()))] for value in candidates],
                             'recent_turns':recent_turns},context)
     if isinstance(result,ToolFailure):
         raise GenerationError(result.error_code)
     if result.output.result.status == 'unrecognized':
         return None
+    if version=='v2':
+        index = result.output.result.action_index
+        if index >= len(candidates):
+            raise GenerationError('invalid_action_index')
+        return candidates[index]
     return result.output.result.action.model_dump()
 
 

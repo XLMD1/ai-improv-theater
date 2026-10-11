@@ -129,7 +129,8 @@ async def process_investigation_run(run_id):
         async with asyncio.timeout(60):
             context.recorder.start(context.task)
             context.recorder.event(context.task,'presentation_selected',{'narration_protocol':narration_protocol})
-            normalized = await interpret_action(story,parent_state,mapping,action,recent,registry,context)
+            normalized = await interpret_action(story,parent_state,mapping,action,recent,registry,context,
+                                                version='v2' if narration_protocol=='approved-feedback-1' else 'v1')
             decision = decide(story,parent_state,normalized)
             context.recorder.event(context.task,'adjudicated',decision.model_dump())
             if decision.status=='accepted' and narration_protocol=='model-scene-1':

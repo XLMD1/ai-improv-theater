@@ -210,15 +210,19 @@ def usage_summary(db,calls):
 
 def operation_usage_summary(db,calls,attempts):
     groups = {}
+    versions = {}
     for attempt in attempts:
         operation = attempt.payload['operation']
         groups.setdefault(operation,[]).append(attempt.id)
+        counts = versions.setdefault(operation,{})
+        version = attempt.payload['version']
+        counts[version] = counts.get(version,0)+1
     result = {}
     attributed = set()
     for operation,ids in groups.items():
         linked = [call for call in calls if call.attempt_id in ids]
         attributed.update(call.id for call in linked)
-        result[operation] = {'attempts':len(ids),'ledger_calls':len(linked),**usage_summary(db,linked)}
+        result[operation] = {'attempts':len(ids),'ledger_calls':len(linked),'versions':versions[operation],**usage_summary(db,linked)}
     unlinked = [call for call in calls if call.id not in attributed]
     if unlinked:
         result['unattributed'] = {'attempts':0,'ledger_calls':len(unlinked),**usage_summary(db,unlinked)}

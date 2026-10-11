@@ -55,7 +55,7 @@ def complete_report(tmp_path_factory):
         inp = json.loads(args[3].split('\n输入数据：', 1)[1])
         if 'text' in inp:
             index = inp['action_labels'].index(inp['text'])
-            return ProviderOutcome(json.dumps({'result': {'status': 'recognized', 'action': inp['available_actions'][index]}}),
+            return ProviderOutcome(json.dumps({'result': {'status': 'recognized', 'action_index': index}}),
                                    20, 20, request_sent=True)
         if 'template' in inp:
             from test_controlled_story import content_data
@@ -120,6 +120,7 @@ def test_export_uses_saved_paths_and_excludes_siblings_and_credentials(complete_
     assert json.loads(path.read_text(encoding='utf-8'))['manual_reviewers'] == 0
     assert set(report['usage']['operations']) == {'story.content_generate', 'story.semantic_check', 'action.interpret'}
     assert report['usage']['operations']['action.interpret']['ledger_calls'] == 63
+    assert report['usage']['operations']['action.interpret']['versions'] == {'v2': 63}
 
 
 @pytest.mark.parametrize('fault', ['missing_terminal', 'wrong_root', 'cross_session', 'frozen_hash', 'manifest_hash', 'duplicate_case'])

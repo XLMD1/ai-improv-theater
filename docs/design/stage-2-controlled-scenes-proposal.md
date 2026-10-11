@@ -43,6 +43,12 @@
 - 0006 增量迁移新增 story_presentations 表：story_version_id 主键/外键、narration_protocol、created_at，记录只能插入、不能修改或删除。没有记录的版本明确走 model-scene-1。新 R1 内容通过全部创建检查后，在同一保存版本事务插入呈现记录；确认核对检查点与记录一致。旧 Story JSON、content_hash、节点及完整旧行不增加字段或回填。
 - 保存同一 story_id/story_version 时同时检查已有内容与呈现协议一致，不能给已经保存的旧版本补上 R1。数据库约束和加载入口只支持已知协议；不能从 StoryTask 的可变运行状态、Node prompt 或实体 ID 推断模式。
 - accepted R1 回合直接使用 Adjudication.feedback，dialogue=[]。现有裁决已按顺序把规则反馈、合法触发事件反馈和结局后果合入该字段，不能再拼一次事件。初版不额外重复地点描述，不截断已审核反馈；不新增固定句段库、呈现工具注册或付费呈现操作。
-- R1 的按钮回合只读取已保存映射并裁决，不要求供应商密钥，也不触发新外部费用；自由文本继续 action.interpret.v1，仍要求密钥且遵守未知费用、80/100 CNY 及 60 秒截止时间。旧模式仍保留原密钥检查、scene.render 与 scene.semantic_check。Trace/提交失败两种模式都停止，不放行半个节点。
+- R1 的按钮回合只读取已保存映射并裁决，不要求供应商密钥，也不触发新外部费用；自由文本采用用户于本轮确认的 action.interpret.v2 候选序号方案，仍要求密钥且遵守未知费用、80/100 CNY 及 60 秒截止时间。旧模式保留 action.interpret.v1、原密钥检查、scene.render 与 scene.semantic_check。Trace/提交失败两种模式都停止，不放行半个节点。
 - R1 新回合的 Node.prompt_version=approved-feedback-1、model_id=server:approved-feedback-1，明确来源是服务器呈现；开场仍记录其创建提示/文字模型。Trace 与冻结评测同时注明 creation_protocol、narration_protocol、骨架、创建提示和行动理解模型。纯按钮回合没有 LLMCall，不能伪造零 token provider 成功；不把新模式称为实时模型叙事。
 - 新评测保持固定 12 项，measurement 区分 real_model_with_approved_feedback 与原 real_model_paths，分别报告真实故事创建、自由行动理解、服务器呈现和人工评价。历史 report 不改。全部九路径完成后，只读导出已保存场景、真相/证据关系及核查表到 Git 忽略目录，至少一位真人回答后才能记录人工通过。
+
+## 已批准的行动理解有界修复
+
+原 R1 真实 11/12 的古代最后一步将公开结局标签误解为过时 talk 话题。用户确认新增 action.interpret.v2：仍在统一执行入口使用当前公开世界、当前候选及最近三个祖先回合；recognized 只返回严格整数 action_index（从 0 起），或 unrecognized，不允许模型返回行动或实体 ID。提示列明索引与公开标签的对应关系；输入匹配唯一标签时选择对应索引，不能由旧披露/承诺重建话题。服务器按本次发送候选的固定顺序检查索引范围、映射行动，再走原裁决/状态提交；越界为 invalid_action_index，记录失败且不提交节点、不补调用。字段错误由统一 schema 检查拒绝并保留 usage。
+
+v1 原入出参及提示保持；R1 仅更换理解注册版本，不改故事 schema/hash、创建提示 investigation-single-6、approved-feedback-1 呈现、按钮、重放、规则或账本。v2 维持 300 输出 token、20 秒单次、最多三次安全瞬态尝试及原 60 秒总截止时间，不对语义/格式失败重试。报告记录默认理解版本及实际 attempt 版本计数。验证先补误解/负数/布尔/越界/过时对象/无法识别/旧版兼容 RED，再接入并运行完整后端、固定模拟及迁移检查；保留原 11/12 报告与账本，在原库重跑完整 12 项，成功后才导出真人材料。本段是用户已批准的有界设计，不表示修复或验收完成。

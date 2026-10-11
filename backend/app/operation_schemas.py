@@ -167,6 +167,15 @@ class Interpretation(StrictModel):
     result: Annotated[Recognized | Unrecognized,Field(discriminator='status')]
 
 
+class Selected(StrictModel):
+    status: Literal['recognized']
+    action_index: int = Field(ge=0)
+
+
+class SelectedInterpretation(StrictModel):
+    result: Annotated[Selected | Unrecognized,Field(discriminator='status')]
+
+
 class SceneDialogue(StrictModel):
     character_id: EntityId
     text: str = Field(min_length=1,max_length=280)

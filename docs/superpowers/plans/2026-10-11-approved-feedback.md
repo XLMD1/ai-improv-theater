@@ -188,6 +188,8 @@ def test_partial_report_cannot_be_exported_as_review_material(tmp_path, monkeypa
 
 ## 计划自检与审阅状态
 
+本计划 Step 7 已运行原固定真实清单，结果 11/12，Step 8/9 保持未完成。用户随后确认有界行动理解修复：R1 使用 action.interpret.v2 选择当前公开候选序号，旧模式保留 v1；具体批准协议见[补充设计](../../design/stage-2-controlled-scenes-proposal.md)。新补充机器检查通过，待原库完整清单真实重跑和真人验收；此前步骤中 v1 表述保留其实施时历史含义。
+
 规格覆盖：Task1 固定协议/旧完整行保护，Task2 创建/恢复/确认/零调用呈现/自由输入与原子提交，Task3 口径/路径导出/旧失败保留/真人门槛。五项 Review Focus 分别有迁移降级、旧协议恢复、长文本事件、无钥匙费用边界、兄弟分支导出负例。
 
 未增加供应商、框架、规则语言、自由生成重试、公共调试入口或故事内容重新采样开关。R1 的质量边界明确：避免回合新增扩写，不能代替创建内容人工检查。数据库结构是新增独立表，原 Story schema/hash 不变；Task2/3 都消费 Task1 精确 helper 名称与版本值。

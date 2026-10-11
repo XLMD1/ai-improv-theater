@@ -65,7 +65,7 @@ def test_real_runner_harness_freezes_story_then_uses_public_text_and_buttons(tmp
         inp = json.loads(prompt.split('\n输入数据：',1)[1])
         if 'text' in inp:
             index = next(i for i,label in enumerate(inp['action_labels']) if label==inp['text'])
-            return ProviderOutcome(json.dumps({'result':{'status':'recognized','action':inp['available_actions'][index]}}),20,20,request_sent=True)
+            return ProviderOutcome(json.dumps({'result':{'status':'recognized','action_index':index}}),20,20,request_sent=True)
         return await successful_provider(provider,model,key,prompt,budget,timeout)
     try:
         with patch('app.story_operations.call_operation_provider',side_effect=interpret_public_label),patch.object(module,'_text',
@@ -125,6 +125,7 @@ def test_real_report_records_creation_provenance_even_without_success(monkeypatc
     assert report['creation_protocol']=='controlled-content-2'
     assert report['narration_protocol']=='approved-feedback-1'
     assert report['measurement']=='real_model_with_approved_feedback'
+    assert report['operation_versions']['action.interpret']=='v2'
     assert report['usage']['operations']=={}
     assert report['blueprint_version']==BLUEPRINT_VERSION and report['blueprint_sha256']==BLUEPRINT_SHA256
     assert json.loads(path.read_text(encoding='utf-8'))['blueprint_sha256']==BLUEPRINT_SHA256
@@ -149,6 +150,7 @@ def test_operation_usage_counts_actual_attempts_and_linked_ledger():
         assert set(ops)=={'action.interpret','story.content_generate'}
         assert ops['action.interpret']['attempts']==ops['action.interpret']['ledger_calls']==1
         assert ops['action.interpret']['input_tokens']==120 and ops['action.interpret']['output_tokens']==80
+        assert ops['action.interpret']['versions']=={'v1':1}
         assert ops['story.content_generate']['attempts']==1 and ops['story.content_generate']['ledger_calls']==0
     finally:
         cleanup_records()
