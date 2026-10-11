@@ -58,6 +58,7 @@ def export_review(report_path: Path, database_url_env: str) -> Path:
     from app.models import Node, StoryTask, StoryVersion, TurnEvent
     from app.story_schema import Story, canonical_hash
     from app.story_versions import load_narration_protocol, load_story_version
+    from app.investigation import public_projection
     by_id = {case['id']: case for case in results}
     stories = {}
     lines = ['# 阶段 2 本地人工审阅材料（有剧透）', '',
@@ -113,16 +114,24 @@ def export_review(report_path: Path, database_url_env: str) -> Path:
                     raise ValueError('review_path_invalid')
                 lines += [f"## 路径：{case['id']} / {ending}", '',
                           '输入方式：' + ('自由文本' if case['free_text'] else '按钮'), '']
-                for node in nodes:
+                for index, node in enumerate(nodes):
                     action = db.scalar(select(TurnEvent.payload).where(TurnEvent.node_id == node.id,
                                                                       TurnEvent.event_type == 'player_action'))
                     if node.parent_id and action is None:
                         raise ValueError('review_path_invalid')
                     known = {key: node.state_snapshot[key] for key in
                              ('location_id', 'action_turn', 'discovered_evidence', 'disclosures', 'commitments', 'ending_id')}
+                    public = public_projection(story, node.state_snapshot)
+                    known['public_text'] = {key: public[key] for key in ('evidence', 'disclosures', 'commitments')}
                     lines += [f"### 第 {node.depth} 步 / {node.id}", '',
-                              '玩家输入：' + json.dumps(action, ensure_ascii=False), '',
-                              '当前已知状态：' + json.dumps(known, ensure_ascii=False), '',
+                              '玩家输入：' + json.dumps(action, ensure_ascii=False), '']
+                    if action and action['type'] == 'option':
+                        label = next((option['label'] for option in nodes[index - 1].rendered_scene['options']
+                                      if option['id'] == action['value']), None) if index else None
+                        if label is None:
+                            raise ValueError('review_path_invalid')
+                        lines += ['所选按钮：' + label, '']
+                    lines += ['当前已知状态：' + json.dumps(known, ensure_ascii=False), '',
                               node.rendered_scene['narration'], '']
                     for line in node.rendered_scene['dialogue']:
                         lines += [f"{line['character_id']}：{line['text']}", '']
@@ -138,7 +147,11 @@ def export_review(report_path: Path, database_url_env: str) -> Path:
               '| future | 待填写 | 待填写 | 待填写 | 待填写 | 待填写 | |', '',
               '请报告所有问题，注明故事、路径和步骤；生成本文件不代表人工验收通过。', '']
     output = report_path.parent / 'human-review.md'
-    output.write_text('\n'.join(lines), encoding='utf-8')
+    try:
+        with output.open('x', encoding='utf-8') as file:
+            file.write('\n'.join(lines))
+    except FileExistsError as error:
+        raise ValueError('review_material_exists') from error
     return output
 
 
