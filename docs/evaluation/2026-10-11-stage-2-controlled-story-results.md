@@ -18,7 +18,7 @@
 
 运行后原 4 节点/2 故事版本完整行 hash 全部不变；总库 34 节点/5 故事版本，新增为三个根及成功中间回合，九失败 run 的 node_id 均为空。原始 report.json SHA256=622273d972200ad1d84936ea4f63e3bff5466e078de18cdcf05d20a39888c029。冻结故事、全部失败 Trace 及 local-diagnostics.json 在 runtime/evals/64cc16647c7446ca9a05b977c3a11234/，Git 忽略，不包含密钥或会话凭据；未改原报告。
 
-已完成路径为 0，不能准备并宣称完整路径人工验收。诊断显示实际新增事实、与真相冲突，同时有疑似误判，详见待选择的[回合呈现补充草案](../design/stage-2-controlled-scenes-proposal.md)。下一步方案未批准，不以该草案宣称阶段完成。
+已完成路径为 0，不能准备并宣称完整路径人工验收。诊断显示实际新增事实、与真相冲突，同时有疑似误判，详见[回合呈现补充设计](../design/stage-2-controlled-scenes-proposal.md)。用户随后已批准 R1，[新实施计划](../superpowers/plans/2026-10-11-approved-feedback.md)待审阅、尚未实施；本轮原 3/12 结果不变，不据新设计宣称阶段完成。
 
 ## 失败窗口与限制
 

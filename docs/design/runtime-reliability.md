@@ -5,6 +5,8 @@
 相关设计：[故事与规则](stage-1-story-rules.md) · [基础任务评测](../evaluation/task-success-baseline.md)
 状态：阶段 2 文字注册表、执行器、有限重试、独立 Trace/失败用量和故障评测已实现并进行模拟验证；真实路径仍未验收。图片、预算原子预留、OpenAI 与并行 Agent 仍为后续规范。见[阶段 2 实测](../evaluation/2026-10-10-stage-2-results.md)。
 
+2026-10-11 已批准[呈现 R1](stage-2-controlled-scenes-proposal.md)，待实施：新故事从创建起固定 approved-feedback-1，每轮直接呈现裁决授权的已审核反馈，不是生成失败后的 fallback。纯按钮回合无 provider attempt/LLMCall，不消耗外部预算、不要求密钥；自由输入、故事生成/修复和故事语义检查继续全部执行/费用要求。纯呈现也须保存真实 Trace、校验与原子提交，Trace 或存储失败不能成功，60 秒总截止时间保持；旧模式的叙事调用和失败边界不改。
+
 ## 1. 当前基线与阶段分工
 
 旧路径继续由 `provider_clients.py` 集中 HTTP、`generation.py` 校验候选，保留旧 fallback。调查路径新增 `execution.py` 注册及执行边界、`execution_traces.py` 独立审计、0005 迁移和创建/行动服务；`runs/run_events` 保存公开进度，`llm_calls` 保存 attempt 关联、可空 token、费用及价格版本。真实语义质量尚未通过人工核查。
