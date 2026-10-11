@@ -143,6 +143,8 @@ llm_calls.run_id 改可空，增加 creation_task_id、trace/span/attempt 关联
 
 真实 prompt 3 六稿均把主角排除于 characters，说明原通用 character_id 错误不能区分缺失主角与非法 NPC 引用。校验须明确指出 protagonist_id 必须引用 characters 中的一员，并列出实际角色 ID；schema 及生成提示明确 characters 恰为一位主角和两位 NPC。该修改只改善既有约束说明，不允许第四角色或主角参与 NPC 专属规则；仍为完整 Story 生成与至多一次修复，不调整架构或放宽验收。
 
+prompt 4 的路径检查发现 scene.render 输入没有区分主角与 NPC。修复该既有边界：仅在叙事生成输入的 public_world.characters 中列出当前 NPC，公开世界 API 不改；提示 schema 明确允许发言的 ID，无 NPC 时 dialogue 长度为零，每个 NPC 至多一条对白。候选仍经过现有角色、重复发言及语义校验，不能通过删改违规候选或增加重试来通过验收。自由生成规则的进一步方案另写草案，未审定前不改生成架构。
+
 1. 通过仅本地操作者可用的核账入口，在现有独立 Trace 事务中追加 versioned usage_reconciled 事件，严格输入为调用 ID、明确来源 user_reported_provider_console、总 token 和实际 CNY 金额；可同时提供非负输入/输出 token，二者必须成对且合计等于总量。不改原 LLMCall 的 outcome_unknown、NULL token/估算、价格版本或原 attempt 结果；不补写剧情。按所属任务锁保证同一调用核账幂等，相同值重复无新增费用，冲突拒绝。只允许核对已经收尾且 uncertain 的调用；无关/已知调用、非法金额或缺来源拒绝。原始失败 report.json 不改写。
 2. 预算读取包含核账金额；只有该调用存在有效核账事件时解除其 cost_unconfirmed，其他未知调用和审计缺失继续阻断。核账来源是用户陈述，不冒充供应商 API 验证；报表分开显示已知输入/输出、已核账总 token/实际金额和仍未知的调用。80/100 CNY 门槛不变。不新增玩家 HTTP 接口，不启用原子预留或图片。
 3. story.generate/story.repair 新执行策略版本 v2 单次最多 120 秒，HTTP 和墙钟上限均使用同一操作策略且不得超过任务剩余时间；创建执行区间仍为 300 秒。生成/修复输出预算仍为 12,000，prompt 不改。行动理解、叙事和语义检查保留 v1、单次 20 秒，行动总限时仍为 60 秒。未知结果不自动重试，单次内容修复上限保持一次。更长限时可能降低过早取消，但不保证可玩质量或供应商完成时间。

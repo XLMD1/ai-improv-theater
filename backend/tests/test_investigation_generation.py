@@ -72,3 +72,21 @@ async def test_render_rejects_wrong_speaker_and_semantic_leak_without_repair():
         with pytest.raises(module.GenerationError,match='invalid_scene_speaker'):
             await module.render_investigation_scene(story,state,{'type':'investigate','object_id':'notice_board'},'调查',[],ToolRegistry(),ctx)
         assert executor.await_count == 1
+
+
+@pytest.mark.asyncio
+async def test_render_context_lists_only_npc_speakers_without_changing_public_api():
+    module,story,state,_ = setup()
+    from app.investigation import public_projection
+    original = public_projection(story,state)
+    assert story.protagonist_id in {c['id'] for c in original['characters']}
+    draft = SceneTextDraft(narration='调查反馈',dialogue=[])
+    report = SemanticReport(passed=True,issues=[])
+    ctx = SimpleNamespace(recorder=SimpleNamespace(event=lambda *args:None),task=None)
+    with patch('app.investigation_generation.execute',new_callable=AsyncMock,
+               side_effect=[ToolSuccess(output=draft),ToolSuccess(output=report)]) as executor:
+        await module.render_investigation_scene(story,state,{'type':'investigate','object_id':'notice_board'},
+                                                 '调查反馈',[],ToolRegistry(),ctx)
+    rendering_world = executor.call_args_list[0].args[3]['public_world']
+    assert {c['id'] for c in rendering_world['characters']} == {c['id'] for c in original['characters']} - {story.protagonist_id}
+    assert public_projection(story,state)==original

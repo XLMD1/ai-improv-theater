@@ -61,8 +61,9 @@ async def interpret_action(story,state,mapping,action,recent_turns,registry,cont
 
 async def render_investigation_scene(story,state,action,feedback,recent_turns,registry,context):
     public_world = public_projection(story,state)
+    render_world = {**public_world,'characters':[c for c in public_world['characters'] if c['id']!=story.protagonist_id]}
     rendered = await execute(registry,'scene.render','v1',
-                             {'public_world':public_world,'action':action,'adjudication_feedback':feedback,
+                             {'public_world':render_world,'action':action,'adjudication_feedback':feedback,
                               'recent_turns':recent_turns},context)
     if isinstance(rendered,ToolFailure):
         raise GenerationError(rendered.error_code)

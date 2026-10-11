@@ -9,6 +9,7 @@
 | 校验反馈修复后完整后端 | 173 passed、7 warnings，35.76 秒 |
 | 身份约束与评测恢复修复后完整后端 | 175 passed、7 warnings，37.64 秒 |
 | 主角归属诊断修复后完整后端 | 176 passed、7 warnings，34.20 秒 |
+| 叙事角色约束修复后完整后端 | 180 passed、7 warnings，37.07 秒 |
 | Alembic check | No new upgrade operations detected，无新迁移 |
 | runtime_simulated（审查修复前） | 10/10，34.922 秒，6c9d84077b694c7e825bf0f8cd8ab2f2 |
 | runtime_simulated（审查修复后） | 10/10，39.578 秒，add66ff4ab8948649e6ac66861f53503 |
@@ -57,3 +58,11 @@ prompt 4 本地自动检查：完整后端 176 passed，固定模拟清单 10/10
 ## prompt 4 鉴权阻断
 
 用户本地输入后轮次 64985a8526c340cda5a097fd65d59eb9（提交 cb46b60）在 4.297 秒结束，0/12、12 error。三个创建各一次 unauthorized，九路径 creation_dependency_failed；3 次 attempt、0 条新增 usage ledger、input/output 均 0、未确认费用 0，全库预算仍 0.864144 CNY。未生成候选或新增节点；此轮只能证明鉴权阻断有效，不能判断 prompt 4 的生成质量。保留报告，重新输入有效密钥后另建轮次；不会盲重试原失败请求，也不把本地零估算说成供应商账单核验。
+
+## prompt 4 有效轮次与后续方案
+
+重新本地输入后，轮次 8c49cee2728b46a887e26a68326f4e94（提交 ca82269）完成：1/12、11 error，188.375 秒。近现代创建通过，其三路径均 invalid_scene_speaker；古代/未来创建 story_repair_exhausted，六路径 creation_dependency_failed。15 次 attempt 均 known/completed，input 60,862/output 27,443，保守估算 0.383927 CNY；全库有效预算 1.248071 CNY，无新增未知费用。近现代两个中间回合成功、三个失败，保留根节点及两个合法中间节点；失败回合没有节点，三结局均未完成。人工核查仍 0，阶段仍未验收。
+
+精确诊断：古代初稿 rule_conflict:r_talk_liu_first,r_talk_liu_again，修复稿 trust_overflow:teahouse_keeper；未来两稿均 missing_endings=[ending_silent_repair]，搜索 12,828 状态。近现代三个失败分别为不存在的 dockhand、重复 dock_supervisor 两条对白、player_investigator 主角对白。叙事输入原来把主角与 NPC 一起列为当前角色且没有身份标志；修复为生成上下文仅提供在场 NPC，并在提示 schema 指定发言 ID/no-NPC 零对白，说明每 NPC 至多一条。公开 API、已存节点、角色与语义否决均保持。回归 RED 4 failed、GREEN 10 passed；完整后端 180 passed，prompt 升至 investigation-single-5，尚未据此重跑真实清单。
+
+规则生成已出现多种独立失败，不继续通过反复扩写提示抽取成功样本。[受控规则骨架补充草案](../design/stage-2-controlled-story-proposal.md)提出服务器确定结构、模型生成内容的方案，降低首版规则自由度；待用户审阅，未实施。该提案不替换原清单或历史失败，不减角色/地点/结局数量，真实三背景路径与人工核查仍必须通过。
