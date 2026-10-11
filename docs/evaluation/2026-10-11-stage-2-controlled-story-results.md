@@ -12,7 +12,13 @@
 
 ## 真实与人工状态
 
-受控协议 prompt investigation-single-6 尚未发真实请求，原 12 案例及人工门槛尚未通过；manual_reviewers=0。原真实库 stage2_real_test 4 个节点/2 个故事版本已只读冻结哈希快照，预算 1.248071 CNY，无未核费用阻断；历史失败与批准内容保留。费用为保守估算与用户核账的混合，不能称为全部实际账单。
+受控协议 prompt investigation-single-6 真实固定清单已完成，未通过，manual_reviewers=0。run 64cc16647c7446ca9a05b977c3a11234，commit aa11c2a：创建 3/3 成功，九结局路径 0/9，总计 succeeded=3/error=9/total=12，task_success_rate=0.25，281.203 秒，退出码 1。所有路径 error_code=scene_semantic_rejected，不将安全拒绝当作任务完成。
+
+90 次 provider attempts/90 条用量记录，input=570577/output=26516，估算 1.522443 CNY，uncertain/unconfirmed=0；没有本轮实际账单，不称实际消费。累计原真实库 stage2_real_test 账本口径从 1.248071 增至 2.770514 CNY，保留历史用户核账 0.02 与其他估算。
+
+运行后原 4 节点/2 故事版本完整行 hash 全部不变；总库 34 节点/5 故事版本，新增为三个根及成功中间回合，九失败 run 的 node_id 均为空。原始 report.json SHA256=622273d972200ad1d84936ea4f63e3bff5466e078de18cdcf05d20a39888c029。冻结故事、全部失败 Trace 及 local-diagnostics.json 在 runtime/evals/64cc16647c7446ca9a05b977c3a11234/，Git 忽略，不包含密钥或会话凭据；未改原报告。
+
+已完成路径为 0，不能准备并宣称完整路径人工验收。诊断显示实际新增事实、与真相冲突，同时有疑似误判，详见待选择的[回合呈现补充草案](../design/stage-2-controlled-scenes-proposal.md)。下一步方案未批准，不以该草案宣称阶段完成。
 
 ## 失败窗口与限制
 
