@@ -2,6 +2,15 @@ import type { Action, AiProvider, LocalSettings, Node, Provider, Run, TreeNode, 
 
 const BASE = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000";
 
+export class ApiError extends Error {
+  status: number;
+  constructor(message: string, status: number) {
+    super(message);
+    this.name = "ApiError";
+    this.status = status;
+  }
+}
+
 async function request<T>(path: string, token?: string, init?: RequestInit): Promise<T> {
   const response = await fetch(`${BASE}${path}`, {
     ...init,
@@ -15,7 +24,7 @@ async function request<T>(path: string, token?: string, init?: RequestInit): Pro
   if (!response.ok) {
     let detail = `请求失败 (${response.status})`;
     try { detail = (await response.json()).detail || detail; } catch { /* empty response */ }
-    throw new Error(detail);
+    throw new ApiError(detail, response.status);
   }
   return response.json() as Promise<T>;
 }

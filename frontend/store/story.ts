@@ -1,7 +1,7 @@
 "use client";
 
 import { create } from "zustand";
-import { api, readSSE } from "@/lib/api";
+import { api, ApiError, readSSE } from "@/lib/api";
 import type { Action, Node, Option, Provider, TreeNode, World } from "@/lib/types";
 
 type Pending = { key: string; parentId: string; action: Action; runId?: string };
@@ -19,6 +19,8 @@ type StoryState = {
   streamedOptions: Option[];
   busy: boolean;
   error: string | null;
+  draft: string;
+  setDraft: (value: string) => void;
   initialize: () => Promise<void>;
   newStory: (provider: Provider, modelId: string) => Promise<void>;
   choose: (action: Action) => Promise<void>;
@@ -33,9 +35,22 @@ const storage = {
 };
 
 const stageLabels: Record<string, string> = {
-  queued: "正在排队", running: "开始构思", directing: "导演安排下一幕",
-  writing: "编剧编排剧情", acting: "角色准备对白", reviewing: "校验剧情一致性",
+  queued: "正在排队", running: "正在处理你的行动", directing: "正在确认行动",
+  writing: "正在准备下一幕", acting: "正在准备对白", reviewing: "正在校验剧情",
 };
+
+// These responses reject a turn before creating a run; network/5xx outcomes stay unresolved.
+function clearRejectedTurn(error: unknown, pending: Pending | null) {
+  if (!pending?.runId && error instanceof ApiError && [400, 401, 403, 404, 409, 422].includes(error.status)) {
+    storage.remove("theater:pending");
+    return { pending: null, stage: "" };
+  }
+  return {};
+}
+
+function errorMessage(error: unknown) {
+  return error instanceof TypeError ? "无法连接本地服务。输入已保留，请恢复服务后重试连接。" : (error as Error).message;
+}
 
 async function listenToRun(token: string, pending: Pending, set: (patch: Partial<StoryState>) => void) {
   const runId = pending.runId;
@@ -47,12 +62,13 @@ async function listenToRun(token: string, pending: Pending, set: (patch: Partial
       const [node, tree] = await Promise.all([api.node(token, run.node_id), api.tree(token)]);
       storage.write("theater:node", node.id);
       storage.remove("theater:pending");
-      set({ node, tree, pending: null, busy: false, streamedText: "", streamedOptions: [], stage: "" });
+      storage.remove("theater:draft");
+      set({ node, tree, pending: null, busy: false, streamedText: "", streamedOptions: [], stage: "", draft: "" });
       return;
     }
     if (run.status === "failed" || run.status === "interrupted") {
       storage.remove("theater:pending");
-      set({ pending: null, busy: false, stage: "", error: "本幕未提交，请重新选择。" });
+      set({ pending: null, busy: false, stage: "", error: run.status === "interrupted" ? "任务已中断，输入已保留。可以重新提交行动。" : "本幕未能保存，输入已保留。请检查设置或重新提交行动。" });
       return;
     }
     try {
@@ -83,10 +99,16 @@ export const useStoryStore = create<StoryState>((set, get) => ({
   streamedOptions: [],
   busy: false,
   error: null,
+  draft: "",
+  setDraft: value => {
+    storage.write("theater:draft", value);
+    set({ draft: value });
+  },
 
   initialize: async () => {
+    if (get().busy) return;
     try {
-      set({ busy: true, error: null });
+      set({ busy: true, error: null, draft: storage.read("theater:draft") || "", streamedText: "", streamedOptions: [] });
       const world = await api.world();
       let token = storage.read("theater:token");
       let node: Node;
@@ -109,25 +131,30 @@ export const useStoryStore = create<StoryState>((set, get) => ({
         modelId = session.model_id;
       }
       const tree = await api.tree(token);
-      set({ token, node, world, tree, provider, modelId, busy: false });
       const stored = storage.read("theater:pending");
+      set({ token, node, world, tree, provider, modelId, busy: Boolean(stored) });
       if (stored) {
         const pending = JSON.parse(stored) as Pending;
         set({ pending, busy: true });
         if (!pending.runId) {
-          const run = await api.turn(token, pending.parentId, pending.action, pending.key);
-          pending.runId = run.run_id;
+          try {
+            const run = await api.turn(token, pending.parentId, pending.action, pending.key);
+            pending.runId = run.run_id;
+          } catch (error) {
+            set(clearRejectedTurn(error, pending));
+            throw error;
+          }
           storage.write("theater:pending", JSON.stringify(pending));
         }
         await listenToRun(token, pending, set);
       }
     } catch (error) {
-      set({ busy: false, error: (error as Error).message });
+      set({ busy: false, error: errorMessage(error) });
     }
   },
 
   newStory: async (provider, modelId) => {
-    if (get().busy) throw new Error("当前回合尚未结束。");
+    if (get().busy || get().pending) throw new Error("当前任务尚未确认，请先恢复任务。");
     set({ busy: true, error: null });
     try {
       const created = await api.createSession(provider, modelId);
@@ -135,9 +162,10 @@ export const useStoryStore = create<StoryState>((set, get) => ({
       storage.write("theater:token", created.token);
       storage.write("theater:node", created.root.id);
       storage.remove("theater:pending");
+      storage.remove("theater:draft");
       set({ token: created.token, node: created.root, tree, provider: created.provider,
         modelId: created.model_id, pending: null, busy: false, streamedText: "",
-        streamedOptions: [], stage: "", error: null });
+        streamedOptions: [], stage: "", error: null, draft: "" });
     } catch (error) {
       set({ busy: false, error: (error as Error).message });
       throw error;
@@ -145,8 +173,8 @@ export const useStoryStore = create<StoryState>((set, get) => ({
   },
 
   choose: async (action) => {
-    const { token, node, busy } = get();
-    if (!token || !node || busy) return;
+    const { token, node, busy, pending: unresolved } = get();
+    if (!token || !node || busy || unresolved) return;
     const pending: Pending = { key: crypto.randomUUID(), parentId: node.id, action };
     storage.write("theater:pending", JSON.stringify(pending));
     set({ pending, busy: true, error: null, streamedText: "", streamedOptions: [], stage: "正在提交选择" });
@@ -157,25 +185,28 @@ export const useStoryStore = create<StoryState>((set, get) => ({
       set({ pending });
       await listenToRun(token, pending, set);
     } catch (error) {
-      set({ busy: false, error: (error as Error).message });
+      set({ ...clearRejectedTurn(error, pending), busy: false, error: errorMessage(error) });
     }
   },
 
   selectNode: async (id) => {
-    const { token, busy } = get();
-    if (!token || busy) return;
+    const { token, busy, pending } = get();
+    if (!token || busy || pending) return;
+    set({ busy: true, error: null });
     try {
       const node = await api.node(token, id);
       storage.write("theater:node", id);
       set({ node, streamedText: "", streamedOptions: [], error: null });
     } catch (error) {
       set({ error: (error as Error).message });
+    } finally {
+      set({ busy: false });
     }
   },
 
   regenerate: async () => {
-    const { token, node, busy } = get();
-    if (!token || !node?.parent_id || busy) return;
+    const { token, node, busy, pending } = get();
+    if (!token || !node?.parent_id || busy || pending) return;
     try {
       const events = await api.nodeEvents(token, node.id);
       const action = events.find(event => event.event_type === "player_action")?.payload;
