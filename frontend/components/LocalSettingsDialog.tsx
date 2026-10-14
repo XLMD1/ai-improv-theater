@@ -3,7 +3,7 @@
 import { FormEvent, useEffect, useRef, useState } from "react";
 import { Eye, EyeOff, X } from "lucide-react";
 import { api } from "@/lib/api";
-import type { AiProvider, LocalSettings, Provider } from "@/lib/types";
+import type { KeyProvider, LocalSettings, Provider } from "@/lib/types";
 
 type Props = {
   currentProvider: Provider;
@@ -13,11 +13,11 @@ type Props = {
   onNewStory: (provider: Provider, modelId: string) => Promise<void>;
 };
 
-const names: Record<AiProvider, string> = { openai: "OpenAI", deepseek: "DeepSeek" };
+const names: Record<KeyProvider, string> = { openai: "OpenAI", deepseek: "DeepSeek",cogview:"智谱 · CogView-4" };
 
 export function LocalSettingsDialog({ currentProvider, currentModel, hasProgress, onClose, onNewStory }: Props) {
   const dialogRef = useRef<HTMLDialogElement>(null);
-  const [selected, setSelected] = useState<AiProvider>("deepseek");
+  const [selected, setSelected] = useState<KeyProvider>("deepseek");
   const [settings, setSettings] = useState<LocalSettings | null>(null);
   const [apiKey, setApiKey] = useState("");
   const [showKey, setShowKey] = useState(false);
@@ -32,7 +32,7 @@ export function LocalSettingsDialog({ currentProvider, currentModel, hasProgress
     return () => { if (dialog?.open) dialog.close(); };
   }, []);
 
-  const changeProvider = (provider: AiProvider) => {
+  const changeProvider = (provider: KeyProvider) => {
     setSelected(provider);
     setApiKey("");
     setShowKey(false);
@@ -73,7 +73,7 @@ export function LocalSettingsDialog({ currentProvider, currentModel, hasProgress
   };
 
   const start = async (provider: Provider, modelId: string) => {
-    if (hasProgress && !window.confirm("开始新故事会切换当前浏览器存档；旧故事仍在本地数据库，但本页暂不提供会话切回入口。继续吗？")) return;
+    if (hasProgress && !window.confirm("开始新故事会切换到新的一局；当前故事会保留在故事库。继续吗？")) return;
     setSaving(true); setError(""); setMessage("");
     try {
       await onNewStory(provider, modelId);
@@ -97,7 +97,7 @@ export function LocalSettingsDialog({ currentProvider, currentModel, hasProgress
         <fieldset className="provider-fieldset" disabled={saving}>
           <legend>模型供应商</legend>
           <div className="provider-cards">
-            {(["openai", "deepseek"] as const).map(provider => <button
+            {(["openai", "deepseek", "cogview"] as const).map(provider => <button
               type="button" key={provider} className={`provider-card ${selected === provider ? "selected" : ""}`}
               aria-pressed={selected === provider} disabled={provider === "openai" || saving} onClick={() => changeProvider(provider)}>
               <strong>{names[provider]}</strong><span>{provider === "openai" ? "待开发验证" : settings?.providers[provider].configured ? "密钥已配置" : "尚未配置密钥"}</span>
@@ -127,11 +127,13 @@ export function LocalSettingsDialog({ currentProvider, currentModel, hasProgress
           <select id="local-model" value={chosen?.model_id || ""} disabled aria-describedby="model-help">
             <option value={chosen?.model_id || ""}>{chosen?.model_id || "正在读取模型"}</option>
           </select>
-          <p id="model-help" className="settings-help">每家暂时只开放一个经过项目验证的模型，不接受自定义 ID。</p>
+          <p id="model-help" className="settings-help">{selected==='cogview'?'图片使用 standard；每次 ¥0.06，每局五张背景与三张人物，共 ¥0.48。':'每家暂时只开放项目指定模型，不接受自定义 ID。'}</p>
         </div>
 
         {settings && <p className={`settings-budget ${settings.budget.status !== "ok" ? "is-warning" : ""}`}>
           估算用量：¥{settings.budget.estimated_spend_cny.toFixed(2)} / ¥{settings.budget.limit_cny}
+          {' · 已预留 ¥'+(settings.budget.reserved_cny||0).toFixed(2)}
+          {settings.budget.cost_unconfirmed?' · 有结果未确认费用，核账前暂停调用':''}
           {settings.budget.status === "blocked" ? " · 已停止新模型调用" : settings.budget.status === "warning" ? " · 接近预算上限" : ""}
         </p>}
         {error && <p className="settings-error" role="alert">{error}</p>}
@@ -139,8 +141,8 @@ export function LocalSettingsDialog({ currentProvider, currentModel, hasProgress
       </div>
       <div className="settings-footer">
         <button type="button" onClick={() => void start("demo", "demo")} disabled={saving}>新建确定性 Demo</button>
-        <button type="button" className="settings-primary" onClick={() => void start(selected, chosen?.model_id || "")}
-          disabled={saving || !chosen?.configured || settings?.budget.status === "blocked"}>用 {names[selected]} 开始新故事</button>
+        {selected!=='cogview'&&<button type="button" className="settings-primary" onClick={() => void start(selected, chosen?.model_id || "")}
+          disabled={saving || selected==='openai' || !chosen?.configured || settings?.budget.status === "blocked"}>用 {names[selected]} 开始新故事</button>}
       </div>
     </dialog>
   );

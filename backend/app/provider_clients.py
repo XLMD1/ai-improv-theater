@@ -8,7 +8,9 @@ import httpx
 
 
 class ProviderFailure(RuntimeError):
-    pass
+    def __init__(self,message,outcome=None):
+        super().__init__(message)
+        self.outcome=outcome
 
 
 @dataclass(frozen=True)
@@ -27,6 +29,7 @@ class ProviderOutcome:
     request_sent: bool = False
     retry_after: float | None = None
     chargeable: bool = True
+    image_count: int | None = None
 
 
 async def call_operation_provider(provider, model_id, api_key, prompt, max_tokens, timeout_seconds):
@@ -79,31 +82,7 @@ async def call_operation_provider(provider, model_id, api_key, prompt, max_token
 
 
 async def call_provider(provider: str, model_id: str, api_key: str, prompt: str) -> ModelResult:
-    if provider == "deepseek":
-        url = "https://api.deepseek.com/chat/completions"
-        payload = {
-            "model": model_id, "messages": [{"role": "user", "content": prompt}],
-            "response_format": {"type": "json_object"},
-            "thinking": {"type": "disabled"}, "max_tokens": 900,
-        }
-    else:
-        raise ProviderFailure("unsupported provider")
-
-    try:
-        async with httpx.AsyncClient(timeout=20.0) as client:
-            response = await client.post(url, headers={"Authorization": f"Bearer {api_key}"}, json=payload)
-            response.raise_for_status()
-            data = response.json()
-    except (httpx.HTTPError, ValueError) as error:
-        raise ProviderFailure("model request failed") from error
-
-    try:
-        usage = data["usage"]
-        input_tokens = usage["prompt_tokens"]
-        output_tokens = usage["completion_tokens"]
-        if type(input_tokens) is not int or input_tokens <= 0 or type(output_tokens) is not int or output_tokens < 0:
-            raise ProviderFailure("invalid model usage")
-        text = data["choices"][0]["message"].get("content") or ""
-        return ModelResult(text, input_tokens, output_tokens)
-    except (KeyError, IndexError, TypeError, AttributeError) as error:
-        raise ProviderFailure("invalid model response envelope") from error
+    outcome=await call_operation_provider(provider,model_id,api_key,prompt,900,20)
+    if outcome.error_code or outcome.input_tokens is None or outcome.input_tokens<=0 or outcome.output_tokens is None:
+        raise ProviderFailure('model request failed',outcome=outcome)
+    return ModelResult(outcome.text or '',outcome.input_tokens,outcome.output_tokens)

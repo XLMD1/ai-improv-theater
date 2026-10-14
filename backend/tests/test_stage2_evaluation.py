@@ -15,7 +15,7 @@ def runner():
     return module
 
 
-def test_stage2_denominator_and_missing_keys_are_not_success():
+def test_stage2_denominator_and_missing_keys_are_not_success(monkeypatch,tmp_path):
     module = runner()
     assert module.summarize([{'status':s} for s in ('succeeded','failed','error','skipped')])['task_success_rate']==.25
     with pytest.raises(ValueError,match='empty_suite'):
@@ -23,8 +23,10 @@ def test_stage2_denominator_and_missing_keys_are_not_success():
     manifest = module.load_manifest()
     real = [c for c in manifest['cases'] if c['suite']=='real_model']
     assert len(real)==12 and {c['era'] for c in real}=={'ancient','modern','future'}
-    results = module.execute_real_cases(real,Path('.'))
-    assert len(results)==12 and all(r['status']=='error' for r in results)
+    monkeypatch.setattr('app.local_settings.configured',lambda provider:False)
+    with patch('app.story_operations.call_operation_provider',side_effect=AssertionError('missing key executed provider')):
+        results = module.execute_real_cases(real,tmp_path)
+    assert len(results)==12 and all(r['status']=='error' and r['error_code']=='key_not_configured' for r in results)
 
 
 def test_stage2_unsafe_database_rejected_before_any_connection(monkeypatch,tmp_path):

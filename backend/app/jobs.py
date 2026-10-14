@@ -1,6 +1,7 @@
 import asyncio
 import hashlib
 import secrets
+import time
 
 from sqlalchemy import func, select
 
@@ -154,7 +155,12 @@ async def process_run(run_id: str) -> None:
         else:
             with SessionLocal.begin() as db:
                 _append_event(db, run_id, "writing", {})
-            scene, changes, usage = await build_ai_scene(parent_state, action, provider, model_id, recent_turns)
+            from app.execution import ExecutionContext
+            from app.execution_traces import TaskRef, TraceRecorder
+            from app.local_settings import get_key
+            context=ExecutionContext(TaskRef('action',run_id,session_id),time.monotonic()+60,provider,model_id,
+                TraceRecorder(SessionLocal,secrets=[get_key(provider)],token_hashes=[session.token_hash]))
+            scene, changes, usage = await build_ai_scene(parent_state, action, provider, model_id, recent_turns,context)
         with SessionLocal.begin() as db:
             run = db.get(Run, run_id)
             state = apply_state_changes(parent_state, scene["scene_id"], changes)

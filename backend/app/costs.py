@@ -5,7 +5,7 @@ from decimal import Decimal
 from sqlalchemy import func, select
 from sqlalchemy.orm import aliased
 
-from app.models import ExecutionTrace, LLMCall
+from app.models import CostReservation, ExecutionTrace, LLMCall
 from app.usage_reconciliation import reconciled_usage
 
 
@@ -36,18 +36,26 @@ def _accounted_spend_cny(db,evidence) -> Decimal:
 
 
 def budget_status(db) -> dict:
+    from app.budget import reserved_cny
     spent = total_spend_cny(db)
+    reserved = reserved_cny(db)
+    unknown = db.scalar(select(CostReservation.attempt_id).where(CostReservation.status == 'uncertain',
+                       CostReservation.call_id.not_in(list(reconciled_usage(db)))).limit(1))
+    unknown = unknown or db.scalar(select(LLMCall.id).where(LLMCall.usage_status=='uncertain',
+                                  LLMCall.id.not_in(list(reconciled_usage(db)))).limit(1))
     return {
         "estimated_spend_cny": float(spent),
+        "reserved_cny": float(reserved), "cost_unconfirmed": bool(unknown),
         "warning_cny": int(WARNING_CNY), "limit_cny": int(LIMIT_CNY),
-        "status": "blocked" if spent >= LIMIT_CNY else "warning" if spent >= WARNING_CNY else "ok",
+        "status": "blocked" if spent + reserved >= LIMIT_CNY or unknown else "warning" if spent + reserved >= WARNING_CNY else "ok",
     }
 
 
-def check_execution_budget(db, estimated_cost=Decimal(0)):
+def check_execution_budget(db, estimated_cost=Decimal(0), *, exclude_attempt=None):
     """Unknown incurred usage or an unfinished audit blocks another external call."""
     confirmed = reconciled_usage(db)
-    if _accounted_spend_cny(db,confirmed) + Decimal(str(estimated_cost)) >= LIMIT_CNY:
+    from app.budget import reserved_cny
+    if _accounted_spend_cny(db,confirmed) + reserved_cny(db) + Decimal(str(estimated_cost)) >= LIMIT_CNY:
         raise ValueError('budget_exhausted')
     if db.scalar(select(LLMCall.id).where(LLMCall.usage_status == 'uncertain',LLMCall.id.not_in(list(confirmed))).limit(1)):
         raise ValueError('cost_unconfirmed')
@@ -55,5 +63,9 @@ def check_execution_budget(db, estimated_cost=Decimal(0)):
     complete = select(finished.id).where(finished.trace_id == ExecutionTrace.trace_id,
                                          finished.span_id == ExecutionTrace.span_id,
                                          finished.event_type == 'attempt_finished').exists()
-    if db.scalar(select(ExecutionTrace.id).where(ExecutionTrace.event_type == 'attempt_started', ~complete).limit(1)):
+    reserved = select(CostReservation.attempt_id).where(CostReservation.attempt_id == ExecutionTrace.id).exists()
+    orphan = select(ExecutionTrace.id).where(ExecutionTrace.event_type == 'attempt_started', ~complete, ~reserved)
+    if exclude_attempt:
+        orphan = orphan.where(ExecutionTrace.id != exclude_attempt)
+    if db.scalar(orphan.limit(1)):
         raise ValueError('audit_incomplete')

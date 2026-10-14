@@ -2,7 +2,9 @@
 
 import { create } from "zustand";
 import { api, ApiError, readSSE } from "@/lib/api";
-import type { Action, Node, Option, Provider, TreeNode, World } from "@/lib/types";
+import {findEntry,migrateLegacy,saveEntry,updateEntry} from "@/lib/library";
+import {normalizeWorld} from "@/lib/world";
+import type { Action, Node, Option, Provider, TreeNode, World,AssetManifest } from "@/lib/types";
 
 type Pending = { key: string; parentId: string; action: Action; runId?: string };
 
@@ -12,6 +14,8 @@ type StoryState = {
   modelId: string;
   node: Node | null;
   world: World | null;
+  assets: AssetManifest | null;
+  libraryId: string | null;
   tree: TreeNode[];
   pending: Pending | null;
   stage: string;
@@ -21,18 +25,42 @@ type StoryState = {
   error: string | null;
   draft: string;
   setDraft: (value: string) => void;
-  initialize: () => Promise<void>;
+  initialize: (id?:string) => Promise<void>;
   newStory: (provider: Provider, modelId: string) => Promise<void>;
   choose: (action: Action) => Promise<void>;
   selectNode: (id: string) => Promise<void>;
   regenerate: () => Promise<void>;
 };
 
+let activeId:string|null=null;
 const storage = {
-  read(name: string) { return sessionStorage.getItem(name); },
-  write(name: string, value: string) { sessionStorage.setItem(name, value); },
-  remove(name: string) { sessionStorage.removeItem(name); },
+  read(name: string) {
+    if (!activeId) return sessionStorage.getItem(name);
+    const entry=findEntry(activeId);
+    if (name==='theater:token') return entry?.token||null;
+    if (name==='theater:node') return entry?.nodeId||null;
+    if (name==='theater:draft') return entry?.draft||null;
+    if (name==='theater:pending') return entry?.pending?JSON.stringify(entry.pending):null;
+    return String(entry?.seq?.[name.slice('theater:seq:'.length)]||0);
+  },
+  write(name: string,value: string) {
+    if (!activeId) { sessionStorage.setItem(name,value); return; }
+    if (name==='theater:token') updateEntry(activeId,{token:value});
+    else if (name==='theater:node') updateEntry(activeId,{nodeId:value});
+    else if (name==='theater:draft') updateEntry(activeId,{draft:value});
+    else if (name==='theater:pending') updateEntry(activeId,{pending:JSON.parse(value)});
+    else updateEntry(activeId,{seq:{...findEntry(activeId)?.seq,[name.slice('theater:seq:'.length)]:Number(value)}});
+  },
+  remove(name: string) {
+    if (!activeId) { sessionStorage.removeItem(name);return; }
+    if (name==='theater:pending') updateEntry(activeId,{pending:undefined});
+    if (name==='theater:draft') updateEntry(activeId,{draft:''});
+  },
 };
+
+async function worldFor(token:string,node:Node):Promise<World> {
+  return node.state_snapshot?.engine_version==='investigation-1'?normalizeWorld(await api.sessionWorld(token,node.id)):api.world();
+}
 
 const stageLabels: Record<string, string> = {
   queued: "正在排队", running: "正在处理你的行动", directing: "正在确认行动",
@@ -60,10 +88,11 @@ async function listenToRun(token: string, pending: Pending, set: (patch: Partial
     const run = await api.run(token, runId);
     if (run.status === "completed" && run.node_id) {
       const [node, tree] = await Promise.all([api.node(token, run.node_id), api.tree(token)]);
+      const world=await worldFor(token,node);
       storage.write("theater:node", node.id);
       storage.remove("theater:pending");
       storage.remove("theater:draft");
-      set({ node, tree, pending: null, busy: false, streamedText: "", streamedOptions: [], stage: "", draft: "" });
+      set({ node, world, tree, pending: null, busy: false, streamedText: "", streamedOptions: [], stage: "", draft: "" });
       return;
     }
     if (run.status === "failed" || run.status === "interrupted") {
@@ -92,6 +121,8 @@ export const useStoryStore = create<StoryState>((set, get) => ({
   modelId: "demo",
   node: null,
   world: null,
+  assets: null,
+  libraryId: null,
   tree: [],
   pending: null,
   stage: "",
@@ -105,21 +136,32 @@ export const useStoryStore = create<StoryState>((set, get) => ({
     set({ draft: value });
   },
 
-  initialize: async () => {
+  initialize: async (id) => {
     if (get().busy) return;
     try {
+      if (typeof localStorage!=='undefined') {
+        migrateLegacy();
+        const selectedId=id||get().libraryId||undefined;
+        const selected=findEntry(selectedId);
+        if (selectedId&&!selected) throw new Error('本机没有这个故事的会话凭据，请返回故事库。');
+        activeId=selected?.id||null;
+      }
       set({ busy: true, error: null, draft: storage.read("theater:draft") || "", streamedText: "", streamedOptions: [] });
-      const world = await api.world();
       let token = storage.read("theater:token");
       let node: Node;
       let provider: Provider;
       let modelId: string;
+      let requiresAssets=false;
       if (!token) {
         const created = await api.createSession();
         token = created.token;
         node = created.root;
         provider = created.provider;
         modelId = created.model_id;
+        if (typeof localStorage!=='undefined') {
+          activeId=crypto.randomUUID();
+          saveEntry({id:activeId,token,kind:'legacy',title:'雾港最后一夜',provider,modelId,nodeId:node.id,draft:'',updatedAt:new Date().toISOString()});
+        }
         storage.write("theater:token", token);
         storage.write("theater:node", node.id);
       } else {
@@ -129,10 +171,18 @@ export const useStoryStore = create<StoryState>((set, get) => ({
         node = savedNode;
         provider = session.provider;
         modelId = session.model_id;
+        requiresAssets=Boolean(session.requires_assets);
       }
+      const world=await worldFor(token,node);
+      const assets=node.state_snapshot?.engine_version==='investigation-1'?await api.assets(token):null;
+      if (requiresAssets&&!assets?.ready&&activeId) {
+        window.location.replace(`/create?id=${activeId}`);
+        return;
+      }
+      if (activeId) updateEntry(activeId,{title:world.title,provider,modelId});
       const tree = await api.tree(token);
       const stored = storage.read("theater:pending");
-      set({ token, node, world, tree, provider, modelId, busy: Boolean(stored) });
+      set({ token, node, world, assets, libraryId:activeId, tree, provider, modelId, busy: Boolean(stored) });
       if (stored) {
         const pending = JSON.parse(stored) as Pending;
         set({ pending, busy: true });
@@ -158,12 +208,18 @@ export const useStoryStore = create<StoryState>((set, get) => ({
     set({ busy: true, error: null });
     try {
       const created = await api.createSession(provider, modelId);
-      const tree = await api.tree(created.token);
+      const [tree,world]=await Promise.all([api.tree(created.token),api.world()]);
+      if (typeof localStorage!=='undefined') {
+        activeId=crypto.randomUUID();
+        saveEntry({id:activeId,token:created.token,kind:'legacy',title:world.title,provider:created.provider,modelId:created.model_id,
+          nodeId:created.root.id,draft:'',updatedAt:new Date().toISOString()});
+        window.history.replaceState(null,'',`/play?id=${activeId}`);
+      }
       storage.write("theater:token", created.token);
       storage.write("theater:node", created.root.id);
       storage.remove("theater:pending");
       storage.remove("theater:draft");
-      set({ token: created.token, node: created.root, tree, provider: created.provider,
+      set({ token: created.token, node: created.root, world,assets:null,libraryId:activeId,tree, provider: created.provider,
         modelId: created.model_id, pending: null, busy: false, streamedText: "",
         streamedOptions: [], stage: "", error: null, draft: "" });
     } catch (error) {
@@ -195,8 +251,9 @@ export const useStoryStore = create<StoryState>((set, get) => ({
     set({ busy: true, error: null });
     try {
       const node = await api.node(token, id);
+      const world=await worldFor(token,node);
       storage.write("theater:node", id);
-      set({ node, streamedText: "", streamedOptions: [], error: null });
+      set({ node, world,streamedText: "", streamedOptions: [], error: null });
     } catch (error) {
       set({ error: (error as Error).message });
     } finally {

@@ -42,14 +42,34 @@ class ConfirmationRequest(StrictModel):
     content_hash: str = Field(pattern=r'^[a-f0-9]{64}$')
 
 
-def create_custom_session(provider,model_id):
+def reject_creation(session_id,task_id):
+    with SessionLocal.begin() as db:
+        session=_session(db,session_id)
+        task=owned_task(db,session_id,task_id,lock=True)
+        if session.story_version_id or task.status=='approved': raise CreationError('story_already_approved')
+        if task.status=='declined': return
+        if task.status!='awaiting_confirmation': raise CreationError('candidate_not_ready')
+        task.status='declined'; task.stage='declined'
+        append_creation_event(db,task,'declined',{})
+
+
+def create_custom_session(provider,model_id,client_token=None,requires_assets=False):
     if provider != 'deepseek' or model_id != MODELS['deepseek']:
         raise CreationError('unverified_model')
-    if not configured(provider):
-        raise CreationError('key_not_configured')
-    token = secrets.token_urlsafe(32)
+    token = client_token or secrets.token_urlsafe(32)
+    digest=hashlib.sha256(token.encode()).hexdigest()
     with SessionLocal.begin() as db:
-        session = StorySession(token_hash=hashlib.sha256(token.encode()).hexdigest(),provider=provider,
+        if client_token:
+            # Hash-based advisory lock also serializes the first insert, when no
+            # session row exists yet. Only the token hash reaches PostgreSQL.
+            db.execute(select(func.pg_advisory_xact_lock(func.hashtext(digest))))
+            old=db.scalar(select(StorySession).where(StorySession.token_hash==digest))
+            if old:
+                if (old.provider,old.model_id,old.requires_assets,old.engine_version)!=(provider,model_id,requires_assets,'investigation-1'):
+                    raise CreationError('session_creation_conflict')
+                db.expunge(old); return token,old
+        if not configured(provider): raise CreationError('key_not_configured')
+        session = StorySession(token_hash=digest,provider=provider,requires_assets=requires_assets,
                                model_id=model_id,engine_version='investigation-1',mode='single')
         db.add(session)
         db.flush()

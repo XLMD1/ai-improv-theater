@@ -1,4 +1,5 @@
-import type { Action, AiProvider, LocalSettings, Node, Provider, Run, TreeNode, World } from "./types";
+import type { Action, KeyProvider, LocalSettings, Node, Provider, Run, TreeNode, World,PublicWorld,SessionInfo,AssetManifest,CreationTask,ImageTask } from "./types";
+import type {CreationRequest} from './library';
 
 const BASE = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000";
 
@@ -32,15 +33,37 @@ async function request<T>(path: string, token?: string, init?: RequestInit): Pro
 export const api = {
   world: () => request<World>("/world"),
   settings: () => request<LocalSettings>("/local-settings"),
-  saveKey: (provider: AiProvider, apiKey: string) => request<{ configured: boolean }>(`/local-settings/keys/${provider}`, undefined, {
+  saveKey: (provider: KeyProvider, apiKey: string) => request<{ configured: boolean }>(`/local-settings/keys/${provider}`, undefined, {
     method: "PUT", body: JSON.stringify({ api_key: apiKey }),
   }),
-  clearKey: (provider: AiProvider) => request<{ configured: boolean }>(`/local-settings/keys/${provider}`, undefined, { method: "DELETE" }),
+  clearKey: (provider: KeyProvider) => request<{ configured: boolean }>(`/local-settings/keys/${provider}`, undefined, { method: "DELETE" }),
   createSession: (provider: Provider = "demo", modelId = "demo") => request<{ token: string; root: Node; provider: Provider; model_id: string }>("/sessions", undefined, {
     method: "POST",
     ...(provider === "demo" ? {} : { body: JSON.stringify({ provider, model_id: modelId }) }),
   }),
-  currentSession: (token: string) => request<{ provider: Provider; model_id: string }>("/session", token),
+  currentSession: (token: string) => request<SessionInfo>("/session", token),
+  createCustomSession: (clientToken:string) => request<{token:string;session_id:string;provider:Provider;model_id:string}>('/story-sessions',undefined,
+    {method:'POST',body:JSON.stringify({provider:'deepseek',flow:'illustrated-3',client_token:clientToken})}),
+  createTask: (token:string,body:CreationRequest,key:string) => request<{task_id:string;status:string}>('/story-tasks',token,
+    {method:'POST',headers:{'Idempotency-Key':key},body:JSON.stringify(body)}),
+  creationTask: (token:string,id:string) => request<CreationTask>(`/story-tasks/${id}`,token),
+  rejectTask: (token:string,id:string) => request<{status:string}>(`/story-tasks/${id}/reject`,token,{method:'POST'}),
+  confirmTask: (token:string,id:string,candidateVersion:string,hash:string) => request<{root:Node}>(`/story-tasks/${id}/confirm`,token,
+    {method:'POST',body:JSON.stringify({candidate_version_id:candidateVersion,content_hash:hash})}),
+  resumeCreation: (token:string,id:string,key:string) => request<{task_id:string;status:string}>(`/story-tasks/${id}/resume`,token,
+    {method:'POST',headers:{'Idempotency-Key':key}}),
+  startImages: (token:string,key:string) => request<{task_id:string;status:string}>('/image-tasks',token,
+    {method:'POST',headers:{'Idempotency-Key':key}}),
+  imageTask: (token:string,id:string) => request<ImageTask>(`/image-tasks/${id}`,token),
+  resumeImages: (token:string,id:string,key:string,confirm=false) => request<{task_id:string;status:string}>(`/image-tasks/${id}/resume`,token,
+    {method:'POST',headers:{'Idempotency-Key':key},body:JSON.stringify({confirm_missing_output:confirm})}),
+  sessionWorld: (token:string,nodeId:string) => request<PublicWorld>(`/session/world?node_id=${encodeURIComponent(nodeId)}`,token),
+  assets: (token:string) => request<AssetManifest>('/session/assets',token),
+  asset: async (token:string,id:string) => {
+    const response=await fetch(`${BASE}/assets/${encodeURIComponent(id)}`,{headers:{Authorization:`Bearer ${token}`}});
+    if (!response.ok) throw new ApiError('图片暂时无法读取，请恢复素材后重试。',response.status);
+    return response.blob();
+  },
   node: (token: string, id: string) => request<Node>(`/nodes/${id}`, token),
   nodeEvents: (token: string, id: string) => request<{ event_type: string; payload: Action }[]>(`/nodes/${id}/events`, token),
   tree: (token: string) => request<TreeNode[]>("/tree", token),

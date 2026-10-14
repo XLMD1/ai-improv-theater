@@ -33,6 +33,12 @@ pwsh -NoProfile -File .\scripts\start-local.ps1
 
 遇到启动失败，先看终端错误；后端启动日志保存在系统临时目录的 `ai-improv-api-<进程号>.err.log`。可运行 `pwsh -NoProfile -File .\scripts\test-start-local.ps1` 检查启动脚本的前置条件提示。
 
+## 阶段三预览与验收
+
+当前首页是逐局保存的故事库。自定义故事流程为背景／年代 → 已校验简介确认 → 八张固定素材 → 调查舞台；在本地设置依次配置 DeepSeek 和智谱 CogView-4，OpenAI 仍禁用。密钥仅在后端内存，重启后须重填；已保存剧情和图片回放无需密钥。CogView-4 固定普通同步 0.06 CNY/次，八图 0.48 CNY，文字另按用量估算；未知结果须核账，恢复不会自动重发不确定的生成请求。
+
+这是阶段三待真实验收的本地预览，自动测试通过不代表生图和剧情质量验收。见[实施专题](docs/design/stage-3-completion.md)及[固定验收口径](docs/evaluation/stage-3-acceptance.md)。运行 `evals/run_stage3.py` 前，预览服务和运行器必须使用同一个独立 PostgreSQL `_test` 库；服务测试库指纹必须匹配，正常用户库不会提供该指纹。运行器只使用已在本地设置保存的内存密钥；不要通过命令参数传入 API Key。报告、冻结故事及测试会话凭据位于忽略的 `runtime/evals/`，不得提交这些本地数据。
+
 ## 阶段 1 规则评测
 
 阶段 1 已提供严格调查协议、确定性裁决、可达性校验及增量版本迁移。当前界面继续使用 Demo；完整雾港调查样本已获用户批准并冻结为 1.0.0，阶段 1 已验收。见[剧情与证据材料](docs/design/mist-harbor-draft-review.md)及[批准版本实测](docs/evaluation/2026-10-10-stage-1-approved-results.md)。

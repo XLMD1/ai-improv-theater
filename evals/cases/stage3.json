@@ -1,0 +1,117 @@
+{
+  "manifest_version": "stage3-1",
+  "metric_version": "stage3-local-acceptance-1",
+  "cases": [
+    {
+      "id": "create_ancient",
+      "era": "ancient",
+      "kind": "creation",
+      "setting": "古代河运城镇，漕船失踪，封锁的码头与旧仓库调查",
+      "expected": "checked candidate explicitly approved with frozen witnesses"
+    },
+    {
+      "id": "images_ancient",
+      "era": "ancient",
+      "kind": "images",
+      "expected": "8 authenticated local fixed assets, correct format/size/checksum, replay zero generation"
+    },
+    {
+      "id": "ancient_ending_1",
+      "era": "ancient",
+      "kind": "path",
+      "index": 0,
+      "free_text": true,
+      "expected": "selected ancestor path reaches frozen ending"
+    },
+    {
+      "id": "ancient_ending_2",
+      "era": "ancient",
+      "kind": "path",
+      "index": 1,
+      "free_text": false,
+      "expected": "selected ancestor path reaches frozen ending"
+    },
+    {
+      "id": "ancient_ending_3",
+      "era": "ancient",
+      "kind": "path",
+      "index": 2,
+      "free_text": false,
+      "expected": "selected ancestor path reaches frozen ending"
+    },
+    {
+      "id": "create_modern",
+      "era": "modern",
+      "kind": "creation",
+      "setting": "近现代港口城镇，暴雨中失踪的航海日志与码头调查",
+      "expected": "checked candidate explicitly approved with frozen witnesses"
+    },
+    {
+      "id": "images_modern",
+      "era": "modern",
+      "kind": "images",
+      "expected": "8 authenticated local fixed assets, correct format/size/checksum, replay zero generation"
+    },
+    {
+      "id": "modern_ending_1",
+      "era": "modern",
+      "kind": "path",
+      "index": 0,
+      "free_text": true,
+      "expected": "selected ancestor path reaches frozen ending"
+    },
+    {
+      "id": "modern_ending_2",
+      "era": "modern",
+      "kind": "path",
+      "index": 1,
+      "free_text": false,
+      "expected": "selected ancestor path reaches frozen ending"
+    },
+    {
+      "id": "modern_ending_3",
+      "era": "modern",
+      "kind": "path",
+      "index": 2,
+      "free_text": false,
+      "expected": "selected ancestor path reaches frozen ending"
+    },
+    {
+      "id": "create_future",
+      "era": "future",
+      "kind": "creation",
+      "setting": "未来轨道城市，货运记录失踪，封锁的航站与能源站调查",
+      "expected": "checked candidate explicitly approved with frozen witnesses"
+    },
+    {
+      "id": "images_future",
+      "era": "future",
+      "kind": "images",
+      "expected": "8 authenticated local fixed assets, correct format/size/checksum, replay zero generation"
+    },
+    {
+      "id": "future_ending_1",
+      "era": "future",
+      "kind": "path",
+      "index": 0,
+      "free_text": true,
+      "expected": "selected ancestor path reaches frozen ending"
+    },
+    {
+      "id": "future_ending_2",
+      "era": "future",
+      "kind": "path",
+      "index": 1,
+      "free_text": false,
+      "expected": "selected ancestor path reaches frozen ending"
+    },
+    {
+      "id": "future_ending_3",
+      "era": "future",
+      "kind": "path",
+      "index": 2,
+      "free_text": false,
+      "expected": "selected ancestor path reaches frozen ending"
+    }
+  ]
+}
