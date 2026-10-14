@@ -60,7 +60,7 @@ export type PublicWorld = {
   objects:NonNullable<World['objects']>;evidence:NonNullable<World['evidence']>;
   disclosures:NonNullable<World['disclosures']>;commitments:NonNullable<World['commitments']>;ending:World['ending'];
 };
-export type SessionInfo = {provider:Provider;model_id:string;engine_version?:string;lifecycle?:string;root_node_id?:string|null;task_id?:string|null;requires_assets?:boolean};
+export type SessionInfo = {provider:Provider;model_id:string;engine_version?:string;lifecycle?:string;root_node_id?:string|null;task_id?:string|null;requires_assets?:boolean;local_sample?:boolean};
 export type AssetManifest = {task_id:string|null;ready:boolean;backgrounds:Record<string,string>;portraits:Record<string,string>};
 export type CreationTask = {id:string;status:string;stage:string;error_code:string|null;recoverable:boolean;
   candidate_version_id?:string;content_hash?:string;title?:string;setting?:string;era?:string;public_intro?:string;
@@ -74,3 +74,5 @@ export type LocalSettings = {
   providers: Record<KeyProvider, { model_id: string; configured: boolean; available: boolean }>;
   budget: { estimated_spend_cny: number; reserved_cny?:number;cost_unconfirmed?:boolean; warning_cny: number; limit_cny: number; status: "ok" | "warning" | "blocked" };
 };
+
+export type LocalSample = {id:"ancient"|"modern"|"future";title:string;era:"ancient"|"modern"|"future";intro:string};

@@ -1,4 +1,4 @@
-import type { Action, KeyProvider, LocalSettings, Node, Provider, Run, TreeNode, World,PublicWorld,SessionInfo,AssetManifest,CreationTask,ImageTask } from "./types";
+import type { Action, KeyProvider, LocalSettings, Node, Provider, Run, TreeNode, World,PublicWorld,SessionInfo,AssetManifest,CreationTask,ImageTask,LocalSample } from "./types";
 import type {CreationRequest} from './library';
 
 const BASE = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000";
@@ -31,6 +31,9 @@ async function request<T>(path: string, token?: string, init?: RequestInit): Pro
 }
 
 export const api = {
+  localSamples: () => request<{samples:LocalSample[]}>('/local-samples'),
+  openLocalSample: (id:LocalSample['id'],clientToken:string) => request<{root:Node;session_id:string;provider:Provider;model_id:string}>('/local-samples/sessions',undefined,
+    {method:'POST',body:JSON.stringify({sample_id:id,client_token:clientToken})}),
   world: () => request<World>("/world"),
   settings: () => request<LocalSettings>("/local-settings"),
   saveKey: (provider: KeyProvider, apiKey: string) => request<{ configured: boolean }>(`/local-settings/keys/${provider}`, undefined, {

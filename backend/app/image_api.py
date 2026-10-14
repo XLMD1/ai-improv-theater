@@ -61,6 +61,11 @@ def create_image_router(current_session,db_session):
 
     @router.get('/session/assets')
     def manifest(session=Depends(current_session),db=Depends(db_session)):
+        if (session.mode or '').startswith('sample:'):
+            slots=list(db.scalars(select(StoryAsset).where(StoryAsset.story_version_id==session.story_version_id)))
+            return {'task_id':None,'ready':len(slots)==8 and all(asset_available(a) for a in slots),
+                'backgrounds':{a.entity_id:a.id for a in slots if a.kind=='background' and asset_available(a)},
+                'portraits':{a.entity_id:a.id for a in slots if a.kind=='portrait' and asset_available(a)}}
         task=db.scalar(select(ImageTask).where(ImageTask.session_id==session.id,ImageTask.story_version_id==session.story_version_id))
         if task is None: return {'task_id':None,'ready':False,'backgrounds':{},'portraits':{}}
         slots=list(db.scalars(select(StoryAsset).where(StoryAsset.task_id==task.id)))
@@ -70,8 +75,12 @@ def create_image_router(current_session,db_session):
 
     @router.get('/assets/{asset_id}')
     def image(asset_id: str,session=Depends(current_session),db=Depends(db_session)):
-        asset=db.scalar(select(StoryAsset).join(ImageTask,StoryAsset.task_id==ImageTask.id).where(
-            StoryAsset.id==asset_id,ImageTask.session_id==session.id))
+        query=select(StoryAsset).where(StoryAsset.id==asset_id)
+        if (session.mode or '').startswith('sample:'):
+            query=query.where(StoryAsset.story_version_id==session.story_version_id)
+        else:
+            query=query.join(ImageTask,StoryAsset.task_id==ImageTask.id).where(ImageTask.session_id==session.id)
+        asset=db.scalar(query)
         if asset is None or not asset_available(asset): raise HTTPException(404,detail='asset_not_found')
         return FileResponse(asset_root()/asset.file_path,media_type='image/png',headers={'Cache-Control':'private, max-age=86400','Vary':'Authorization'})
     return router

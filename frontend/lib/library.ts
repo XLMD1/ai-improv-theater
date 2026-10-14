@@ -7,12 +7,12 @@ export type LibraryEntry = {
   sessionId?:string;nodeId?:string;draft:string;pending?:PendingAction;seq?:Record<string,number>;
   createRequest?:CreationRequest;createKey?:string;creationTaskId?:string;creationResumeKey?:string;
   imageKey?:string;imageTaskId?:string;imageResumeKey?:string;updatedAt:string;
-  coverAssetId?:string;
+  coverAssetId?:string;sampleId?:'ancient'|'modern'|'future';
 };
 export type Library = {version:1;entries:LibraryEntry[];currentId?:string};
 type Disk = Pick<Storage,'getItem'|'setItem'>;
 const key='theater:library:v1';
-const fields: (keyof LibraryEntry)[] = ['id','token','kind','title','provider','modelId','sessionId','nodeId','draft','pending','seq','createRequest','createKey','creationTaskId','creationResumeKey','imageKey','imageTaskId','imageResumeKey','updatedAt','coverAssetId'];
+const fields: (keyof LibraryEntry)[] = ['id','token','kind','title','provider','modelId','sessionId','nodeId','draft','pending','seq','createRequest','createKey','creationTaskId','creationResumeKey','imageKey','imageTaskId','imageResumeKey','updatedAt','coverAssetId','sampleId'];
 
 function clean(entry:LibraryEntry):LibraryEntry {
   return Object.fromEntries(fields.filter(field=>entry[field]!==undefined).map(field=>[field,entry[field]])) as LibraryEntry;

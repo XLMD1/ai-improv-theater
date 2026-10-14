@@ -32,8 +32,10 @@ def asset_available(asset):
 
 
 def assets_ready(db,session):
-    slots=list(db.scalars(select(StoryAsset).join(ImageTask,StoryAsset.task_id==ImageTask.id).where(
-        ImageTask.session_id==session.id,StoryAsset.story_version_id==session.story_version_id)))
+    query=select(StoryAsset).where(StoryAsset.story_version_id==session.story_version_id)
+    if not (session.mode or '').startswith('sample:'):
+        query=query.join(ImageTask,StoryAsset.task_id==ImageTask.id).where(ImageTask.session_id==session.id)
+    slots=list(db.scalars(query))
     return len(slots)==8 and all(asset_available(asset) for asset in slots)
 
 
@@ -42,6 +44,8 @@ def create_image_task(session_id,key):
         raise ImageTaskError('invalid_idempotency_key')
     with SessionLocal.begin() as db:
         session=db.scalar(select(StorySession).where(StorySession.id==session_id).with_for_update())
+        if session is not None and (session.mode or '').startswith('sample:'):
+            raise ImageTaskError('local_sample_assets_fixed')
         if session is None or not session.story_version_id:
             raise ImageTaskError('story_not_ready')
         version=db.get(StoryVersion,session.story_version_id)

@@ -125,6 +125,10 @@ def get_session(session: StorySession = Depends(current_session)):
     if session.engine_version == 'investigation-1':
         from app.models import StoryTask
         with SessionLocal() as db:
+            if (session.mode or '').startswith('sample:'):
+                root=db.scalar(select(Node).where(Node.session_id==session.id,Node.parent_id.is_(None)))
+                return {'provider':session.provider,'model_id':session.model_id,'engine_version':session.engine_version,
+                        'lifecycle':'approved','root_node_id':root.id,'task_id':None,'requires_assets':True,'local_sample':True}
             task = db.scalar(select(StoryTask).where(StoryTask.session_id == session.id).order_by(StoryTask.created_at.desc()))
             return {'provider':session.provider,'model_id':session.model_id,'engine_version':session.engine_version,
                     'lifecycle':task.status if task else 'empty','root_node_id':task.root_node_id if task else None,
@@ -237,3 +241,6 @@ from app.story_api import create_router
 app.include_router(create_router(current_session,db_session))
 from app.image_api import create_image_router
 app.include_router(create_image_router(current_session,db_session))
+
+from app.local_samples import router as local_samples_router
+app.include_router(local_samples_router)

@@ -12,6 +12,7 @@ type StoryState = {
   token: string | null;
   provider: Provider;
   modelId: string;
+  localSample: boolean;
   node: Node | null;
   world: World | null;
   assets: AssetManifest | null;
@@ -77,6 +78,7 @@ function clearRejectedTurn(error: unknown, pending: Pending | null) {
 }
 
 function errorMessage(error: unknown) {
+  if(error instanceof ApiError&&error.message==='key_not_configured')return "自由输入需要 DeepSeek API 密钥。可以继续使用无需密钥的调查按钮；输入已保留。";
   return error instanceof TypeError ? "无法连接本地服务。输入已保留，请恢复服务后重试连接。" : (error as Error).message;
 }
 
@@ -123,6 +125,7 @@ export const useStoryStore = create<StoryState>((set, get) => ({
   world: null,
   assets: null,
   libraryId: null,
+  localSample: false,
   tree: [],
   pending: null,
   stage: "",
@@ -152,6 +155,7 @@ export const useStoryStore = create<StoryState>((set, get) => ({
       let provider: Provider;
       let modelId: string;
       let requiresAssets=false;
+      let localSample=false;
       if (!token) {
         const created = await api.createSession();
         token = created.token;
@@ -172,6 +176,7 @@ export const useStoryStore = create<StoryState>((set, get) => ({
         provider = session.provider;
         modelId = session.model_id;
         requiresAssets=Boolean(session.requires_assets);
+        localSample=Boolean(session.local_sample);
       }
       const world=await worldFor(token,node);
       const assets=node.state_snapshot?.engine_version==='investigation-1'?await api.assets(token):null;
@@ -182,7 +187,7 @@ export const useStoryStore = create<StoryState>((set, get) => ({
       if (activeId) updateEntry(activeId,{title:world.title,provider,modelId});
       const tree = await api.tree(token);
       const stored = storage.read("theater:pending");
-      set({ token, node, world, assets, libraryId:activeId, tree, provider, modelId, busy: Boolean(stored) });
+      set({ token, node, world, assets, libraryId:activeId, tree, provider, modelId, localSample, busy: Boolean(stored) });
       if (stored) {
         const pending = JSON.parse(stored) as Pending;
         set({ pending, busy: true });
@@ -220,7 +225,7 @@ export const useStoryStore = create<StoryState>((set, get) => ({
       storage.remove("theater:pending");
       storage.remove("theater:draft");
       set({ token: created.token, node: created.root, world,assets:null,libraryId:activeId,tree, provider: created.provider,
-        modelId: created.model_id, pending: null, busy: false, streamedText: "",
+        modelId: created.model_id, localSample:false, pending: null, busy: false, streamedText: "",
         streamedOptions: [], stage: "", error: null, draft: "" });
     } catch (error) {
       set({ busy: false, error: (error as Error).message });

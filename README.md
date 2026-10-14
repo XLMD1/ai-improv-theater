@@ -33,6 +33,10 @@ pwsh -NoProfile -File .\scripts\start-local.ps1
 
 遇到启动失败，先看终端错误；后端启动日志保存在系统临时目录的 `ai-improv-api-<进程号>.err.log`。可运行 `pwsh -NoProfile -File .\scripts\test-start-local.ps1` 检查启动脚本的前置条件提示。
 
+## 本地无密钥样本
+
+故事库提供已发布的古代、近现代、未来样本。点击“开始试玩”建立独立进度；调查、交流、出示、移动、结局按钮和回放无需 DeepSeek 或智谱密钥。自由文字输入仍需 DeepSeek 密钥。仅真实剧情和八图质量验收通过的样本才加入 `runtime/local-samples.json`；目录尚未发布时不会显示样本入口。保留当前本地数据库与 `runtime/generated-images/`，勿将目录、故事、图片或会话凭据提交到 Git。此模式仍需启动本地服务。
+
 ## 阶段三预览与验收
 
 当前首页是逐局保存的故事库。自定义故事流程为背景／年代 → 已校验简介确认 → 八张固定素材 → 调查舞台；在本地设置依次配置 DeepSeek 和智谱 CogView-4，OpenAI 仍禁用。密钥仅在后端内存，重启后须重填；已保存剧情和图片回放无需密钥。CogView-4 固定普通同步 0.06 CNY/次，八图 0.48 CNY，文字另按用量估算；未知结果须核账，恢复不会自动重发不确定的生成请求。
