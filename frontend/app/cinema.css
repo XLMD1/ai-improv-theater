@@ -158,6 +158,10 @@
   .scene-location { left: 28px; }
   .scene-mode { right: 28px; }
 }
+@media (max-width: 1023px) {
+  .console-bottom { flex-direction: column; }
+  .free-action { width: 100%; }
+}
 @media (max-width: 767px) {
   .cinema-topbar { min-height: 58px; padding-inline: 12px; gap: 8px; }
   .story-home { padding-right: 4px !important; gap: 4px; }
@@ -190,7 +194,7 @@
   .compose-wrap { width: 100%; }
   .compose-field textarea { padding: 13px 12px; min-height: 54px; }
   .send-button { min-width: 66px; }
-  .utility-tools { width: 100%; justify-content: space-between; }
+  .utility-tools { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); width: 100%; }
   .utility-tools button { flex: 1; padding: 8px 10px; font-size: 16px; }
   .drawer-heading { padding: 20px; }
   .drawer-content { padding: 22px 20px max(24px, env(safe-area-inset-bottom)); }
