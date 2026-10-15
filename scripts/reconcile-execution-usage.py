@@ -38,7 +38,8 @@ def main():
             call = db.get(LLMCall,args.call_id)
             if call is None:
                 raise ValueError('call_not_found')
-            ref = TaskRef('action' if call.run_id else 'creation',call.run_id or call.creation_task_id,args.session_id)
+            ref = TaskRef('action' if call.run_id else 'creation' if call.creation_task_id else 'image',
+                          call.run_id or call.creation_task_id or call.image_task_id,args.session_id)
         receipt = TraceRecorder(SessionLocal).reconcile_usage(ref,{
             'schema_version':'usage-reconciliation-1','call_id':args.call_id,'source':args.source,
             'actual_cost_cny':args.actual_cost_cny,'total_tokens':args.total_tokens,

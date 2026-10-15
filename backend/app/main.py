@@ -12,7 +12,7 @@ from sqlalchemy.orm import Session
 from app.config import get_settings
 from app.costs import budget_status
 from app.canon import get_canon
-from app.db import SessionLocal
+from app.db import SessionLocal, engine, testing_database_id
 from app.jobs import create_run, create_story_session, dispatch_run, interrupt_unfinished, session_for_token
 from app.local_settings import MODELS, Provider, clear_key, configured, public_status, put_key
 from app.models import Node, Run, RunEvent, StorySession, TurnEvent
@@ -22,6 +22,10 @@ from app.state import StoryValidationError
 
 @asynccontextmanager
 async def lifespan(_app: FastAPI):
+    from app.execution_traces import interrupt_reservations
+    from app.image_tasks import interrupt_image_tasks
+    interrupt_reservations(SessionLocal)
+    interrupt_image_tasks()
     interrupt_unfinished()
     from app.story_creation import interrupt_creation_tasks
     interrupt_creation_tasks()
@@ -66,7 +70,7 @@ def public_node(node: Node) -> dict:
 
 @app.get("/health")
 def health():
-    return {"ok": True, "demo_mode": True}
+    return {"ok": True, "demo_mode": True, "testing_database_id":testing_database_id(engine.url)}
 
 
 @app.get("/local-settings")
@@ -121,10 +125,14 @@ def get_session(session: StorySession = Depends(current_session)):
     if session.engine_version == 'investigation-1':
         from app.models import StoryTask
         with SessionLocal() as db:
+            if (session.mode or '').startswith('sample:'):
+                root=db.scalar(select(Node).where(Node.session_id==session.id,Node.parent_id.is_(None)))
+                return {'provider':session.provider,'model_id':session.model_id,'engine_version':session.engine_version,
+                        'lifecycle':'approved','root_node_id':root.id,'task_id':None,'requires_assets':True,'local_sample':True}
             task = db.scalar(select(StoryTask).where(StoryTask.session_id == session.id).order_by(StoryTask.created_at.desc()))
             return {'provider':session.provider,'model_id':session.model_id,'engine_version':session.engine_version,
                     'lifecycle':task.status if task else 'empty','root_node_id':task.root_node_id if task else None,
-                    'task_id':task.id if task else None}
+                    'task_id':task.id if task else None,'requires_assets':session.requires_assets}
     return {"provider": session.provider, "model_id": session.model_id}
 
 
@@ -231,3 +239,8 @@ async def stream_run(
 
 from app.story_api import create_router
 app.include_router(create_router(current_session,db_session))
+from app.image_api import create_image_router
+app.include_router(create_image_router(current_session,db_session))
+
+from app.local_samples import router as local_samples_router
+app.include_router(local_samples_router)

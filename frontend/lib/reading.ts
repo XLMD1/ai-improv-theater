@@ -22,7 +22,7 @@ export function readingLines(scene: Pick<RenderedScene, "narration" | "dialogue"
     .map(text => ({ ...line, text })));
 }
 
-export function knownClues(flags: Record<string, boolean>) {
+export function knownClues(flags: Record<string, boolean> = {}) {
   // Legacy public flags are milestones, not a fabricated inventory of evidence objects.
   const labels: Record<string, string> = {
     clue_found: "已发现航海日志的线索",

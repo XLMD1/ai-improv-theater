@@ -24,6 +24,25 @@ pytestmark = pytest.mark.skipif(
 )
 
 
+@pytest.fixture(autouse=True)
+def isolate_unknown_simulated_usage():
+    """Fault tests must not leave their simulated unknown bill blocking later cases."""
+    if not database_url or not (make_url(database_url).database or '').endswith('_test'):
+        yield
+        return
+    from app.db import SessionLocal
+    from app.models import ExecutionTrace,LLMCall
+    from sqlalchemy import delete,select
+    with SessionLocal() as db:
+        before=set(db.scalars(select(LLMCall.id)))
+    yield
+    with SessionLocal.begin() as db:
+        calls=list(db.scalars(select(LLMCall).where(LLMCall.id.not_in(before),LLMCall.usage_status=='uncertain')))
+        if calls:
+            db.execute(delete(ExecutionTrace).where(ExecutionTrace.run_id.in_([call.run_id for call in calls])))
+            db.execute(delete(LLMCall).where(LLMCall.id.in_([call.id for call in calls])))
+
+
 def wait_for_run(client: TestClient, headers: dict, run_id: str) -> dict:
     for _ in range(100):
         run = client.get(f"/runs/{run_id}", headers=headers).json()
@@ -232,6 +251,11 @@ def test_provider_authentication_failure_creates_no_ghost_node():
             assert run["status"] == "failed"
             assert run["node_id"] is None
             assert "invalid-test-key" not in client.get(f"/runs/{run['id']}/events", headers=headers).text
+            from app.db import SessionLocal
+            from app.models import LLMCall
+            from sqlalchemy import select
+            with SessionLocal() as db:
+                assert db.scalar(select(LLMCall.id).where(LLMCall.run_id==run['id'])) is None
             assert len(client.get("/tree", headers=headers).json()) == 1
         finally:
             client.delete("/local-settings/keys/deepseek")
@@ -261,5 +285,11 @@ def test_missing_provider_usage_cannot_be_recorded_as_zero_cost():
             assert run["status"] == "failed"
             assert run["node_id"] is None
             assert len(client.get("/tree", headers=headers).json()) == 1
+            from app.db import SessionLocal
+            from app.models import LLMCall
+            from sqlalchemy import select
+            with SessionLocal() as db:
+                call=db.scalar(select(LLMCall).where(LLMCall.run_id==run['id']))
+                assert call is not None and call.usage_status=='uncertain' and call.estimated_cost_cny is None
         finally:
             client.delete("/local-settings/keys/deepseek")

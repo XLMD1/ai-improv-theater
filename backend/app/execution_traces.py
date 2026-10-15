@@ -10,7 +10,7 @@ from uuid import uuid4
 from sqlalchemy import select
 from sqlalchemy.exc import SQLAlchemyError
 
-from app.models import ExecutionTrace, LLMCall, Run, StoryTask
+from app.models import CostReservation, ExecutionTrace, ImageTask, LLMCall, Run, StoryTask
 from app.usage_reconciliation import UsageReconciliation, ReconciliationReceipt
 
 
@@ -20,7 +20,7 @@ class TraceStorageFailure(RuntimeError):
 
 @dataclass(frozen=True)
 class TaskRef:
-    kind: Literal['action', 'creation']
+    kind: Literal['action', 'creation', 'image']
     task_id: str
     session_id: str
 
@@ -69,9 +69,9 @@ class TraceRecorder:
         return value
 
     def _task(self, db, ref):
-        if ref.kind not in ('action', 'creation'):
+        if ref.kind not in ('action', 'creation', 'image'):
             raise ValueError('task_not_found')
-        cls = Run if ref.kind == 'action' else StoryTask
+        cls = {'action': Run, 'creation': StoryTask, 'image': ImageTask}[ref.kind]
         task = db.scalar(select(cls).where(cls.id == ref.task_id, cls.session_id == ref.session_id).with_for_update())
         if task is None:
             raise ValueError('task_not_found')
@@ -84,6 +84,7 @@ class TraceRecorder:
         row = ExecutionTrace(trace_id=task.trace_id, seq=task.trace_seq, session_id=ref.session_id,
                              run_id=ref.task_id if ref.kind == 'action' else None,
                              creation_task_id=ref.task_id if ref.kind == 'creation' else None,
+                             image_task_id=ref.task_id if ref.kind == 'image' else None,
                              event_type=event_type, payload=self.redact(payload), **kwargs)
         db.add(row)
         db.flush()
@@ -107,7 +108,7 @@ class TraceRecorder:
         except SQLAlchemyError as error:
             raise TraceStorageFailure('trace_storage_failure') from error
 
-    def begin_attempt(self, task, operation, version, number, payload):
+    def begin_attempt(self, task, operation, version, number, payload, budget=None):
         self.start(task)
         attempt_id, span_id = str(uuid4()), str(uuid4())
         try:
@@ -115,6 +116,9 @@ class TraceRecorder:
                 row = self._task(db, task)
                 self._append(db, task, row, 'attempt_started', {'operation': operation, 'version': version, 'input': payload},
                              id=attempt_id, span_id=span_id, attempt=number)
+                if budget is not None:
+                    from app.budget import reserve
+                    reserve(db, attempt_id, budget)
                 return AttemptRef(row.trace_id, span_id, attempt_id, number)
         except SQLAlchemyError as error:
             raise TraceStorageFailure('trace_storage_failure') from error
@@ -126,7 +130,7 @@ class TraceRecorder:
             with self.factory.begin() as db:
                 task = self._task(db,task_ref)
                 call = db.get(LLMCall,data.call_id)
-                if call is None or (call.run_id if task_ref.kind=='action' else call.creation_task_id) != task_ref.task_id:
+                if call is None or {'action':call.run_id,'creation':call.creation_task_id,'image':call.image_task_id}[task_ref.kind] != task_ref.task_id:
                     raise ValueError('call_not_found')
                 if call.usage_status != 'uncertain':
                     raise ValueError('call_not_uncertain')
@@ -156,7 +160,8 @@ class TraceRecorder:
                 if (begin is None or begin.trace_id != ref.trace_id or begin.span_id != ref.span_id
                         or begin.event_type != 'attempt_started'):
                     raise ValueError('attempt_not_found')
-                task_ref = TaskRef('action' if begin.run_id else 'creation', begin.run_id or begin.creation_task_id, begin.session_id)
+                task_ref = TaskRef('action' if begin.run_id else 'creation' if begin.creation_task_id else 'image',
+                                   begin.run_id or begin.creation_task_id or begin.image_task_id, begin.session_id)
                 task = self._task(db, task_ref)
                 old = db.scalar(select(ExecutionTrace).where(ExecutionTrace.trace_id == ref.trace_id,
                                  ExecutionTrace.span_id == ref.span_id, ExecutionTrace.event_type == 'attempt_finished'))
@@ -167,17 +172,33 @@ class TraceRecorder:
                 call = None
                 if provider_outcome.get('request_sent') and provider_outcome.get('chargeable', True):
                     cost = provider_outcome.get('estimated_cost_cny')
-                    call = LLMCall(run_id=begin.run_id, creation_task_id=begin.creation_task_id,
+                    call = LLMCall(run_id=begin.run_id, creation_task_id=begin.creation_task_id, image_task_id=begin.image_task_id,
                                    trace_id=ref.trace_id, span_id=ref.span_id, attempt_id=ref.attempt_id,
                                    provider=provider_outcome['provider'], model_id=provider_outcome['model_id'],
                                    input_tokens=provider_outcome.get('input_tokens'), output_tokens=provider_outcome.get('output_tokens'),
+                                   image_count=provider_outcome.get('image_count'),
                                    estimated_cost_cny=Decimal(str(cost)) if cost is not None else None,
                                    price_version=provider_outcome['price_version'], call_status=error_code or 'completed',
-                                   usage_status='known' if provider_outcome.get('input_tokens') is not None else 'uncertain')
+                                   usage_status='known' if provider_outcome.get('input_tokens') is not None or provider_outcome.get('image_count') is not None else 'uncertain')
                     db.add(call)
                     db.flush()
+                from app.budget import settle
+                settle(db, ref.attempt_id, call)
                 self._append(db, task_ref, task, 'attempt_finished', payload, span_id=ref.span_id,
                              attempt=ref.number, llm_call_id=call.id if call else None, error_code=error_code,
                              duration_ms=provider_outcome.get('duration_ms'))
         except SQLAlchemyError as error:
             raise TraceStorageFailure('trace_storage_failure') from error
+
+
+def interrupt_reservations(factory):
+    """A started request has an unknown result after restart; never resend it."""
+    with factory() as db:
+        rows = list(db.scalars(select(CostReservation).where(CostReservation.status == 'reserved')))
+    recorder = TraceRecorder(factory)
+    for row in rows:
+        with factory() as db:
+            begin = db.get(ExecutionTrace, row.attempt_id)
+            ref = AttemptRef(begin.trace_id, begin.span_id, begin.id, begin.attempt)
+        recorder.finish_attempt(ref, dict(provider=row.provider, model_id=row.model_id,
+            price_version=row.price_version, request_sent=True, chargeable=row.chargeable, estimated_cost_cny=None), 'process_restarted')

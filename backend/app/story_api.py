@@ -2,6 +2,7 @@
 import asyncio
 import json
 from typing import Literal
+from pydantic import Field
 
 from fastapi import APIRouter, Depends, Header, HTTPException, Query
 from fastapi.responses import StreamingResponse
@@ -21,6 +22,8 @@ from app.story_versions import load_story_version
 class CustomSessionRequest(StrictModel):
     provider: Literal['deepseek'] = 'deepseek'
     model_id: str | None = None
+    flow: Literal['legacy-2','illustrated-3'] = 'legacy-2'
+    client_token: str | None = Field(default=None,pattern=r'^[a-zA-Z0-9_-]{32,128}$')
 
 
 def _http(error):
@@ -43,7 +46,9 @@ def create_router(current_session,db_session):
     @router.post('/story-sessions',status_code=201)
     def new_session(request: CustomSessionRequest):
         try:
-            token,session = create_custom_session(request.provider,request.model_id or MODELS['deepseek'])
+            if request.client_token and request.flow!='illustrated-3': raise CreationError('invalid_creation_flow')
+            token,session = create_custom_session(request.provider,request.model_id or MODELS['deepseek'],
+                                                  request.client_token,request.flow=='illustrated-3')
             return {'token':token,'session_id':session.id,'provider':session.provider,'model_id':session.model_id,
                     'engine_version':session.engine_version,'mode':session.mode}
         except CreationError as error:
@@ -95,6 +100,14 @@ def create_router(current_session,db_session):
         except CreationError as error:
             _http(error)
 
+    @router.post('/story-tasks/{task_id}/reject')
+    def reject(task_id: str,session=Depends(current_session)):
+        from app.story_creation import reject_creation
+        try:
+            reject_creation(session.id,task_id)
+            return {'status':'declined'}
+        except CreationError as error: _http(error)
+
     @router.get('/story-tasks/{task_id}/events')
     async def events(task_id: str,after: int = Query(default=0,ge=0),session=Depends(current_session),db=Depends(db_session)):
         try:
@@ -122,6 +135,10 @@ def create_router(current_session,db_session):
         node = db.get(Node,node_id)
         if node is None or node.session_id != session.id or node.story_version_id is None:
             raise HTTPException(status_code=404,detail='node_not_found')
-        return public_projection(load_story_version(db,node.story_version_id),node.state_snapshot)
+        story=load_story_version(db,node.story_version_id)
+        return {**public_projection(story,node.state_snapshot),
+                'locations':[{'id':l.id,'name':l.name,'description':l.description} for l in story.locations],
+                'cast':[{'id':c.id,'name':c.name,'appearance':c.appearance} for c in story.characters],
+                'protagonist_id':story.protagonist_id}
 
     return router

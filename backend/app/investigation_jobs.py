@@ -36,6 +36,9 @@ def create_investigation_run(session_id,parent_node_id,action,key):
         row = db.get(StoryVersion,session.story_version_id)
         if row.approval_status != 'approved':
             raise StoryValidationError('story_not_ready')
+        if session.requires_assets:
+            from app.image_tasks import assets_ready
+            if not assets_ready(db,session): raise StoryValidationError('images_not_ready')
         parent = db.get(Node,parent_node_id)
         if parent is None or parent.session_id != session_id or parent.story_version_id != row.id:
             raise StoryValidationError('parent_node_not_found')
@@ -70,12 +73,17 @@ def recent_investigation_turns(db,parent_node_id):
 
 
 def public_investigation_node(node):
+    options={key:value for key,value in (node.investigation_options or {}).items()
+             if key in {option['id'] for option in node.rendered_scene.get('options',[])}}
     return {'id':node.id,'session_id':node.session_id,'parent_id':node.parent_id,'depth':node.depth,
             'scene_id':node.scene_id,
             'state_snapshot':{key:deepcopy(value) for key,value in node.state_snapshot.items()
                               if key in ('schema_version','engine_version','story_id','story_version','location_id',
                                          'action_turn','discovered_evidence','disclosures','commitments','trust','ending_id')},
             'rendered_scene':deepcopy(node.rendered_scene),'canon_version':node.canon_version,
+            'option_types':{key:value['type'] for key,value in options.items()},
+            'option_targets':{key:{field:value[field] for field in ('character_id','object_id','evidence_id','location_id') if field in value}
+                              for key,value in options.items()},
             'prompt_version':node.prompt_version,'model_id':node.model_id,
             'created_at':node.created_at.astimezone(timezone.utc).isoformat()}
 

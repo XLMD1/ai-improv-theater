@@ -1,5 +1,6 @@
 @import "tailwindcss";
 @import "./cinema.css";
+@import "./journey.css";
 
 :root {
   color-scheme: dark;

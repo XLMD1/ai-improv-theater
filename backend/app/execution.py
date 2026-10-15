@@ -24,6 +24,7 @@ class ToolSpec:
     retry_codes: frozenset[str]
     side_effect_policy: Literal['pure','read_only','idempotent_external','non_idempotent_external']
     estimate_cost: Callable
+    chargeable: bool = True
 
     def __post_init__(self):
         if not 0 < self.timeout_seconds <= 120 or not 1 <= self.max_attempts <= 3:
@@ -102,11 +103,21 @@ async def execute(registry, name, version, raw_input, context):
             if remaining <= 0:
                 return ToolFailure(error_code='task_timeout')
             try:
-                context.check_budget(spec.estimate_cost(validated))
+                if spec.chargeable: context.check_budget(spec.estimate_cost(validated))
             except ValueError as error:
                 context.recorder.event(context.task, 'budget_blocked', {'error_code':str(error)})
                 return ToolFailure(error_code=str(error))
-            ref = context.recorder.begin_attempt(context.task,name,version,number,validated.model_dump(mode='json'))
+            budget = dict(estimate=str(spec.estimate_cost(validated)), provider=context.provider,
+                          model_id=context.model_id, price_version=EXECUTION_PRICE_VERSION,chargeable=spec.chargeable)
+            if context.provider == 'cogview':
+                from app.image_operations import IMAGE_PRICE_VERSION
+                budget['price_version'] = IMAGE_PRICE_VERSION
+            try:
+                args = (budget,) if context.budget_check is None else ()
+                ref = context.recorder.begin_attempt(context.task,name,version,number,validated.model_dump(mode='json'),*args)
+            except ValueError as error:
+                context.recorder.event(context.task,'budget_blocked',{'error_code':str(error)})
+                return ToolFailure(error_code=str(error))
             started = time.monotonic()
             cancelled = False
             try:
@@ -119,14 +130,19 @@ async def execute(registry, name, version, raw_input, context):
                 context.stopped = True
                 outcome = ProviderOutcome(error_code='cancelled', request_sent=True)
             except TimeoutError:
-                outcome = ProviderOutcome(error_code='outcome_unknown', request_sent=True)
+                code='connect_failure' if spec.side_effect_policy=='read_only' else 'outcome_unknown'
+                outcome = ProviderOutcome(error_code=code, request_sent=True)
             except Exception:
                 outcome = ProviderOutcome(error_code='internal_error', request_sent=True)
             data = asdict(outcome)
-            data.update(provider=context.provider,model_id=context.model_id,price_version=EXECUTION_PRICE_VERSION,
+            data['chargeable'] = spec.chargeable and outcome.chargeable
+            data.update(provider=context.provider,model_id=context.model_id,price_version=budget['price_version'],
                         duration_ms=round((time.monotonic()-started)*1000),estimated_cost_cny=None)
             if outcome.input_tokens is not None and outcome.output_tokens is not None:
                 data['estimated_cost_cny'] = str(estimate_cny(context.provider,outcome.input_tokens,outcome.output_tokens))
+            if outcome.image_count is not None:
+                from app.image_operations import IMAGE_PRICE_CNY, IMAGE_PRICE_VERSION
+                data.update(estimated_cost_cny=str(IMAGE_PRICE_CNY * outcome.image_count),price_version=IMAGE_PRICE_VERSION)
             context.recorder.finish_attempt(ref,data,outcome.error_code)
             if cancelled:
                 raise asyncio.CancelledError()

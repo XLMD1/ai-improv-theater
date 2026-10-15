@@ -5,9 +5,11 @@ import ts from "typescript";
 
 // Exercise the real Zustand store; only the browser storage and HTTP boundary are replaced.
 const source = await readFile(new URL("../store/story.ts", import.meta.url), "utf8");
-const compiled = ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.ESNext } }).outputText
+const compiled = ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.ESNext, target:ts.ScriptTarget.ES2022 } }).outputText
   .replace('"zustand"', JSON.stringify(import.meta.resolve("zustand")))
-  .replace('"@/lib/api"', JSON.stringify(new URL("../lib/api.ts", import.meta.url).href));
+  .replace('"@/lib/api"', JSON.stringify(new URL("../lib/api.ts", import.meta.url).href))
+  .replace('"@/lib/library"',JSON.stringify(new URL('../lib/library.ts',import.meta.url).href))
+  .replace('"@/lib/world"',JSON.stringify(new URL('../lib/world.ts',import.meta.url).href));
 const { useStoryStore: store } = await import(`data:text/javascript;base64,${Buffer.from(compiled).toString("base64")}`);
 const originalFetch = globalThis.fetch;
 const originalStorage = globalThis.sessionStorage;
@@ -112,4 +114,29 @@ test("an ambiguous server failure keeps the key until recovery confirms its outc
   assert.equal(JSON.parse(sessionStorage.getItem("theater:pending")).key, store.getState().pending.key);
   assert.equal(store.getState().draft, "检查窗边");
   assert.equal(store.getState().node.id, "root");
+});
+
+
+test("reconnect retains this tab's selected story after another tab selects one", async () => {
+  const previous=globalThis.localStorage;
+  const data=new Map();
+  globalThis.localStorage={getItem:key=>data.get(key)??null,setItem:(key,value)=>data.set(key,value)};
+  try {
+    const entries=['a','b'].map(id=>({id,token:'token-'+id,kind:'legacy',title:id,provider:'demo',modelId:'demo',nodeId:'root-'+id,draft:'',updatedAt:'now'}));
+    localStorage.setItem('theater:library:v1',JSON.stringify({version:1,entries,currentId:'b'}));
+    store.setState({libraryId:'a'});
+    const credentials=[];
+    globalThis.fetch=async (url,init)=>{
+      credentials.push(init?.headers?.Authorization);
+      const path=new URL(url).pathname;
+      if(path==='/session')return Response.json({provider:'demo',model_id:'demo'});
+      if(path==='/world')return Response.json({title:'a'});
+      if(path==='/tree')return Response.json([]);
+      return Response.json({id:'root-a',state_snapshot:{},rendered_scene:{}});
+    };
+    await store.getState().initialize();
+    assert.equal(store.getState().token,'token-a');
+    assert.equal(store.getState().libraryId,'a');
+    assert.ok(credentials.every(value=>value==='Bearer token-a'||value===undefined));
+  } finally {globalThis.localStorage=previous;}
 });

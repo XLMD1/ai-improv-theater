@@ -39,7 +39,8 @@ def reconciled_usage(db):
     rows = db.execute(select(ExecutionTrace, LLMCall).join(LLMCall,ExecutionTrace.llm_call_id==LLMCall.id).where(
         ExecutionTrace.event_type=='usage_reconciled',LLMCall.usage_status=='uncertain',
         ExecutionTrace.trace_id==LLMCall.trace_id,ExecutionTrace.span_id==LLMCall.span_id,
-        or_(ExecutionTrace.run_id==LLMCall.run_id,ExecutionTrace.creation_task_id==LLMCall.creation_task_id))).all()
+        or_(ExecutionTrace.run_id==LLMCall.run_id,ExecutionTrace.creation_task_id==LLMCall.creation_task_id,
+            ExecutionTrace.image_task_id==LLMCall.image_task_id))).all()
     evidence = {}
     for row,call in rows:
         item = UsageReconciliation.model_validate_json(json.dumps(row.payload))

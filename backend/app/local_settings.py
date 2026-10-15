@@ -3,8 +3,8 @@ from typing import Literal
 from pydantic import SecretStr
 
 
-Provider = Literal["openai", "deepseek"]
-MODELS: dict[str, str] = {"openai": "gpt-6-luna", "deepseek": "deepseek-flash"}
+Provider = Literal["openai", "deepseek", "cogview"]
+MODELS: dict[str, str] = {"openai": "gpt-6-luna", "deepseek": "deepseek-flash", "cogview": "cogview-4"}
 _keys: dict[str, SecretStr] = {}
 
 
@@ -27,6 +27,6 @@ def clear_key(provider: Provider) -> None:
 
 def public_status() -> dict:
     return {"providers": {
-        provider: {"model_id": model_id, "configured": configured(provider), "available": provider == "deepseek"}
+        provider: {"model_id": model_id, "configured": configured(provider), "available": provider in ("deepseek","cogview")}
         for provider, model_id in MODELS.items()
     }}

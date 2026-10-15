@@ -9,6 +9,7 @@ from app.demo import build_demo_scene
 from app.local_settings import get_key
 from app.provider_clients import ModelResult, ProviderFailure, call_provider
 from app.schemas import Action, StateChange, StrictModel
+from app.story_schema import StrictModel as ExecutionSchema
 from app.state import StoryValidationError, apply_state_changes, validate_change
 
 
@@ -22,6 +23,34 @@ class SceneDraft(StrictModel):
     narration: str = Field(min_length=1, max_length=1200)
     dialogue: list[DialogueLine] = Field(min_length=1, max_length=2)
     state_changes: list[StateChange] = Field(max_length=4)
+
+
+class LegacyPrompt(ExecutionSchema):
+    prompt: str
+
+
+class LegacyCandidate(ExecutionSchema):
+    text: str
+
+
+async def registered_legacy_call(prompt, provider, model_id, key, context):
+    from app.execution import ToolFailure, ToolRegistry, ToolSpec, execute
+    from app.provider_clients import ProviderOutcome
+    from app.costs import estimate_cny
+    async def handler(value, _context):
+        try:
+            result = await call_provider(provider,model_id,key,value.prompt)
+            return ProviderOutcome(text=json.dumps({'text':result.text}),input_tokens=result.input_tokens,
+                                   output_tokens=result.output_tokens,request_sent=True)
+        except ProviderFailure as error:
+            return error.outcome or ProviderOutcome(error_code='outcome_unknown',request_sent=True)
+    registry=ToolRegistry()
+    registry.register(ToolSpec('legacy.scene_generate','v1',LegacyPrompt,LegacyCandidate,handler,20,1,
+        frozenset(),'non_idempotent_external',lambda value:estimate_cny(provider,len(value.prompt.encode('utf-8')),900)))
+    result=await execute(registry,'legacy.scene_generate','v1',{'prompt':prompt},context)
+    if isinstance(result,ToolFailure):
+        raise ProviderFailure(result.error_code)
+    return ModelResult(result.output.text,0,0)
 
 
 def _prompt(parent_state: dict, action: Action, target: dict, recent_turns: list[dict] | None = None) -> str:
@@ -58,12 +87,13 @@ def _prompt(parent_state: dict, action: Action, target: dict, recent_turns: list
     )
 
 
-async def build_ai_scene(parent_state: dict, action: Action, provider: str, model_id: str, recent_turns: list[dict] | None = None) -> tuple[dict, list[StateChange], ModelResult]:
+async def build_ai_scene(parent_state: dict, action: Action, provider: str, model_id: str, recent_turns: list[dict] | None = None, context=None) -> tuple[dict, list[StateChange], ModelResult | None]:
     key = get_key(provider)
     if not key:
         raise ProviderFailure("API key not configured")
     target, baseline_changes = build_demo_scene(parent_state, action)
-    result = await call_provider(provider, model_id, key, _prompt(parent_state, action, target, recent_turns))
+    prompt = _prompt(parent_state, action, target, recent_turns)
+    result = await registered_legacy_call(prompt,provider,model_id,key,context) if context else await call_provider(provider,model_id,key,prompt)
     try:
         draft = SceneDraft.model_validate_json(result.text)
         expected = {line["character_id"] for line in target["dialogue"]}
@@ -78,7 +108,7 @@ async def build_ai_scene(parent_state: dict, action: Action, provider: str, mode
         changes = baseline_changes + [change for change in draft.state_changes if change.key not in fixed_keys]
         apply_state_changes(parent_state, target["scene_id"], changes)
         scene = {**target, "narration": draft.narration, "dialogue": [line.model_dump() for line in draft.dialogue]}
-        return scene, changes, result
+        return scene, changes, None if context else result
     except (ValidationError, StoryValidationError):
         fallback = {**target, "dialogue": [], "fallback": True}
-        return fallback, [], result
+        return fallback, [], None if context else result

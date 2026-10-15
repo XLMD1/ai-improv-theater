@@ -1,7 +1,7 @@
 from datetime import datetime, timezone
 from uuid import uuid4
 
-from sqlalchemy import CheckConstraint, JSON, DateTime, ForeignKey, Index, Integer, Numeric, String, UniqueConstraint
+from sqlalchemy import Boolean, CheckConstraint, JSON, DateTime, ForeignKey, Index, Integer, Numeric, String, UniqueConstraint
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -57,6 +57,7 @@ class StorySession(Base):
     mode: Mapped[str | None] = mapped_column(String(20), nullable=True)
     provider: Mapped[str] = mapped_column(String(20), default="demo", nullable=False)
     model_id: Mapped[str] = mapped_column(String(100), default="demo", nullable=False)
+    requires_assets: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now, nullable=False)
 
 
@@ -123,11 +124,13 @@ class RunEvent(Base):
 
 class LLMCall(Base):
     __tablename__ = "llm_calls"
-    __table_args__ = (CheckConstraint("(run_id IS NOT NULL AND creation_task_id IS NULL) OR (run_id IS NULL AND creation_task_id IS NOT NULL)", name="ck_call_task"),)
+    __table_args__ = (CheckConstraint("num_nonnulls(run_id, creation_task_id, image_task_id) = 1", name="ck_call_task"),)
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=uid)
     run_id: Mapped[str | None] = mapped_column(ForeignKey("runs.id"), nullable=True, index=True)
     creation_task_id: Mapped[str | None] = mapped_column(ForeignKey("story_tasks.id"), nullable=True)
+    image_task_id: Mapped[str | None] = mapped_column(ForeignKey("image_tasks.id"), nullable=True)
+    image_count: Mapped[int | None] = mapped_column(Integer, nullable=True)
     trace_id: Mapped[str | None] = mapped_column(String(36), nullable=True)
     span_id: Mapped[str | None] = mapped_column(String(36), nullable=True)
     attempt_id: Mapped[str | None] = mapped_column(String(36), nullable=True, unique=True)
@@ -178,7 +181,7 @@ class ExecutionTrace(Base):
     __tablename__ = "execution_traces"
     __table_args__ = (
         UniqueConstraint("trace_id", "seq", name="uq_trace_seq"),
-        CheckConstraint("(run_id IS NOT NULL AND creation_task_id IS NULL) OR (run_id IS NULL AND creation_task_id IS NOT NULL)", name="ck_trace_task"),
+        CheckConstraint("num_nonnulls(run_id, creation_task_id, image_task_id) = 1", name="ck_trace_task"),
     )
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=uid)
     trace_id: Mapped[str] = mapped_column(String(36), nullable=False, index=True)
@@ -187,6 +190,7 @@ class ExecutionTrace(Base):
     seq: Mapped[int] = mapped_column(Integer, nullable=False)
     run_id: Mapped[str | None] = mapped_column(ForeignKey("runs.id"), nullable=True)
     creation_task_id: Mapped[str | None] = mapped_column(ForeignKey("story_tasks.id"), nullable=True)
+    image_task_id: Mapped[str | None] = mapped_column(ForeignKey("image_tasks.id"), nullable=True)
     session_id: Mapped[str] = mapped_column(ForeignKey("sessions.id"), nullable=False)
     node_id: Mapped[str | None] = mapped_column(ForeignKey("nodes.id"), nullable=True)
     llm_call_id: Mapped[str | None] = mapped_column(ForeignKey("llm_calls.id"), nullable=True)
@@ -196,3 +200,55 @@ class ExecutionTrace(Base):
     error_code: Mapped[str | None] = mapped_column(String(80), nullable=True)
     payload: Mapped[dict] = mapped_column(JsonType, nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now, nullable=False)
+
+
+class ImageTask(Base):
+    __tablename__ = "image_tasks"
+    __table_args__ = (UniqueConstraint('session_id', 'idempotency_key', name='uq_image_key'),
+                     UniqueConstraint('session_id', 'story_version_id', name='uq_image_story'))
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=uid)
+    session_id: Mapped[str] = mapped_column(ForeignKey('sessions.id'), nullable=False)
+    story_version_id: Mapped[str] = mapped_column(ForeignKey('story_versions.id'), nullable=False)
+    idempotency_key: Mapped[str] = mapped_column(String(80), nullable=False)
+    recovery_keys: Mapped[list] = mapped_column(JsonType, default=list, nullable=False)
+    status: Mapped[str] = mapped_column(String(30), default='queued', nullable=False)
+    error_code: Mapped[str | None] = mapped_column(String(80), nullable=True)
+    trace_id: Mapped[str | None] = mapped_column(String(36), nullable=True)
+    trace_seq: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now, nullable=False)
+
+
+class StoryAsset(Base):
+    __tablename__ = "story_assets"
+    __table_args__ = (UniqueConstraint('story_version_id', 'kind', 'entity_id', name='uq_asset_slot'),)
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=uid)
+    task_id: Mapped[str] = mapped_column(ForeignKey('image_tasks.id'), nullable=False)
+    story_version_id: Mapped[str] = mapped_column(ForeignKey('story_versions.id'), nullable=False)
+    kind: Mapped[str] = mapped_column(String(20), nullable=False)
+    entity_id: Mapped[str] = mapped_column(String(64), nullable=False)
+    status: Mapped[str] = mapped_column(String(30), default='pending', nullable=False)
+    prompt: Mapped[str] = mapped_column(String(12000), nullable=False)
+    prompt_version: Mapped[str] = mapped_column(String(40), nullable=False)
+    model_id: Mapped[str] = mapped_column(String(100), nullable=False)
+    size: Mapped[str] = mapped_column(String(20), nullable=False)
+    download_url: Mapped[str | None] = mapped_column(String(4000), nullable=True)
+    file_path: Mapped[str | None] = mapped_column(String(200), nullable=True)
+    sha256: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    error_code: Mapped[str | None] = mapped_column(String(80), nullable=True)
+
+
+class BudgetAccount(Base):
+    __tablename__ = 'budget_accounts'
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+
+
+class CostReservation(Base):
+    __tablename__ = 'cost_reservations'
+    attempt_id: Mapped[str] = mapped_column(ForeignKey('execution_traces.id', ondelete='CASCADE'), primary_key=True)
+    amount_cny = mapped_column(Numeric(12, 6), nullable=False)
+    status: Mapped[str] = mapped_column(String(20), nullable=False)
+    provider: Mapped[str] = mapped_column(String(20), nullable=False)
+    model_id: Mapped[str] = mapped_column(String(100), nullable=False)
+    price_version: Mapped[str] = mapped_column(String(40), nullable=False)
+    chargeable: Mapped[bool] = mapped_column(Boolean,default=True,nullable=False)
+    call_id: Mapped[str | None] = mapped_column(ForeignKey('llm_calls.id'), nullable=True)
