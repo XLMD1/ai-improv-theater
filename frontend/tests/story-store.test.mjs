@@ -140,3 +140,23 @@ test("reconnect retains this tab's selected story after another tab selects one"
     assert.ok(credentials.every(value=>value==='Bearer token-a'||value===undefined));
   } finally {globalThis.localStorage=previous;}
 });
+
+
+test("concurrent initialization creates only one game while migration yields", async () => {
+  const previous=globalThis.localStorage,data=new Map();
+  globalThis.localStorage={getItem:key=>data.get(key)??null,setItem:(key,value)=>data.set(key,value)};
+  let created=0;
+  try {
+    globalThis.fetch=async url=>{
+      const path=new URL(url).pathname;
+      if(path==='/sessions') {created++;return Response.json({token:'new-token',provider:'demo',model_id:'demo',root:{...root,state_snapshot:{}}});}
+      if(path==='/world')return Response.json({title:'test story'});
+      if(path==='/tree')return Response.json([root]);
+      throw new Error('unexpected path '+path);
+    };
+    await Promise.all([store.getState().initialize(),store.getState().initialize()]);
+    assert.equal(created,1);
+    assert.equal(JSON.parse(localStorage.getItem('theater:library:v1')).entries.length,1);
+    assert.equal(store.getState().busy,false);assert.equal(store.getState().error,null);
+  } finally {globalThis.localStorage=previous;}
+});
