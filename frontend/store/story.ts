@@ -141,9 +141,10 @@ export const useStoryStore = create<StoryState>((set, get) => ({
 
   initialize: async (id) => {
     if (get().busy) return;
+    set({busy:true,error:null});
     try {
       if (typeof localStorage!=='undefined') {
-        migrateLegacy();
+        await migrateLegacy();
         const selectedId=id||get().libraryId||undefined;
         const selected=findEntry(selectedId);
         if (selectedId&&!selected) throw new Error('本机没有这个故事的会话凭据，请返回故事库。');

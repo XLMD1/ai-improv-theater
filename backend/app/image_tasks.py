@@ -61,13 +61,13 @@ def create_image_task(session_id,key):
         task=ImageTask(session_id=session_id,story_version_id=version.id,idempotency_key=key)
         db.add(task); db.flush()
         era={'ancient':'中国古代','modern':'近现代工业文明','future':'未来科技文明'}[story.era]
-        style=f'电影叙事概念美术，写实绘画，细腻光影，冷青与暖金统一色调。年代：{era}。不要添加文字、界面、字幕或调查线索，不揭示秘密。'
+        style=f'电影叙事概念美术，写实绘画，细腻光影，冷青与暖金统一色调。年代：{era}。无边框电影画面，真实人体比例与皮肤质感。不要生成文字、书法、题字、印章、卷轴、画框、界面、字幕或调查线索，不揭示秘密。'
         for kind,entities,size in [('background',story.locations,'1344x768'),('portrait',story.characters,'768x1344')]:
             for entity in entities:
                 if kind=='background':
-                    subject=f'空的环境全景，只绘制建筑、自然环境与陈设，不画任何人物、身体、脸、剪影或人像。故事背景：{story.setting}。地点：{entity.name}。以下只取环境信息，提到的人物不得画出：{entity.description}。再次强调空场景，没有人物。'
+                    subject=f'空的环境全景，只绘制建筑、自然环境与陈设，不画任何人物、身体、脸、剪影或人像。故事背景：{story.setting}。地点：{entity.name}。以下只取环境信息，提到的人物不得画出：{entity.description}。依据描述准确区分室内与室外，不擅自改成建筑外观；只绘制这一处地点，不拼接多个场景。再次强调空场景，没有人物、路人或远处人影。'
                 else:
-                    subject=f'单人竖版全身肖像，只画这一位人物：{entity.name}。唯一目标外貌卡：{entity.appearance}。服饰符合指定年代。干净的氛围背景，禁止第二个人、重复身体、合影、拼图或镜中人像。'
+                    subject=f'单人竖版全身肖像，只画这一位人物：{entity.name}。唯一目标外貌卡：{entity.appearance}。严格符合外貌卡的年龄、性别、肤色、发型与服饰，不额外衰老或幼化。人物站立，头顶至鞋底完整入画并留少量空间，不截断头脚，不使用半身或特写。服饰与配件逐项符合指定年代及外貌卡。干净的单色氛围背景，禁止第二个人、重复身体、合影、拼图、分屏或镜中人像；禁止题字和印章。'
                 db.add(StoryAsset(task_id=task.id,story_version_id=version.id,kind=kind,entity_id=entity.id,
                     prompt=style+subject,prompt_version=IMAGE_PROMPT_VERSION,model_id='cogview-4',size=size))
         db.expunge(task)

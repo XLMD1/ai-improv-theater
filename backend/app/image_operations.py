@@ -19,7 +19,7 @@ from app.story_schema import StrictModel
 
 IMAGE_PRICE_VERSION = 'cogview4-2026-10-14-cny'
 IMAGE_PRICE_CNY = Decimal('.06')
-IMAGE_PROMPT_VERSION = 'cinematic-public-2'
+IMAGE_PROMPT_VERSION = 'cinematic-public-3'
 MAX_IMAGE_BYTES = 12 * 1024 * 1024
 Size = Literal['1344x768', '768x1344']
 
