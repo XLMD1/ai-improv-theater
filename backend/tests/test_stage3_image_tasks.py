@@ -173,7 +173,7 @@ def test_each_image_prompt_has_only_its_target_card_and_backgrounds_have_no_cast
     with SessionLocal() as db:
         story=load_story_version(db,task.story_version_id)
         for asset in db.scalars(select(StoryAsset).where(StoryAsset.task_id==task.id)):
-            assert asset.prompt_version=='cinematic-public-2'
+            assert asset.prompt_version=='cinematic-public-3'
             assert '人物外貌统一参考' not in asset.prompt
             if asset.kind=='background':
                 assert '不画任何人物' in asset.prompt

@@ -80,3 +80,41 @@ async def test_generation_http_and_wall_timeout_share_policy_and_remaining_deadl
     assert [kind for kind,_ in limits] == ['wall','http']
     assert 0 < limits[1][1] <= limits[0][1] <= min(120,remaining)+1e-9
     assert abs(limits[1][1]-limits[0][1]) < .01
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize('name,version',[('story.content_generate','draft-1'),('story.content_repair','draft-2')])
+@pytest.mark.parametrize('prompt_version',['investigation-single-6','investigation-single-7'])
+async def test_controlled_provider_receives_complete_output_slot_names_before_authoring(monkeypatch,name,version,prompt_version):
+    import json,time
+    from app.execution import ExecutionContext,ToolRegistry,execute
+    from app.execution_traces import TaskRef
+    from app.story_content import load_blueprint_template,assemble_story_content,BLUEPRINT_SHA256
+    import app.story_operations as operations
+    from test_execution import Recorder
+    from test_custom_story_creation import successful_provider
+    template=load_blueprint_template(str(uuid4()),version,'未来货运记录调查','future')
+    received=[]
+    async def provider(*args):
+        received.append(json.loads(args[3].split('\n输入数据：',1)[1]))
+        return await successful_provider(*args)
+    monkeypatch.setattr(operations,'call_operation_provider',provider)
+    monkeypatch.setattr(operations,'get_key',lambda provider:'fixture-key')
+    registry=ToolRegistry();operations.register_story_operations(registry,prompt_version=prompt_version)
+    context=ExecutionContext(TaskRef('creation','task','session'),time.monotonic()+120,
+                             'deepseek','deepseek-flash',Recorder(),budget_check=lambda:None)
+    data={'story_id':template.story_id,'story_version':version,'setting':template.setting,'era':'future',
+          'blueprint_version':'controlled-investigation-1','blueprint_sha256':BLUEPRINT_SHA256,'template':template.model_dump()}
+    if name.endswith('repair'):data.update(raw_candidate='{}',issues=['missing action_feedback'])
+    result=await execute(registry,name,'v1',data,context)
+    assert result.status=='success'
+    assert assemble_story_content(template,result.output).story_version==version
+    if prompt_version=='investigation-single-6':
+        assert 'content_slots' not in received[0]
+        return
+    slots=received[0]['content_slots']
+    assert set(slots)=={'characters','locations','objects','evidence','disclosures','commitments','action_feedback','event_feedback','endings','truth_facts'}
+    assert slots['action_feedback']==[rule.id for rule in template.action_rules]
+    assert slots['event_feedback']==[event.id for event in template.events]
+    assert len(slots['characters'])==3 and len(slots['locations'])==5 and len(slots['endings'])==3
+    assert assemble_story_content(template,result.output).story_version==version

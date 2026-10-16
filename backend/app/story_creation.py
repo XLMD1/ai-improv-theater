@@ -21,7 +21,7 @@ from app.local_settings import MODELS, configured, get_key
 from app.models import Node, StorySession, StoryTask, StoryTaskEvent, StoryVersion, TurnEvent
 from app.operation_schemas import validate_semantic_report
 from app.reachability_worker import validate_reachability
-from app.story_operations import PROMPT_VERSION, OPERATION_VERSIONS, register_story_operations
+from app.story_operations import PROMPT_VERSION, SUPPORTED_PROMPT_VERSIONS, OPERATION_VERSIONS, register_story_operations
 from app.story_schema import Story, StrictModel
 from app.story_content import BLUEPRINT_VERSION,BLUEPRINT_SHA256,load_blueprint_template,parse_story_content,assemble_story_content
 from app.story_validation import ReachabilityReport
@@ -156,7 +156,7 @@ def _narration_protocol(checkpoint):
     if protocol is not None and (
             checkpoint.get('blueprint_version') != BLUEPRINT_VERSION or
             checkpoint.get('blueprint_sha256') != BLUEPRINT_SHA256 or
-            checkpoint.get('prompt_version') != PROMPT_VERSION):
+            checkpoint.get('prompt_version') not in SUPPORTED_PROMPT_VERSIONS):
         raise CreationError('creation_protocol_mismatch')
     if protocol is None and any(key in checkpoint for key in ('blueprint_version','blueprint_sha256','prompt_version','content_raw')):
         raise CreationError('creation_protocol_mismatch')
@@ -189,10 +189,10 @@ async def process_creation_task(task_id):
             context = creation_context(task,max(0,deadline-time.monotonic()))
             context.deadline = deadline
             registry = ToolRegistry()
-            register_story_operations(registry)
             protocol = checkpoint.get('creation_protocol')
             controlled = protocol in ('controlled-content-1','controlled-content-2')
             narration_protocol = _narration_protocol(checkpoint)
+            register_story_operations(registry,prompt_version=checkpoint.get('prompt_version',PROMPT_VERSION))
             context.recorder.event(context.task,'creation_protocol_selected',{
                 key:checkpoint[key] for key in ('creation_protocol','narration_protocol','blueprint_version','blueprint_sha256','prompt_version')
                 if key in checkpoint})

@@ -100,7 +100,8 @@ def test_mismatched_creation_presentation_stops_before_provider(protocol, narrat
             c.delete('/local-settings/keys/deepseek')
 
 
-def test_controlled_v1_resume_and_repeated_confirmation_keep_model_scene():
+@pytest.mark.parametrize('prompt_version',['investigation-single-6','investigation-single-7'])
+def test_controlled_v1_resume_and_repeated_confirmation_keep_model_scene(prompt_version):
     from app.story_creation import CreationRequest, create_creation_task, process_creation_task
     with client() as c, patch('app.story_operations.call_operation_provider', side_effect=successful_provider) as provider:
         headers, session = create_session(c)
@@ -108,7 +109,7 @@ def test_controlled_v1_resume_and_repeated_confirmation_keep_model_scene():
             task, _ = create_creation_task(session['session_id'], CreationRequest(setting='调查', era='modern'), uuid4().hex)
             with SessionLocal.begin() as db:
                 row = db.get(StoryTask, task.id)
-                cp = {**row.checkpoint, 'creation_protocol': 'controlled-content-1'}
+                cp = {**row.checkpoint, 'creation_protocol': 'controlled-content-1','prompt_version':prompt_version}
                 cp.pop('narration_protocol', None)
                 row.checkpoint = cp
             asyncio.run(process_creation_task(task.id))

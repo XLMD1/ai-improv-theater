@@ -39,3 +39,6 @@ No API/model calls precede budget protection. Each task starts with a failing be
 2026-10-14 自动验证：后端332，前端21，typecheck/build、alembic check通过。一次独立审查并修复费用/检查点/重连及测试库身份问题。任务6仍待三年代真实创建、生图及完整路径；Demo本地操作及响应式结果见 design-qa.md。
 
 真实首轮3/15、恢复7/15，v1图片质量失败；v2提示回归通过但实图未验证，任务6继续未完成。见 docs/evaluation/2026-10-14-stage-3-results.md。
+
+
+2026-10-16 继续任务 6：删除记录已复核并推送 82cd3f9；失败定位为缺 action_feedback 后修复语义未过。新内容/图片提示与 v6 检查点兼容修正已实现，完整回归及真实重测按当日开发日志记录。Ruling：执行一次新版三年代固定清单，保留既有样本/旧图/原失败分母，不自动循环建局；真实门槛未通过前不勾选任务 6。
