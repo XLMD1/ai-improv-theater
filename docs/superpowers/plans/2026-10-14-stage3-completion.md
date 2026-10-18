@@ -25,6 +25,10 @@
 - R1 empty dialogue and many long options remain readable; projections must exclude hidden story facts.
 - Legacy sessions continue without mandatory newly introduced images; new sessions cannot bypass preparation through direct API calls.
 
+## Final scope and outcome (2026-10-18)
+
+The user explicitly closed stage 3 after reviewing a same-prompt CogView-4 / built-in GPT image comparison. Automatic-image visual optimization and physical-mobile testing are non-blocking retained limitations, not passed checks. Technical three-era paths, reviewed local sample assets and desktop checks remain the acceptance evidence. See [closeout](../../evaluation/2026-10-18-stage-3-closeout.md). Earlier progress entries below are preserved historical records.
+
 ## Tasks
 
 1. [x] **Atomic ledger and migration.** Create `budget.py`, new budget/reservation/image task/asset models and migration; add failing concurrency, unknown outcome and legacy accounting tests; implement shared reserve/settle at the trace boundary; run relevant existing execution tests.
@@ -32,9 +36,9 @@
 3. [x] **Image task lifecycle and authenticated API.** Create `image_tasks.py` / `image_api.py`; implement fixed eight slots, idempotent start/resume, progress, checkpoint download, interruption, read-only asset serving and server preparation gate. Test cross-session, concurrency, restart, partial recovery and legacy compatibility.
 4. [x] **Persistent frontend library.** Create `lib/library.ts` and tests; migrate old browser session storage; save per-story tokens, current nodes, drafts and pending keys. Extend types/API/store to support public custom worlds and restore pending work. Tests pin sibling/story isolation and unknown request recovery.
 5. [x] **Complete pages and settings.** Add fixed library/create/play routes, actual create/confirm/prepare states and CogView settings. Adapt the existing stage/people/clues/actions to public entity IDs and authenticated image blobs. Preserve cinematic responsive UI; tests/typecheck/build.
-6. [ ] **Acceptance and records.** Migrate separate test DB, full backend/frontend suites and schema check. Browser-check Demo, fixed approved investigation sample, multiple stories, pending recovery and responsive forms. Then perform real three-era creation/eight-image/three-ending checks when keys are provided; record measured results, exact limitations and commit.
+6. [x] **Acceptance and records (user-adjusted scope, 2026-10-18).** Migrate separate test DB, full backend/frontend suites and schema check. Browser-check Demo, fixed approved investigation sample, multiple stories, pending recovery and responsive forms. Then perform real three-era creation/eight-image/three-ending checks when keys are provided; record measured results, exact limitations and commit.
 
-No API/model calls precede budget protection. Each task starts with a failing behavioral test and finishes with verified commands. A real acceptance gap keeps stage 3 unchecked.
+No API/model calls precede budget protection. Each task starts with a failing behavioral test and finishes with verified commands. A real acceptance gap without an explicit user-approved scope adjustment keeps stage 3 unchecked.
 
 2026-10-14 自动验证：后端332，前端21，typecheck/build、alembic check通过。一次独立审查并修复费用/检查点/重连及测试库身份问题。任务6仍待三年代真实创建、生图及完整路径；Demo本地操作及响应式结果见 design-qa.md。
 
