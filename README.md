@@ -2,6 +2,10 @@
 
 本地单人版互动叙事引擎。无需模型密钥即可使用确定性 Demo；DeepSeek 模式需要在页面设置中临时填写密钥，后端重启后会清除。OpenAI 选项目前待开发验证。
 
+## Docker 交付方向（准备中）
+
+2026-10-19 起按用户要求优先 Docker Compose 与源码复现，取消 Windows 便携包。计划让使用者先安装 Docker／Compose，下载源码并在容器构建中安装依赖，然后通过本机浏览器使用；保留下面的直接依赖安装方式。Docker 配置尚未实施或实测，目前仍按下方步骤运行。设计范围见[阶段四草案](docs/superpowers/specs/2026-10-19-stage4-docker-design.md)。
+
 ## Windows 本地启动
 
 需要 Python 3.11+、Node.js/npm、PostgreSQL，以及 Windows PowerShell 5.1 或 PowerShell 7。将本地数据库连接地址写入 `backend/.env` 的 `DATABASE_URL`；该文件已加入 Git 忽略规则，不要提交其中的密码。Alembic 优先使用进程环境变量 `MIGRATION_DATABASE_URL`、其次 `DATABASE_URL`，未设置时读取 `backend/.env`。
@@ -41,7 +45,7 @@ pwsh -NoProfile -File .\scripts\start-local.ps1
 
 当前首页是逐局保存的故事库。自定义故事流程为背景／年代 → 已校验简介确认 → 八张固定素材 → 调查舞台；在本地设置依次配置 DeepSeek 和智谱 CogView-4，OpenAI 仍禁用。密钥仅在后端内存，重启后须重填；已保存剧情和图片回放无需密钥。CogView-4 固定普通同步 0.06 CNY/次，八图 0.48 CNY，文字另按用量估算；未知结果须核账，恢复不会自动重发不确定的生成请求。
 
-阶段三已于 2026-10-18 按用户确认的调整范围收尾，见[收尾记录](docs/evaluation/2026-10-18-stage-3-closeout.md)。核心流程、真实三年代技术路径和电脑端验收已有记录；手机实机测试未执行，自动配图质量仍有已知偏差，用户明确将两项作为非阻塞保留项。本地三个样本使用用户审核通过的 24 张图片；便携包和 OpenAI 文字支持仍属后续阶段。自动测试不替代人工质量评价。见[实施专题](docs/design/stage-3-completion.md)及[固定验收口径](docs/evaluation/stage-3-acceptance.md)。运行 `evals/run_stage3.py` 前，预览服务和运行器必须使用同一个独立 PostgreSQL `_test` 库；服务测试库指纹必须匹配，正常用户库不会提供该指纹。运行器只使用已在本地设置保存的内存密钥；不要通过命令参数传入 API Key。报告、冻结故事及测试会话凭据位于忽略的 `runtime/evals/`，不得提交这些本地数据。
+阶段三已于 2026-10-18 按用户确认的调整范围收尾，见[收尾记录](docs/evaluation/2026-10-18-stage-3-closeout.md)。核心流程、真实三年代技术路径和电脑端验收已有记录；手机实机测试未执行，自动配图质量仍有已知偏差，用户明确将两项作为非阻塞保留项。本地三个样本使用用户审核通过的 24 张图片；Docker 交付和 OpenAI 文字支持仍属后续阶段。自动测试不替代人工质量评价。见[实施专题](docs/design/stage-3-completion.md)及[固定验收口径](docs/evaluation/stage-3-acceptance.md)。运行 `evals/run_stage3.py` 前，预览服务和运行器必须使用同一个独立 PostgreSQL `_test` 库；服务测试库指纹必须匹配，正常用户库不会提供该指纹。运行器只使用已在本地设置保存的内存密钥；不要通过命令参数传入 API Key。报告、冻结故事及测试会话凭据位于忽略的 `runtime/evals/`，不得提交这些本地数据。
 
 ## 阶段 1 规则评测
 
