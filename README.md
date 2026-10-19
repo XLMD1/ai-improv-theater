@@ -6,7 +6,7 @@
 
 已提供 Docker Compose 配置；2026-10-19 按用户要求暂不启动 Docker，因此镜像实际构建、容器运行和持久化验收仍待执行，见[阶段四验证记录](docs/evaluation/2026-10-19-stage-4-docker-results.md)。Windows 便携包取消，源码直接安装方式保留在下文。
 
-需要 Docker Engine 与 Compose v2 或更新版本；Windows 可安装 [Docker Desktop](https://docs.docker.com/desktop/setup/install/windows-install/) 并选择 Linux 容器。首次使用时启动 Docker，构建需要网络下载基础镜像与依赖；宿主机无需另装 Python、Node.js 或 PostgreSQL。下载 GitHub 源码 ZIP 并解压，或执行：
+需要 Docker Engine 与 Compose 2.17 或更新版本；Windows 可安装 [Docker Desktop](https://docs.docker.com/desktop/setup/install/windows-install/) 并选择 Linux 容器。首次使用时启动 Docker，构建需要网络下载基础镜像与依赖；宿主机无需另装 Python、Node.js 或 PostgreSQL。下载 GitHub 源码 ZIP 并解压，或执行：
 
 ```powershell
 git clone https://github.com/XLMD1/ai-improv-theater.git
@@ -24,7 +24,7 @@ docker compose -f compose.yaml ps
 
 待三个服务就绪，打开 [本机游戏](http://localhost:8080)。首次干净源码提供内置 Demo，无需模型密钥即可走三个结局；当前开发电脑中三个已审核样本依赖本地私有数据，不随源码分发。自定义故事在页面设置输入 DeepSeek 和智谱密钥，密钥仅在后端内存，API 重启后重新填写。固定剧情、图片和存档持久保存。
 
-只有网页端口发布到 `127.0.0.1`；API 和数据库仅在容器网络中使用。`APP_PORT` 默认 8080，端口占用时可在根 `.env` 改为其他空闲端口后再次执行 `up`。浏览器存档绑定地址，请保持相同主机名和端口，避免因更换地址看不到原来的浏览器故事库。
+Compose 更新或重建 API 时会联动重启网页代理，重新连接后端。只有网页端口发布到 `127.0.0.1`；API 和数据库仅在容器网络中使用。`APP_PORT` 默认 8080，端口占用时可在根 `.env` 改为其他空闲端口后再次执行 `up`。浏览器存档绑定地址，请保持相同主机名和端口，避免因更换地址看不到原来的浏览器故事库。
 
 日常管理与更新（均在项目根目录执行）：
 

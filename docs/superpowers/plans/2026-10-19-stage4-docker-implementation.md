@@ -4,7 +4,7 @@
 
 **Goal:** A clean source checkout can build and run the local app with Docker Compose, keeping the direct source-install path.
 **Architecture:** Nginx static export and same-origin /api proxy, single-worker FastAPI with migration-first startup, PostgreSQL 18 and separate persistent volumes.
-**Tech Stack:** Python 3.12, Node 22 build stage, Nginx stable, PostgreSQL 18, Compose v2; existing application dependencies.
+**Tech Stack:** Python 3.12, Node 22 build stage, Nginx stable, PostgreSQL 18, Compose >=2.17; existing application dependencies.
 **Spec:** [Approved Docker design](../specs/2026-10-19-stage4-docker-design.md).
 
 ## Global Constraints
@@ -56,6 +56,8 @@
 
 ### Task 4: Whole-change review and completion
 
-- [ ] Request one fresh read-only final review against base db1198a, this plan and spec, with the Review Focus above and ledger rulings. No per-task implementer delegation.
-- [ ] Re-grade findings; fix critical/important issues once with failing behavioral reproductions, then rerun relevant suites. Record deferred minor findings and all review limitations.
-- [ ] Verify status and documented scope, commit only relevant files. Do not push, merge, install Docker/WSL or delete user data without the corresponding authorization.
+- [x] Request one fresh read-only final review against base db1198a, this plan and spec, with the Review Focus above and ledger rulings. No per-task implementer delegation.
+- [x] Re-grade findings; fix critical/important issues once with failing behavioral reproductions, then rerun relevant suites. Record deferred minor findings and all review limitations.
+- [x] Verify status and documented scope, commit only relevant files. Do not push, merge, install Docker/WSL or delete user data without the corresponding authorization.
+
+2026-10-19 final source review: one Important update-path issue addressed by `web.depends_on.api.restart: true`, with engine-free Compose assertion observed failing then passing. This is configuration verification only; actual API-IP-change recovery remains pending with all other container gates.

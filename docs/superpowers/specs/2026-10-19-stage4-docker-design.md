@@ -4,7 +4,7 @@
 
 ## 目标与使用流程
 
-用户安装 Docker Engine 与 Compose v2（Windows 通常用 Docker Desktop），下载源码，复制公开的 `.env.example` 为 Git 忽略的根 `.env` 并设置本地数据库密码，再执行 `docker compose up --build -d`，浏览器访问 `http://localhost:8080`。依赖由镜像构建安装，宿主机无需单独安装 Python、Node.js 或 PostgreSQL。首次构建需网络，后续用已构建镜像启动 Demo 无需模型接口。
+用户安装 Docker Engine 与 Compose 2.17 或更新版本（Windows 通常用 Docker Desktop），下载源码，复制公开的 `.env.example` 为 Git 忽略的根 `.env` 并设置本地数据库密码，再执行 `docker compose up --build -d`，浏览器访问 `http://localhost:8080`。依赖由镜像构建安装，宿主机无需单独安装 Python、Node.js 或 PostgreSQL。首次构建需网络，后续用已构建镜像启动 Demo 无需模型接口。
 
 保留 README 中 Python／Node／PostgreSQL 直接安装及 `scripts/start-local.ps1` 方式。源码开发仍使用原 `backend/.env`，Docker 不读取或挂载该文件。没有 Windows 便携包、安装器、云部署、多用户或预发布镜像仓库工作。
 
@@ -21,7 +21,7 @@
 
 根 `.env.example` 仅提供 `APP_PORT` 与本地数据库参数示例，无实际密钥。API 密钥继续通过游戏设置进入后端内存，不写 Compose、镜像、卷或浏览器存储。Docker 启动代码安全构建数据库 URL，处理密码中的 URL 保留字符，避免把密码放在命令参数或日志里；不修改原配置优先级。
 
-Compose 等待 db 的 `pg_isready` 健康后启动 api；API 入口先执行现有 `alembic upgrade head`，成功后用 exec 启动单 worker，失败明确退出。API 健康后启动 web。不得用重建用户数据库或无界重试掩盖迁移失败。
+Compose 等待 db 的 `pg_isready` 健康后启动 api；API 入口先执行现有 `alembic upgrade head`，成功后用 exec 启动单 worker，失败明确退出。API 健康后启动 web。web 对 api 的依赖设置 `restart: true`，使 Compose 显式更新／重建 API 时重启 Nginx，重新解析 api 服务地址，避免代理继续连接旧容器 IP。不得用重建用户数据库或无界重试掩盖迁移失败。
 
 独立命名卷保存数据库和 `RUNTIME_DIR=/app/runtime`；PostgreSQL 18 数据卷挂载 `/var/lib/postgresql`，遵循官方新版 PGDATA 目录。后端镜像需允许其运行用户写 runtime 卷。源码、内置 canon、迁移和 Demo 公开图片进入镜像；根／后端 `.env`、`.git`、node_modules、开发虚拟环境、runtime、现有用户图／数据库／日志及三份未追踪后端草稿排除在构建上下文外。
 
@@ -40,7 +40,7 @@ Compose 等待 db 的 `pg_isready` 健康后启动 api；API 入口先执行现�
 1. 配置与构建：`docker compose -f compose.yaml config --quiet` 通过，使用干净源码实际构建镜像，入口文件与公开 Demo 资源齐全；检查镜像／上下文不含个人数据和密钥。
 2. 新卷启动：独立测试项目名及独立卷启动到 healthy，自动迁移；默认只有回环网页端口，api／db 无宿主机映射，网页 `/api/health` 和固定路由可用。
 3. 实际游玩：Demo 三结局、分支回放与长文本／图片读取通过同源代理，SSE 事件和幂等提交正常；按钮路径不触发真实模型调用。
-4. 保留与恢复：停止、重建／重启后数据库会话与 runtime 哨兵文件保留；同 origin 浏览器当前节点和草稿恢复；API 重启清除内存密钥，不重发未知结果。
+4. 保留与恢复：停止、重建／重启后数据库会话与 runtime 哨兵文件保留；后端单独更新并改变容器地址后，web 能重新连接 api；同 origin 浏览器当前节点和草稿恢复；API 重启清除内存密钥，不重发未知结果。
 5. 失败边界：缺失配置、错误数据库连接、数据库未就绪、迁移失败、主机端口占用可诊断；迁移失败不会运行 API，代理不重试收费写请求。相关源码测试／typecheck／静态构建按改动执行。
 6. 用全新临时 clone／archive 证明没有依赖当前忽略数据；与用户数据库和 3000／8000 预览隔离。删除测试卷仅限明确命名、可丢弃的测试项目，不操作用户卷。
 
