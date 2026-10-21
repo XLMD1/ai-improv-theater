@@ -2,6 +2,58 @@
 
 本地单人版互动叙事引擎。无需模型密钥即可使用确定性 Demo；DeepSeek 模式需要在页面设置中临时填写密钥，后端重启后会清除。OpenAI 选项目前待开发验证。
 
+## Docker 运行（推荐交付方式）
+
+Docker Compose 已于 2026-10-21 在干净源码与独立数据卷上完成实际构建、启动、Demo 三结局、代理、持久化和恢复验收，见[验收记录](docs/evaluation/2026-10-21-stage-4-docker-results.md)。Windows 便携包取消，源码直接安装方式保留在下文。
+
+需要 Docker Engine 与 Compose 2.17 或更新版本；Windows 可安装 [Docker Desktop](https://docs.docker.com/desktop/setup/install/windows-install/) 并选择 Linux 容器。首次使用时启动 Docker，构建需要网络下载基础镜像与依赖；宿主机无需另装 Python、Node.js 或 PostgreSQL。下载 GitHub 源码 ZIP 并解压，或执行：
+
+```powershell
+git clone https://github.com/XLMD1/ai-improv-theater.git
+cd ai-improv-theater
+Copy-Item .env.example .env
+```
+
+使用文本编辑器打开根目录 `.env`，将 `POSTGRES_PASSWORD` 示例改为自己的本地数据库密码；保留单引号可避免 `$`、`#` 和空格被解释。不要覆盖已有 `.env`。该文件已被 Git 忽略，不要填写 DeepSeek／智谱 API Key，也不要发给别人。Docker 使用根 `.env`，不读取源码模式的 `backend/.env`。配置完成后执行：
+
+```powershell
+docker compose -f compose.yaml config --quiet
+docker compose -f compose.yaml up --build -d
+docker compose -f compose.yaml ps
+```
+
+待三个服务就绪，打开 [本机游戏](http://localhost:8080)。首次干净源码提供内置 Demo，无需模型密钥即可走三个结局；当前开发电脑中三个已审核样本依赖本地私有数据，不随源码分发。自定义故事在页面设置输入 DeepSeek 和智谱密钥，密钥仅在后端内存，API 重启后重新填写。固定剧情、图片和存档持久保存。
+
+Compose 更新或重建 API 时会联动重启网页代理，重新连接后端。只有网页端口发布到 `127.0.0.1`；API 和数据库仅在容器网络中使用。`APP_PORT` 默认 8080，端口占用时可在根 `.env` 改为其他空闲端口后再次执行 `up`。浏览器存档绑定地址，请保持相同主机名和端口，避免因更换地址看不到原来的浏览器故事库。
+
+日常管理与更新（均在项目根目录执行）：
+
+```powershell
+# 查看启动问题；不要公开包含个人剧情的日志
+docker compose -f compose.yaml logs --tail=100 api db web
+# 暂停／恢复现有容器
+docker compose -f compose.yaml stop
+docker compose -f compose.yaml start
+# 移除容器和网络，保留数据库及素材卷
+docker compose -f compose.yaml down
+# 更新源码后重建、增量迁移并启动；ZIP 用户先替换源码，保留 .env
+git pull
+docker compose -f compose.yaml up --build -d
+```
+
+数据库与素材分别在 `postgres_data` 和 `app_runtime` 命名卷中。正常 `stop`、`down` 和重建不删除卷；不要给 `down` 添加删除卷的参数，也不要删除 Docker Desktop 中的项目卷。保持项目名和目录稳定，避免切换到另一组卷。重要存档应先备份再更新；本次不提供自动备份或数据清空功能。
+
+常见问题：
+
+- 找不到 `docker` 或无法连接 Engine：确认 Docker Desktop 已安装、已启动且使用 Linux 容器；必要时重新打开终端。
+- 提示 `POSTGRES_PASSWORD` 缺失：检查项目根 `.env` 及当前终端是否有同名环境变量覆盖。验证配置用 `config --quiet`，不要公开打印解析后的密码。
+- 拉取镜像时 Docker Hub 认证服务超时：确认 Docker Desktop 的代理／网络可访问官方镜像源。若命令行构建的认证请求仍然直连，在当前终端临时设置 `HTTP_PROXY`、`HTTPS_PROXY` 指向同一可用代理；不要把个人代理写入仓库或镜像。
+- 网页端口被占用：修改 `.env` 中的 `APP_PORT` 后重建容器，再使用对应地址。
+- API 迁移失败：API 会退出，不会继续启动。通过 `ps` 和 `logs` 检查数据库健康、连接配置及迁移版本；启动不会重置数据库。PostgreSQL 的初始化密码仅作用于空卷，已有卷不能靠修改 `.env` 更换数据库密码，应保持原配置或按数据库管理流程修改。
+- 干净源码看不到三个本地故事样本：这是预期行为，可先玩 Demo 或配置密钥自行创建故事。
+
+可选开发验收：已有后端 Python 依赖时，在独立 Compose 测试项目中运行 `python scripts/test-docker.py --base-url http://localhost:18080`。脚本只访问已运行的本机服务，创建独立 Demo 会话，检查三结局、回放、授权、幂等和已完成任务的 SSE；不启动 Docker、不调用收费接口、不清空数据，报告在忽略目录 `runtime/docker-smoke-report.json`。它不能代替容器重建、数据卷和浏览器恢复验收，具体流程见[阶段四验收记录](docs/evaluation/2026-10-21-stage-4-docker-results.md)。
+
 ## Windows 本地启动
 
 需要 Python 3.11+、Node.js/npm、PostgreSQL，以及 Windows PowerShell 5.1 或 PowerShell 7。将本地数据库连接地址写入 `backend/.env` 的 `DATABASE_URL`；该文件已加入 Git 忽略规则，不要提交其中的密码。Alembic 优先使用进程环境变量 `MIGRATION_DATABASE_URL`、其次 `DATABASE_URL`，未设置时读取 `backend/.env`。
@@ -41,7 +93,7 @@ pwsh -NoProfile -File .\scripts\start-local.ps1
 
 当前首页是逐局保存的故事库。自定义故事流程为背景／年代 → 已校验简介确认 → 八张固定素材 → 调查舞台；在本地设置依次配置 DeepSeek 和智谱 CogView-4，OpenAI 仍禁用。密钥仅在后端内存，重启后须重填；已保存剧情和图片回放无需密钥。CogView-4 固定普通同步 0.06 CNY/次，八图 0.48 CNY，文字另按用量估算；未知结果须核账，恢复不会自动重发不确定的生成请求。
 
-阶段三已于 2026-10-18 按用户确认的调整范围收尾，见[收尾记录](docs/evaluation/2026-10-18-stage-3-closeout.md)。核心流程、真实三年代技术路径和电脑端验收已有记录；手机实机测试未执行，自动配图质量仍有已知偏差，用户明确将两项作为非阻塞保留项。本地三个样本使用用户审核通过的 24 张图片；便携包和 OpenAI 文字支持仍属后续阶段。自动测试不替代人工质量评价。见[实施专题](docs/design/stage-3-completion.md)及[固定验收口径](docs/evaluation/stage-3-acceptance.md)。运行 `evals/run_stage3.py` 前，预览服务和运行器必须使用同一个独立 PostgreSQL `_test` 库；服务测试库指纹必须匹配，正常用户库不会提供该指纹。运行器只使用已在本地设置保存的内存密钥；不要通过命令参数传入 API Key。报告、冻结故事及测试会话凭据位于忽略的 `runtime/evals/`，不得提交这些本地数据。
+阶段三已于 2026-10-18 按用户确认的调整范围收尾，见[收尾记录](docs/evaluation/2026-10-18-stage-3-closeout.md)。核心流程、真实三年代技术路径和电脑端验收已有记录；手机实机测试未执行，自动配图质量仍有已知偏差，用户明确将两项作为非阻塞保留项。本地三个样本使用用户审核通过的 24 张图片；Docker 已按阶段四记录完成实际验收，OpenAI 文字支持仍属后续阶段。自动测试不替代人工质量评价。见[实施专题](docs/design/stage-3-completion.md)及[固定验收口径](docs/evaluation/stage-3-acceptance.md)。运行 `evals/run_stage3.py` 前，预览服务和运行器必须使用同一个独立 PostgreSQL `_test` 库；服务测试库指纹必须匹配，正常用户库不会提供该指纹。运行器只使用已在本地设置保存的内存密钥；不要通过命令参数传入 API Key。报告、冻结故事及测试会话凭据位于忽略的 `runtime/evals/`，不得提交这些本地数据。
 
 ## 阶段 1 规则评测
 
