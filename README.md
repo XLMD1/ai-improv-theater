@@ -4,7 +4,7 @@
 
 ## Docker 运行（推荐交付方式）
 
-已提供 Docker Compose 配置；2026-10-19 按用户要求暂不启动 Docker，因此镜像实际构建、容器运行和持久化验收仍待执行，见[阶段四验证记录](docs/evaluation/2026-10-19-stage-4-docker-results.md)。Windows 便携包取消，源码直接安装方式保留在下文。
+已提供 Docker Compose 配置。2026-10-21 已连接实际 Docker 引擎，构建上下文检查通过；应用构建因 Docker Hub 认证服务网络超时停止，容器运行和持久化仍待验收，见[最新补验记录](docs/evaluation/2026-10-21-stage-4-docker-results.md)。Windows 便携包取消，源码直接安装方式保留在下文。
 
 需要 Docker Engine 与 Compose 2.17 或更新版本；Windows 可安装 [Docker Desktop](https://docs.docker.com/desktop/setup/install/windows-install/) 并选择 Linux 容器。首次使用时启动 Docker，构建需要网络下载基础镜像与依赖；宿主机无需另装 Python、Node.js 或 PostgreSQL。下载 GitHub 源码 ZIP 并解压，或执行：
 

@@ -101,7 +101,7 @@ OpenAI 文字（阶段 5） / 多 Agent 编排（阶段 6）
 
 舞台以背景、人物与对白为中心，证据/人物资料/分支记录按需展开；提供人物交流、调查对象、出示证据、移动及自由行动。逐句对白、完整句显示、历史对白、速度、键盘及减少动画设置均需前端验收。
 
-2026-10-19 用户取消阶段四 Windows 便携包，改为 Docker Compose 源码交付。已提供 web／api／db 三服务配置：Next 静态导出由 Nginx 提供，`/api` 同源代理至容器内 FastAPI，普通 PostgreSQL 18 仅在容器网络访问。宿主机仅发布回环网页端口，数据卷独立持久化；数据库健康后执行 Alembic 迁移，迁移失败不启动 API，API 就绪后提供网页。容器内服务监听与网络细节见[已确认设计](superpowers/specs/2026-10-19-stage4-docker-design.md)和[验证记录](evaluation/2026-10-19-stage-4-docker-results.md)，用户要求暂不启动 Docker，当前容器构建与运行未验收。开发仍使用 `scripts/start-local.ps1`，数据库配置在 Git 忽略的 `backend/.env`；迁移优先级为 `MIGRATION_DATABASE_URL` → `DATABASE_URL` → `.env`。迁移及破坏性测试仅使用独立测试库。
+2026-10-19 用户取消阶段四 Windows 便携包，改为 Docker Compose 源码交付。已提供 web／api／db 三服务配置：Next 静态导出由 Nginx 提供，`/api` 同源代理至容器内 FastAPI，普通 PostgreSQL 18 仅在容器网络访问。宿主机仅发布回环网页端口，数据卷独立持久化；数据库健康后执行 Alembic 迁移，迁移失败不启动 API，API 就绪后提供网页。容器内服务监听与网络细节见[已确认设计](superpowers/specs/2026-10-19-stage4-docker-design.md)和[验证记录](evaluation/2026-10-19-stage-4-docker-results.md)，2026-10-21 已连接 Docker 并通过实际构建上下文检查，但基础镜像拉取因网络超时中断，当前容器构建与运行未验收，见[最新补验](evaluation/2026-10-21-stage-4-docker-results.md)。开发仍使用 `scripts/start-local.ps1`，数据库配置在 Git 忽略的 `backend/.env`；迁移优先级为 `MIGRATION_DATABASE_URL` → `DATABASE_URL` → `.env`。迁移及破坏性测试仅使用独立测试库。
 
 ## 8. 验证与评测边界
 
