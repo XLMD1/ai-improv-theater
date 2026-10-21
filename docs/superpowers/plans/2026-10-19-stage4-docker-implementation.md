@@ -38,11 +38,11 @@
 **Interfaces:** consumes Task 1 API image; web serves fixed exported paths and proxies /api to api:8000; Compose waits db healthy then api healthy then web.
 
 - [x] Run engine-free Compose config and semantic checks for required password, punctuation, port binding, dependencies and PG18 volume. No source-string mirror tests.
-- [ ] Run actual image builds and Nginx configuration execution; deferred by user instruction not to start Docker.
+- [x] Run actual image builds and Nginx configuration execution; passed 2026-10-21 after user started Docker and configured the proxy.
 - [x] Build frontend with npm ci and `/api`; provide complete static files and preserve query strings. Configure SSE buffering/retries off and 1300s read timeout. Only web maps a loopback port.
 - [x] Configure DB/runtime volumes, required password and local example settings, health dependencies and context exclusions. Use verified versioned official base tags, no pgvector/latest, no read of backend/.env.
 - [x] Run frontend tests/typecheck and isolated `/api` production build; commit scoped files.
-- [ ] Run clean image builds and health/startup checks when the user chooses to start Docker; retain pending status.
+- [x] Run clean image builds and health/startup checks; passed 2026-10-21 on the independent test project.
 
 ### Task 3: Container acceptance and source instructions
 
@@ -50,7 +50,7 @@
 **Interfaces:** consumes running same-origin web base URL, explicit Docker test project and its own volumes; records no tokens/API keys.
 
 - [x] Reuse existing Demo expected paths to run HTTP-only three endings, authenticated replay, idempotency and SSE checks without paid calls; the runner refuses non-loopback base URLs and never resets data.
-- [ ] Run Compose with a fresh archive/checkout and a named test project/port, inspect host port exposure, sentinel DB/runtime persistence across stop/recreate and missing/invalid config behavior. Test the actual artifacts, not just YAML text. Keep existing preview isolated.
+- [x] Run Compose with a fresh archive/checkout and a named test project/port, inspect host port exposure, sentinel DB/runtime persistence across stop/recreate and missing/invalid config behavior. Test the actual artifacts, not just YAML text. Keep existing preview isolated.
 - [x] Document clone/download, Docker prerequisites, example config, build/access, updates, normal stop/start/down and troubleshooting. Keep source install instructions, clarify Demo-only clean checkout and origin-bound browser saves.
 - [x] Record executed checks, failures and unverified engine/device gates; do not close stage 4 until actual container gates pass. Check links/diff and commit.
 
@@ -61,3 +61,5 @@
 - [x] Verify status and documented scope, commit only relevant files. Do not push, merge, install Docker/WSL or delete user data without the corresponding authorization.
 
 2026-10-19 final source review: one Important update-path issue addressed by `web.depends_on.api.restart: true`, with engine-free Compose assertion observed failing then passing. This is configuration verification only; actual API-IP-change recovery remains pending with all other container gates.
+
+2026-10-21 runtime completion: all six approved acceptance groups passed, including an actual API IP change with automatic web restart. Test project stopped and named volumes retained. See [actual results](../../evaluation/2026-10-21-stage-4-docker-results.md); historical failures remain recorded, no paid model calls or new mobile acceptance.

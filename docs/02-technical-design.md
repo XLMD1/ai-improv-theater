@@ -24,7 +24,7 @@ DeepSeek 文字 / CogView-4 图片
 OpenAI 文字（阶段 5） / 多 Agent 编排（阶段 6）
 ```
 
-上图是目标架构。当前应用保留固定 `canon.json`、Demo / DeepSeek 单次生成、PostgreSQL、不可变节点、幂等任务及批准后 SSE；2026-10-14 前端已接入固定 `/`、`/create`、`/play?id=...` 静态导出页面，版本化 `localStorage` 故事库保留每局凭据／节点／草稿／待完成任务，旧 `sessionStorage` 迁移一次；密钥仍仅在后端内存。阶段 1 的版本化故事、同地点调查规则、增量迁移和批准样本已验收。阶段 2 已接入自定义创建及运行时调查后端 API，并通过模拟测试；R1/v2 的三类背景固定真实清单 12/12，一位实际用户对三故事与九路径五项剧情核查均通过，阶段 2 已按方案 A/R1/v2 验收。阶段三图片、共享原子预留和故事库已实现；2026-10-16 固定真实清单补缺后技术检查 15/15，自动配图视觉质量未通过。2026-10-18 三个本地样本另获用户批准并发布 24 张审核图，Edge 原生 200% 缩放、电脑键盘、实际读屏和用户完整退出重开恢复已按[电脑端记录](evaluation/2026-10-18-stage-3-desktop-results.md)核对；2026-10-18 用户明确将手机实机测试和图片质量优化从本阶段阻塞项移出，阶段三按调整范围收尾，详见[阶段三收尾记录](evaluation/2026-10-18-stage-3-closeout.md)；Docker 已提供构建配置但容器实测待执行，OpenAI 和多 Agent 尚待后续实施。详见[阶段三专题](design/stage-3-completion.md)。保留浏览器直连本地 API，不接云服务、Redis 或 pgvector，只允许本地前端 origin。
+上图是目标架构。当前应用保留固定 `canon.json`、Demo / DeepSeek 单次生成、PostgreSQL、不可变节点、幂等任务及批准后 SSE；2026-10-14 前端已接入固定 `/`、`/create`、`/play?id=...` 静态导出页面，版本化 `localStorage` 故事库保留每局凭据／节点／草稿／待完成任务，旧 `sessionStorage` 迁移一次；密钥仍仅在后端内存。阶段 1 的版本化故事、同地点调查规则、增量迁移和批准样本已验收。阶段 2 已接入自定义创建及运行时调查后端 API，并通过模拟测试；R1/v2 的三类背景固定真实清单 12/12，一位实际用户对三故事与九路径五项剧情核查均通过，阶段 2 已按方案 A/R1/v2 验收。阶段三图片、共享原子预留和故事库已实现；2026-10-16 固定真实清单补缺后技术检查 15/15，自动配图视觉质量未通过。2026-10-18 三个本地样本另获用户批准并发布 24 张审核图，Edge 原生 200% 缩放、电脑键盘、实际读屏和用户完整退出重开恢复已按[电脑端记录](evaluation/2026-10-18-stage-3-desktop-results.md)核对；2026-10-18 用户明确将手机实机测试和图片质量优化从本阶段阻塞项移出，阶段三按调整范围收尾，详见[阶段三收尾记录](evaluation/2026-10-18-stage-3-closeout.md)；Docker 已于 2026-10-21 完成六组独立容器验收，OpenAI 和多 Agent 尚待后续实施。详见[阶段三专题](design/stage-3-completion.md)。保留浏览器直连本地 API，不接云服务、Redis 或 pgvector，只允许本地前端 origin。
 
 ## 2. 版本化故事与调查规则（阶段 1）
 
@@ -101,7 +101,7 @@ OpenAI 文字（阶段 5） / 多 Agent 编排（阶段 6）
 
 舞台以背景、人物与对白为中心，证据/人物资料/分支记录按需展开；提供人物交流、调查对象、出示证据、移动及自由行动。逐句对白、完整句显示、历史对白、速度、键盘及减少动画设置均需前端验收。
 
-2026-10-19 用户取消阶段四 Windows 便携包，改为 Docker Compose 源码交付。已提供 web／api／db 三服务配置：Next 静态导出由 Nginx 提供，`/api` 同源代理至容器内 FastAPI，普通 PostgreSQL 18 仅在容器网络访问。宿主机仅发布回环网页端口，数据卷独立持久化；数据库健康后执行 Alembic 迁移，迁移失败不启动 API，API 就绪后提供网页。容器内服务监听与网络细节见[已确认设计](superpowers/specs/2026-10-19-stage4-docker-design.md)和[验证记录](evaluation/2026-10-19-stage-4-docker-results.md)，2026-10-21 已连接 Docker 并通过实际构建上下文检查，但基础镜像拉取因网络超时中断，当前容器构建与运行未验收，见[最新补验](evaluation/2026-10-21-stage-4-docker-results.md)。开发仍使用 `scripts/start-local.ps1`，数据库配置在 Git 忽略的 `backend/.env`；迁移优先级为 `MIGRATION_DATABASE_URL` → `DATABASE_URL` → `.env`。迁移及破坏性测试仅使用独立测试库。
+2026-10-19 用户取消阶段四 Windows 便携包，改为 Docker Compose 源码交付。已提供 web／api／db 三服务配置：Next 静态导出由 Nginx 提供，`/api` 同源代理至容器内 FastAPI，普通 PostgreSQL 18 仅在容器网络访问。宿主机仅发布回环网页端口，数据卷独立持久化；数据库健康后执行 Alembic 迁移，迁移失败不启动 API，API 就绪后提供网页。容器内服务监听与网络细节见[已确认设计](superpowers/specs/2026-10-19-stage4-docker-design.md)和[验证记录](evaluation/2026-10-19-stage-4-docker-results.md)，2026-10-21 已完成干净源码构建、三服务启动、Demo、代理、五类故障、数据卷及 Edge 页面恢复等六组实际验收，初期网络失败记录保留，见[实际验收](evaluation/2026-10-21-stage-4-docker-results.md)。开发仍使用 `scripts/start-local.ps1`，数据库配置在 Git 忽略的 `backend/.env`；迁移优先级为 `MIGRATION_DATABASE_URL` → `DATABASE_URL` → `.env`。迁移及破坏性测试仅使用独立测试库。
 
 ## 8. 验证与评测边界
 

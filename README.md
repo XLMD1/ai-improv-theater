@@ -4,7 +4,7 @@
 
 ## Docker 运行（推荐交付方式）
 
-已提供 Docker Compose 配置。2026-10-21 已连接实际 Docker 引擎，构建上下文检查通过；应用构建因 Docker Hub 认证服务网络超时停止，容器运行和持久化仍待验收，见[最新补验记录](docs/evaluation/2026-10-21-stage-4-docker-results.md)。Windows 便携包取消，源码直接安装方式保留在下文。
+Docker Compose 已于 2026-10-21 在干净源码与独立数据卷上完成实际构建、启动、Demo 三结局、代理、持久化和恢复验收，见[验收记录](docs/evaluation/2026-10-21-stage-4-docker-results.md)。Windows 便携包取消，源码直接安装方式保留在下文。
 
 需要 Docker Engine 与 Compose 2.17 或更新版本；Windows 可安装 [Docker Desktop](https://docs.docker.com/desktop/setup/install/windows-install/) 并选择 Linux 容器。首次使用时启动 Docker，构建需要网络下载基础镜像与依赖；宿主机无需另装 Python、Node.js 或 PostgreSQL。下载 GitHub 源码 ZIP 并解压，或执行：
 
@@ -47,11 +47,12 @@ docker compose -f compose.yaml up --build -d
 
 - 找不到 `docker` 或无法连接 Engine：确认 Docker Desktop 已安装、已启动且使用 Linux 容器；必要时重新打开终端。
 - 提示 `POSTGRES_PASSWORD` 缺失：检查项目根 `.env` 及当前终端是否有同名环境变量覆盖。验证配置用 `config --quiet`，不要公开打印解析后的密码。
+- 拉取镜像时 Docker Hub 认证服务超时：确认 Docker Desktop 的代理／网络可访问官方镜像源。若命令行构建的认证请求仍然直连，在当前终端临时设置 `HTTP_PROXY`、`HTTPS_PROXY` 指向同一可用代理；不要把个人代理写入仓库或镜像。
 - 网页端口被占用：修改 `.env` 中的 `APP_PORT` 后重建容器，再使用对应地址。
 - API 迁移失败：API 会退出，不会继续启动。通过 `ps` 和 `logs` 检查数据库健康、连接配置及迁移版本；启动不会重置数据库。PostgreSQL 的初始化密码仅作用于空卷，已有卷不能靠修改 `.env` 更换数据库密码，应保持原配置或按数据库管理流程修改。
 - 干净源码看不到三个本地故事样本：这是预期行为，可先玩 Demo 或配置密钥自行创建故事。
 
-可选开发验收：已有后端 Python 依赖时，在独立 Compose 测试项目中运行 `python scripts/test-docker.py --base-url http://localhost:18080`。脚本只访问已运行的本机服务，创建独立 Demo 会话，检查三结局、回放、授权、幂等和已完成任务的 SSE；不启动 Docker、不调用收费接口、不清空数据，报告在忽略目录 `runtime/docker-smoke-report.json`。它不能代替容器重建、数据卷和浏览器恢复验收，具体流程见[阶段四验证记录](docs/evaluation/2026-10-19-stage-4-docker-results.md)。
+可选开发验收：已有后端 Python 依赖时，在独立 Compose 测试项目中运行 `python scripts/test-docker.py --base-url http://localhost:18080`。脚本只访问已运行的本机服务，创建独立 Demo 会话，检查三结局、回放、授权、幂等和已完成任务的 SSE；不启动 Docker、不调用收费接口、不清空数据，报告在忽略目录 `runtime/docker-smoke-report.json`。它不能代替容器重建、数据卷和浏览器恢复验收，具体流程见[阶段四验收记录](docs/evaluation/2026-10-21-stage-4-docker-results.md)。
 
 ## Windows 本地启动
 
@@ -92,7 +93,7 @@ pwsh -NoProfile -File .\scripts\start-local.ps1
 
 当前首页是逐局保存的故事库。自定义故事流程为背景／年代 → 已校验简介确认 → 八张固定素材 → 调查舞台；在本地设置依次配置 DeepSeek 和智谱 CogView-4，OpenAI 仍禁用。密钥仅在后端内存，重启后须重填；已保存剧情和图片回放无需密钥。CogView-4 固定普通同步 0.06 CNY/次，八图 0.48 CNY，文字另按用量估算；未知结果须核账，恢复不会自动重发不确定的生成请求。
 
-阶段三已于 2026-10-18 按用户确认的调整范围收尾，见[收尾记录](docs/evaluation/2026-10-18-stage-3-closeout.md)。核心流程、真实三年代技术路径和电脑端验收已有记录；手机实机测试未执行，自动配图质量仍有已知偏差，用户明确将两项作为非阻塞保留项。本地三个样本使用用户审核通过的 24 张图片；Docker 交付和 OpenAI 文字支持仍属后续阶段。自动测试不替代人工质量评价。见[实施专题](docs/design/stage-3-completion.md)及[固定验收口径](docs/evaluation/stage-3-acceptance.md)。运行 `evals/run_stage3.py` 前，预览服务和运行器必须使用同一个独立 PostgreSQL `_test` 库；服务测试库指纹必须匹配，正常用户库不会提供该指纹。运行器只使用已在本地设置保存的内存密钥；不要通过命令参数传入 API Key。报告、冻结故事及测试会话凭据位于忽略的 `runtime/evals/`，不得提交这些本地数据。
+阶段三已于 2026-10-18 按用户确认的调整范围收尾，见[收尾记录](docs/evaluation/2026-10-18-stage-3-closeout.md)。核心流程、真实三年代技术路径和电脑端验收已有记录；手机实机测试未执行，自动配图质量仍有已知偏差，用户明确将两项作为非阻塞保留项。本地三个样本使用用户审核通过的 24 张图片；Docker 已按阶段四记录完成实际验收，OpenAI 文字支持仍属后续阶段。自动测试不替代人工质量评价。见[实施专题](docs/design/stage-3-completion.md)及[固定验收口径](docs/evaluation/stage-3-acceptance.md)。运行 `evals/run_stage3.py` 前，预览服务和运行器必须使用同一个独立 PostgreSQL `_test` 库；服务测试库指纹必须匹配，正常用户库不会提供该指纹。运行器只使用已在本地设置保存的内存密钥；不要通过命令参数传入 API Key。报告、冻结故事及测试会话凭据位于忽略的 `runtime/evals/`，不得提交这些本地数据。
 
 ## 阶段 1 规则评测
 
