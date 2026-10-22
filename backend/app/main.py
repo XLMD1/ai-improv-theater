@@ -81,7 +81,7 @@ def local_settings(db: Session = Depends(db_session)):
 @app.put("/local-settings/keys/{provider}")
 def save_key(provider: Provider, request: ApiKeyRequest):
     if provider == "openai":
-        raise HTTPException(status_code=409, detail="OpenAI 密钥选择待开发验证")
+        raise HTTPException(status_code=409, detail="当前不支持 OpenAI 文字模型")
     key = request.api_key.get_secret_value().strip()
     if not 1 <= len(key) <= 500:
         raise HTTPException(status_code=422, detail="API Key 长度须为 1–500 个字符")
@@ -92,7 +92,7 @@ def save_key(provider: Provider, request: ApiKeyRequest):
 @app.delete("/local-settings/keys/{provider}")
 def delete_key(provider: Provider):
     if provider == "openai":
-        raise HTTPException(status_code=409, detail="OpenAI 密钥选择待开发验证")
+        raise HTTPException(status_code=409, detail="当前不支持 OpenAI 文字模型")
     clear_key(provider)
     return {"configured": False}
 
@@ -107,7 +107,7 @@ def world():
 def new_session(request: SessionCreateRequest | None = None):
     request = request or SessionCreateRequest()
     if request.provider == "openai":
-        raise HTTPException(status_code=409, detail="OpenAI 密钥选择待开发验证")
+        raise HTTPException(status_code=409, detail="当前不支持 OpenAI 文字模型")
     model_id = request.model_id or ("demo" if request.provider == "demo" else MODELS[request.provider])
     if request.provider == "demo":
         if model_id != "demo":

@@ -21,10 +21,10 @@ FastAPI 单进程（仅监听 127.0.0.1）
   └─ PostgreSQL：故事版本、会话、不可变节点、事件、任务、用量
           ↓
 DeepSeek 文字 / CogView-4 图片
-OpenAI 文字（阶段 5） / 多 Agent 编排（阶段 6）
+多 Agent 编排（阶段 6；阶段 5 补齐展示与基线评测）
 ```
 
-上图是目标架构。当前应用保留固定 `canon.json`、Demo / DeepSeek 单次生成、PostgreSQL、不可变节点、幂等任务及批准后 SSE；2026-10-14 前端已接入固定 `/`、`/create`、`/play?id=...` 静态导出页面，版本化 `localStorage` 故事库保留每局凭据／节点／草稿／待完成任务，旧 `sessionStorage` 迁移一次；密钥仍仅在后端内存。阶段 1 的版本化故事、同地点调查规则、增量迁移和批准样本已验收。阶段 2 已接入自定义创建及运行时调查后端 API，并通过模拟测试；R1/v2 的三类背景固定真实清单 12/12，一位实际用户对三故事与九路径五项剧情核查均通过，阶段 2 已按方案 A/R1/v2 验收。阶段三图片、共享原子预留和故事库已实现；2026-10-16 固定真实清单补缺后技术检查 15/15，自动配图视觉质量未通过。2026-10-18 三个本地样本另获用户批准并发布 24 张审核图，Edge 原生 200% 缩放、电脑键盘、实际读屏和用户完整退出重开恢复已按[电脑端记录](evaluation/2026-10-18-stage-3-desktop-results.md)核对；2026-10-18 用户明确将手机实机测试和图片质量优化从本阶段阻塞项移出，阶段三按调整范围收尾，详见[阶段三收尾记录](evaluation/2026-10-18-stage-3-closeout.md)；Docker 已于 2026-10-21 完成六组独立容器验收，OpenAI 和多 Agent 尚待后续实施。详见[阶段三专题](design/stage-3-completion.md)。保留浏览器直连本地 API，不接云服务、Redis 或 pgvector，只允许本地前端 origin。
+上图是目标架构。当前应用保留固定 `canon.json`、Demo / DeepSeek 单次生成、PostgreSQL、不可变节点、幂等任务及批准后 SSE；2026-10-14 前端已接入固定 `/`、`/create`、`/play?id=...` 静态导出页面，版本化 `localStorage` 故事库保留每局凭据／节点／草稿／待完成任务，旧 `sessionStorage` 迁移一次；密钥仍仅在后端内存。阶段 1 的版本化故事、同地点调查规则、增量迁移和批准样本已验收。阶段 2 已接入自定义创建及运行时调查后端 API，并通过模拟测试；R1/v2 的三类背景固定真实清单 12/12，一位实际用户对三故事与九路径五项剧情核查均通过，阶段 2 已按方案 A/R1/v2 验收。阶段三图片、共享原子预留和故事库已实现；2026-10-16 固定真实清单补缺后技术检查 15/15，自动配图视觉质量未通过。2026-10-18 三个本地样本另获用户批准并发布 24 张审核图，Edge 原生 200% 缩放、电脑键盘、实际读屏和用户完整退出重开恢复已按[电脑端记录](evaluation/2026-10-18-stage-3-desktop-results.md)核对；2026-10-18 用户明确将手机实机测试和图片质量优化从本阶段阻塞项移出，阶段三按调整范围收尾，详见[阶段三收尾记录](evaluation/2026-10-18-stage-3-closeout.md)；Docker 已于 2026-10-21 完成六组独立容器验收，OpenAI 文字支持已于 2026-10-22 按用户要求取消，多 Agent 仍待后续实施。详见[阶段三专题](design/stage-3-completion.md)。保留浏览器直连本地 API，不接云服务、Redis 或 pgvector，只允许本地前端 origin。
 
 ## 2. 版本化故事与调查规则（阶段 1）
 
@@ -71,7 +71,7 @@ OpenAI 文字（阶段 5） / 多 Agent 编排（阶段 6）
 
 ## 5. API、授权、SSE 与恢复
 
-现有 `POST /sessions`、`GET /session`、`POST /turns`、`GET /nodes/{id}`、`GET /nodes/{id}/events`、`GET /tree`、`GET /runs/{id}` 和 `GET /runs/{id}/events?after=N` 保持旧调用兼容。会话创建缺省 `demo`，返回一次会话令牌；供应商及模型创建后固定。`GET /local-settings` 只返回模型列表、密钥配置布尔值及预算状态；`PUT/DELETE /local-settings/keys/{provider}` 当前开放 DeepSeek 与智谱 CogView-4，OpenAI 继续返回待验证错误。
+现有 `POST /sessions`、`GET /session`、`POST /turns`、`GET /nodes/{id}`、`GET /nodes/{id}/events`、`GET /tree`、`GET /runs/{id}` 和 `GET /runs/{id}/events?after=N` 保持旧调用兼容。会话创建缺省 `demo`，返回一次会话令牌；供应商及模型创建后固定。`GET /local-settings` 只返回模型列表、密钥配置布尔值及预算状态；`PUT/DELETE /local-settings/keys/{provider}` 当前开放 DeepSeek 与智谱 CogView-4，OpenAI 文字支持已取消，保留兼容识别及 HTTP 409 拒绝新调用的边界，提示“不支持”而非“待开发验证”；设置页不再显示 OpenAI 卡片，不新增供应商调用。
 
 阶段 2 已增加故事创建任务的创建、进度查询、SSE 补发、玩家确认、显式恢复和按已保存节点获取公开世界的后端接口，协议见专题设计；素材和新前端已在阶段 3 接入，整体验收状态见开发计划。创建和行动均支持幂等提交：同键同输入复用任务，同键不同输入拒绝；真实并发不能产生第二个任务或节点。
 
