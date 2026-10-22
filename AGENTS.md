@@ -47,7 +47,7 @@
 - Phase 1 must deliver a runnable minimum task-success evaluation with frozen cases, explicit success criteria, counts, and failure details; follow [task-success-baseline.md](docs/evaluation/task-success-baseline.md). Use `evals/` for runners/case manifests, `backend/tests/` for assertions and shared fixtures, and `docs/evaluation/` for metric definitions/reports; do not create a duplicate `benchmark/` entry point or empty placeholders.
 - Cover invalid input, malformed model output, tool failure, timeout, retry exhaustion, and recovery at the phase where each boundary is implemented. Report deterministic rule evaluation separately from simulated fault tests and real-model evaluation; skipped or unimplemented cases must not inflate success rates.
 - Report only checks that were actually run. Do not describe a plan, draft, or unverified feature as complete.
-- Preserve unrelated working-tree changes. The untracked `backend/app/generators.py`, `backend/app/llm.py`, `backend/app/memory.py`, and `docker-compose.yml` are pre-existing drafts; do not stage or rewrite them unless they are explicitly brought into scope and validated.
+- Preserve unrelated working-tree changes. The obsolete untracked drafts `backend/app/generators.py`, `backend/app/llm.py`, `backend/app/memory.py`, and `docker-compose.yml` were removed at the user's explicit request on 2026-10-22. Do not restore them as planned or implemented features; use the maintained generation/provider modules and `compose.yaml`. See [cleanup record](docs/development-log/2026-10-22-legacy-draft-cleanup.md).
 
 ## Git workflow
 

@@ -11,7 +11,7 @@
 
 以下阶段 0–6 是本轮唯一有效编号。旧基线的阶段、勾选及历史测试数字在本文历史部分保留，不继承为新阶段完成状态。已有状态更新、不可变节点、分支存档、幂等、SSE、最近三个祖先回合上下文和一条 DeepSeek 真实路径可以复用；阶段 2 自定义故事及调查后端已按方案 A/R1/v2 验收；阶段三图片／完整前端已按 2026-10-18 用户调整范围收尾；Docker 与源码交付已于 2026-10-21 完成独立实际验收；OpenAI 文字支持已于 2026-10-22 按用户要求取消；阶段 5 求职展示与历史基线重算已于 2026-10-22 验收；多 Agent 已在随后讨论中取消。
 
-未跟踪的 `backend/app/generators.py`、`backend/app/llm.py`、`backend/app/memory.py` 和 `docker-compose.yml` 仍为独立草稿，未经明确纳入并验证不改写、不提交。生成故事、图片、数据库、密钥和本地日志使用 Git 忽略的运行目录。
+2026-10-22 用户明确要求清理四份未使用原型：`backend/app/generators.py`、`backend/app/llm.py`、`backend/app/memory.py` 和 `docker-compose.yml` 已从本地移除，未纳入正式实现。此前保留草稿的阶段记录继续作为历史，当前状态见[清理记录](development-log/2026-10-22-legacy-draft-cleanup.md)。生成故事、图片、数据库、密钥和本地日志使用 Git 忽略的运行目录。
 
 ## 2. 当前开发阶段
 
