@@ -1,5 +1,7 @@
 # 基础任务成功率评测规范
 
+2026-10-22 范围更新：OpenAI 与阶段 6 多 Agent 已取消；下文对应后续故障/配对案例为历史计划，不再实施。阶段 5 普通流水线的当前口径见[设计](../superpowers/specs/2026-10-22-stage5-portfolio-design.md)与[实际报告](2026-10-22-stage-5-results.md)。
+
 日期：2026-10-10；评测口径版本：1
 依据：[阶段验收](../03-development-plan.md) · [故事与规则](../design/stage-1-story-rules.md) · [运行可靠性](../design/runtime-reliability.md)
 状态：阶段 1 规则及旧存档兼容入口、固定清单和 fixture 已实现并实际运行；后续模型执行器及真实模型套件尚未验收。样本已获用户批准并冻结为 1.0.0。实际结果见[批准版本报告](2026-10-10-stage-1-approved-results.md)，[原草稿报告](2026-10-10-stage-1-results.md)保留其历史口径。

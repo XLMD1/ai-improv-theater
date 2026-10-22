@@ -1,0 +1,140 @@
+{
+  "metric_version": "stage5-baseline-1",
+  "measurement": "recorded_real_model_with_approved_feedback",
+  "source": {
+    "run_id": "1bfcdec4e93c463b9a77fab44ee7d60e",
+    "timestamp": "2026-10-11T13:20:27.643380+00:00",
+    "git_commit": "600b67f5e7bb6ed4daab9f4491087347f7ebc9b8",
+    "model_version": "deepseek-flash",
+    "prompt_version": "investigation-single-6",
+    "price_version": "2026-10-10-flash-peak-usd-cny7.5",
+    "manifest_sha256": "ac927d293c87f5407692d7aa11aa22307191a936175c1b8c017335f5315fef5a",
+    "blueprint_version": "controlled-investigation-1",
+    "blueprint_sha256": "516f8804af3bf97df0b964a875a1d818c6ff084fd68ec552e092de016c438c9e",
+    "creation_protocol": "controlled-content-2",
+    "narration_protocol": "approved-feedback-1"
+  },
+  "source_report_sha256": "024dece958315738dff6ce8f8c71924785bc2a39736facf1d6ebe18c3b5ee0d3",
+  "tasks": {
+    "total": 12,
+    "succeeded": 12,
+    "failed": 0,
+    "error": 0,
+    "skipped": 0,
+    "task_success_rate": 1.0
+  },
+  "bundle_sha256": "9d773976810a612e6f8e519ddac8584aefa2313dacdfd1d3095ef72827cad02f",
+  "stories": [
+    {
+      "era": "ancient",
+      "content_hash": "080c2048e61a17412b1b33f7075a04f62a6a07ea41d3bc482a6bc568ec70b4a7",
+      "frozen_paths_sha256": "acce75e1b81769bef7a965930c631b7a3454f1b27178787a2e888a381efbdc40"
+    },
+    {
+      "era": "modern",
+      "content_hash": "ca0b82d567ef5ecaa05d68c576418f80266edc06d113304f4494bbad97d7b990",
+      "frozen_paths_sha256": "d6f0273e54c61cf12669b582c6c064917039cab92718d9f5f479f52a43bbb5cd"
+    },
+    {
+      "era": "future",
+      "content_hash": "1489010bdb1eb716d0ddaf6a9bcc190b86a4898f2838462e8c4dc1a6bdd6184b",
+      "frozen_paths_sha256": "e7583162a532ed05ecf8e7f728b1b443a4c3305a3123d504ddaedbdb768f97e5"
+    }
+  ],
+  "first_output_structure": {
+    "total": 71,
+    "valid": 71,
+    "rate": 1.0
+  },
+  "semantic_checks": {
+    "total": 5,
+    "rejected": 2
+  },
+  "creation_repair": {
+    "total": 3,
+    "count": 2,
+    "rate": 0.6666666666666666
+  },
+  "fallback": {
+    "total": 189,
+    "count": 0,
+    "rate": 0.0
+  },
+  "latency": {
+    "button": {
+      "samples": 126,
+      "missing": 0,
+      "p50_ms": 12.954,
+      "p95_ms": 17.94
+    },
+    "free_text": {
+      "samples": 63,
+      "missing": 0,
+      "p50_ms": 1407.649,
+      "p95_ms": 1889.65
+    },
+    "creation_case": {
+      "samples": 3,
+      "missing": 0,
+      "p50_ms": 41875.0,
+      "p95_ms": 49688.0
+    }
+  },
+  "fact_consistency": {
+    "status": "historical_human_review",
+    "reviewers": 1,
+    "review_date": "2026-10-11",
+    "scope": "three_stories_nine_saved_paths",
+    "reviewed_stories": 3,
+    "stories_without_reported_conflict": 3,
+    "reported_issues": 0
+  },
+  "usage": {
+    "attempts": 73,
+    "ledger_calls": 73,
+    "usage_measurement_version": "execution-usage-2",
+    "input_tokens": 275169,
+    "output_tokens": 25629,
+    "uncertain_calls": 0,
+    "unconfirmed_calls": 0,
+    "estimated_cost_cny": "0.849793",
+    "reconciled_calls": 0,
+    "reconciliation_source": null,
+    "reconciled_total_tokens": 0,
+    "reconciled_input_tokens": 0,
+    "reconciled_output_tokens": 0,
+    "reconciled_missing_split_calls": 0,
+    "actual_reconciled_cost_cny": "0",
+    "budget_accounted_cost_cny": "0.849793",
+    "coverage_complete": true,
+    "full_run_estimated_cost_cny": "0.849793"
+  },
+  "coverage": {
+    "saved_turns": 189,
+    "observed_runs": 189,
+    "creation_tasks": 3,
+    "attempts": 73,
+    "ledger_calls": 73,
+    "unmeasured_cases": [],
+    "accounting_complete": true,
+    "scope": "declared_creation_tasks_and_frozen_paths_including_failed_run_ids",
+    "read_only": true
+  },
+  "environment": {
+    "collector_commit": "b623ea696eec90f9c63c6ad049ae32537e82f4c5",
+    "python": "3.12.10",
+    "collector_script_sha256": "bc90188093cbf4ffbf9d812494a2d8710d35ca00904079067dce94a660cf6b43",
+    "platform": "Windows",
+    "packages": {
+      "sqlalchemy": "2.1.4",
+      "pydantic": "2.13.5",
+      "psycopg": "3.3.6"
+    }
+  },
+  "limitations": [
+    "Historical evidence, not a new model or current-prompt quality evaluation.",
+    "R1 saved feedback is server presentation, not live model narration.",
+    "Turn latency excludes queueing, browser rendering and network delivery.",
+    "CNY estimates are not provider invoice verification."
+  ]
+}

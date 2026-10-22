@@ -1,5 +1,7 @@
 # 工具执行、故障恢复与 Trace 设计
 
+2026-10-22 当前范围：OpenAI 文字和阶段 6 多 Agent 均已按用户要求取消。下文阶段 5/6 的旧模型接入、并行生成及审核修复条款保留历史设计，不再作为实现义务；当前阶段 5 仅交付普通流水线基线与作品展示，见[设计](../superpowers/specs/2026-10-22-stage5-portfolio-design.md)。
+
 2026-10-11 行动理解补充：用户批准 R1 的 action.interpret.v2，独立严格出参仅为 recognized/action_index（严格非负整数）或 unrecognized；统一入口仍先保留真实 usage 再验证。服务器在调用后检查当前候选长度并映射，越界 invalid_action_index，不裁决、不提交节点、不重试格式或语义失败。旧模式保留 v1；v2 的 20 秒单次、三次安全瞬态上限、300 输出 token、60 秒行动截止时间和费用/Trace 策略不变。详见[批准设计](stage-2-controlled-scenes-proposal.md)。
 
 日期：2026-10-10；设计版本：1

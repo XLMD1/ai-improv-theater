@@ -147,6 +147,7 @@ def execute_real_cases(cases,output):
                     with SessionLocal() as db:
                         result['session_id'] = db.get(Node,parent).session_id
                     ending,path = sorted(paths.items())[case['index']]
+                    result['run_ids'] = []
                     for normalized in path:
                         with SessionLocal() as db:
                             node = db.get(Node,parent)
@@ -158,7 +159,9 @@ def execute_real_cases(cases,output):
                                                json={'parent_node_id':parent,'action':action})
                         if response.status_code!=202:
                             raise ValueError('turn_creation_failed')
-                        run = _poll(client,'/runs/'+response.json()['run_id'],headers,65)
+                        submitted_run = response.json()['run_id']
+                        result['run_ids'].append(submitted_run)
+                        run = _poll(client,'/runs/'+submitted_run,headers,65)
                         if run['status']!='completed':
                             raise ValueError(run['error_code'] or 'turn_failed')
                         with SessionLocal() as db:
@@ -186,9 +189,9 @@ def execute_real_cases(cases,output):
     return results
 
 
-def usage_summary(db,calls):
+def usage_summary(db,calls,*,evidence=None):
     from app.usage_reconciliation import reconciled_usage
-    evidence = reconciled_usage(db)
+    evidence = reconciled_usage(db) if evidence is None else evidence
     confirmed = [evidence[c.id] for c in calls if c.id in evidence]
     actual = sum((item.actual_cost_cny for item in confirmed),Decimal(0))
     original_estimate = sum((c.estimated_cost_cny or Decimal(0) for c in calls),Decimal(0))
