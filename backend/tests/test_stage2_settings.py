@@ -76,17 +76,22 @@ def test_new_ai_story_requires_key_but_demo_stays_keyless():
         assert demo.json()["provider"] == "demo"
 
 
-def test_openai_key_and_story_remain_pending_verification():
+def test_openai_key_and_story_are_unsupported():
     with TestClient(app) as client:
         status = client.get("/local-settings").json()["providers"]["openai"]
         assert status["available"] is False
         assert status["configured"] is False
         saved = client.put("/local-settings/keys/openai", json={"api_key": "test-openai-key"})
         assert saved.status_code == 409
-        assert "待开发验证" in saved.json()["detail"]
-        assert client.delete("/local-settings/keys/openai").status_code == 409
+        assert "不支持" in saved.json()["detail"]
+        assert "待开发验证" not in saved.json()["detail"]
+        deleted = client.delete("/local-settings/keys/openai")
+        assert deleted.status_code == 409
+        assert "不支持" in deleted.json()["detail"]
         created = client.post("/sessions", json={"provider": "openai", "model_id": "gpt-6-luna"})
         assert created.status_code == 409
+        assert "不支持" in created.json()["detail"]
+        assert client.get("/local-settings").json()["providers"]["openai"]["configured"] is False
 
 
 def test_invalid_api_key_is_rejected_without_echoing_input():

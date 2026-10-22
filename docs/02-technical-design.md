@@ -71,7 +71,7 @@ DeepSeek 文字 / CogView-4 图片
 
 ## 5. API、授权、SSE 与恢复
 
-现有 `POST /sessions`、`GET /session`、`POST /turns`、`GET /nodes/{id}`、`GET /nodes/{id}/events`、`GET /tree`、`GET /runs/{id}` 和 `GET /runs/{id}/events?after=N` 保持旧调用兼容。会话创建缺省 `demo`，返回一次会话令牌；供应商及模型创建后固定。`GET /local-settings` 只返回模型列表、密钥配置布尔值及预算状态；`PUT/DELETE /local-settings/keys/{provider}` 当前开放 DeepSeek 与智谱 CogView-4，OpenAI 文字支持已取消，保留兼容识别及拒绝新调用的边界，不新增供应商调用。
+现有 `POST /sessions`、`GET /session`、`POST /turns`、`GET /nodes/{id}`、`GET /nodes/{id}/events`、`GET /tree`、`GET /runs/{id}` 和 `GET /runs/{id}/events?after=N` 保持旧调用兼容。会话创建缺省 `demo`，返回一次会话令牌；供应商及模型创建后固定。`GET /local-settings` 只返回模型列表、密钥配置布尔值及预算状态；`PUT/DELETE /local-settings/keys/{provider}` 当前开放 DeepSeek 与智谱 CogView-4，OpenAI 文字支持已取消，保留兼容识别及 HTTP 409 拒绝新调用的边界，提示“不支持”而非“待开发验证”；设置页不再显示 OpenAI 卡片，不新增供应商调用。
 
 阶段 2 已增加故事创建任务的创建、进度查询、SSE 补发、玩家确认、显式恢复和按已保存节点获取公开世界的后端接口，协议见专题设计；素材和新前端已在阶段 3 接入，整体验收状态见开发计划。创建和行动均支持幂等提交：同键同输入复用任务，同键不同输入拒绝；真实并发不能产生第二个任务或节点。
 

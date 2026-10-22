@@ -17,7 +17,7 @@ const names: Record<KeyProvider, string> = { openai: "OpenAI", deepseek: "DeepSe
 
 export function LocalSettingsDialog({ currentProvider, currentModel, hasProgress, onClose, onNewStory }: Props) {
   const dialogRef = useRef<HTMLDialogElement>(null);
-  const [selected, setSelected] = useState<KeyProvider>("deepseek");
+  const [selected, setSelected] = useState<Exclude<KeyProvider, "openai">>("deepseek");
   const [settings, setSettings] = useState<LocalSettings | null>(null);
   const [apiKey, setApiKey] = useState("");
   const [showKey, setShowKey] = useState(false);
@@ -32,7 +32,7 @@ export function LocalSettingsDialog({ currentProvider, currentModel, hasProgress
     return () => { if (dialog?.open) dialog.close(); };
   }, []);
 
-  const changeProvider = (provider: KeyProvider) => {
+  const changeProvider = (provider: Exclude<KeyProvider, "openai">) => {
     setSelected(provider);
     setApiKey("");
     setShowKey(false);
@@ -97,10 +97,10 @@ export function LocalSettingsDialog({ currentProvider, currentModel, hasProgress
         <fieldset className="provider-fieldset" disabled={saving}>
           <legend>模型供应商</legend>
           <div className="provider-cards">
-            {(["openai", "deepseek", "cogview"] as const).map(provider => <button
+            {(["deepseek", "cogview"] as const).map(provider => <button
               type="button" key={provider} className={`provider-card ${selected === provider ? "selected" : ""}`}
-              aria-pressed={selected === provider} disabled={provider === "openai" || saving} onClick={() => changeProvider(provider)}>
-              <strong>{names[provider]}</strong><span>{provider === "openai" ? "待开发验证" : settings?.providers[provider].configured ? "密钥已配置" : "尚未配置密钥"}</span>
+              aria-pressed={selected === provider} disabled={saving} onClick={() => changeProvider(provider)}>
+              <strong>{names[provider]}</strong><span>{settings?.providers[provider].configured ? "密钥已配置" : "尚未配置密钥"}</span>
             </button>)}
           </div>
         </fieldset>
@@ -142,7 +142,7 @@ export function LocalSettingsDialog({ currentProvider, currentModel, hasProgress
       <div className="settings-footer">
         <button type="button" onClick={() => void start("demo", "demo")} disabled={saving}>新建确定性 Demo</button>
         {selected!=='cogview'&&<button type="button" className="settings-primary" onClick={() => void start(selected, chosen?.model_id || "")}
-          disabled={saving || selected==='openai' || !chosen?.configured || settings?.budget.status === "blocked"}>用 {names[selected]} 开始新故事</button>}
+          disabled={saving || !chosen?.configured || settings?.budget.status === "blocked"}>用 {names[selected]} 开始新故事</button>}
       </div>
     </dialog>
   );
